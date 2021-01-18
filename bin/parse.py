@@ -39,4 +39,4 @@ def arguments():
     parser.add_argument('--ffmpeg', '-ff', type=int, choices=[1], dest='ffmpeg', 
                         help="If specified, it will start a certain number of ffmpeg processes.")
 
-    return args = parser.parse_args()
+    return parser.parse_args()
