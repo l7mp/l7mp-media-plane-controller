@@ -1,7 +1,6 @@
 import argparse
 
 def arguments():
-
     # Init
     parser = argparse.ArgumentParser(description='Client for control RTPengine in kubernetes with l7mp.')
 
