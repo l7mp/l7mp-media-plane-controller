@@ -1,15 +1,12 @@
 from parse import arguments
-import json
 from utils import send, ffmpeg
+from call_gen import generate_calls
+import json
 import sdp_transform
 import socket
-from call_gen import generate_calls
 import time
 
 args = arguments()
-
-# if args.tcpdump:
-#     tcpdump_proc = tcpdump()
 
 if not args.server:
     if args.file:
@@ -47,14 +44,13 @@ else:
         time.sleep(1)
         response = send(args, json.loads(data.decode()), addr[0], int(addr[1]))
         parsed_sdp_dict = sdp_transform.parse(response.get('sdp'))
-        print("RTP port from rtpengine: %d" % parsed_sdp_dict.get('media')[0].get('port'))
-        print("RTCP port from rtpengine: %d\n" % parsed_sdp_dict.get('media')[0].get('rtcp').get('port'))
+        print("RTP port from rtpengine: %d" % parsed_sdp_dict.get('media')[0]
+            .get('port'))
+        print("RTCP port from rtpengine: %d\n" % parsed_sdp_dict.get('media')[0]
+            .get('rtcp').get('port'))
 
 if args.offer and args.answer and args.ffmpeg:
     time.sleep(1)
-    offer_rtp_address = ["rtp://" + args.addr + ":" + str(offer_rtp_port) + "?localrtpport=" + str(args.bind_offer[1])]
-    answer_rtp_address = ["rtp://" + args.addr + ":" + str(answer_rtp_port) + "?localrtpport=" + str(args.bind_answer[1])]
+    offer_rtp_address = [f'rtp://{args.addr}:{str(offer_rtp_port)}?localrtpport={str(args.bind_offer[1])}']
+    answer_rtp_address = [f'rtp://{args.addr}:{str(answer_rtp_port)}?localrtpport={str(args.bind_answer[1])}']
     ffmpeg(args, 1, offer_rtp_address, answer_rtp_address)
-
-# if args.tcpdump:
-#     tcpdump_proc.terminate()
