@@ -15,7 +15,7 @@ def parse(args, file):
       file: Location of the config file. 
     '''
 
-    with open(file) as f:
+    with open(file, 'r') as f:
         Lines = f.readlines()
         for line in Lines:
             line = line.strip()
@@ -47,6 +47,10 @@ def arguments():
 
     parser.add_argument('--config_file', '-c', type=str, dest='config',
                         help='Specify the config file place.')
+
+    # Kubernetes
+    parser.add_argument('--token', '-t', type=str, dest='token',
+                        help='Specify the BearerToken location.')
 
     # RTPengine server args
     parser.add_argument('--port', '-p', default=22222, type=int, dest='port',

@@ -9,9 +9,18 @@ class KubernetesAPIClient():
     '''
 
     def __init__(self, token):
+        ''' Constructor to set up connection with Kubernetes cluster.
+
+        Args:
+          token: Path to the BearerToken. 
+        '''
+        
         self.configuration = client.Configuration()
         # Configure API key authorization: BearerToken
-        self.configuration.api_key['authorization'] = token
+        with open(token, 'r') as ft:
+            data = ft.read().replace('\n', '')
+
+        self.configuration.api_key['authorization'] = data
         
     def create_vsvc(self, participant, rtcp = False):
         ''' Create a virtual service based on the participants data. 
