@@ -7,5 +7,5 @@ kubernetes. The SIP server will see as the same as RTPengine.
 
 - [ ] Somehow configure a kubernetes cluster with this code. 
 - [ ] Make the right function to create the right resources in the cluster. 
-- [ ] Generate RTP streams for testing in a way where we can see the RTPC 
+- [ ] Generate RTP streams for testing in a way where we can see the RTCP
     packets. 
