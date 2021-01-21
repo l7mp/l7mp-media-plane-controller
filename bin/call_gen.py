@@ -33,7 +33,7 @@ def generate_calls(args, cnt):
             "from-tag" + str(start_port), "caller" + str(start_port), 
             args.sdpaddr, start_port)
         )
-        offer = send(args, sdp_offer, args.sdpaddr, start_port)
+        offer = send(args.addr, args.port, sdp_offer, args.sdpaddr, start_port)
 
         # Answer
         start_port += 2
@@ -42,7 +42,7 @@ def generate_calls(args, cnt):
             "from-tag" + str(start_port - 2), "to-tag" + str(start_port), 
             "callee" + str(start_port), args.sdpaddr, start_port)
         )
-        answer = send(args, sdp_answer,args.sdpaddr, start_port)
+        answer = send(args.addr, args.port, sdp_answer,args.sdpaddr, start_port)
         
         parsed_offer = sdp_transform.parse(offer.get('sdp'))
         parsed_answer = sdp_transform.parse(answer.get('sdp'))
