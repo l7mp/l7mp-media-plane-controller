@@ -1,4 +1,4 @@
-from kubernetes import client, ApiException
+from kubernetes import client
 from pprint import pprint
 
 class KubernetesAPIClient():
@@ -21,8 +21,34 @@ class KubernetesAPIClient():
             data = ft.read().replace('\n', '')
 
         self.configuration.api_key['authorization'] = data
+
+    def send_custom_obj(self, resource, kind, protocol):
+         # Enter a context with an instance of the API kubernetes.client
+        with client.ApiClient(self.configuration) as api_client:
+            # Create an instance of the API class
+            api_instance = client.CustomObjectsApi(api_client)
+            group = 'l7mp.io' 
+            version = 'v1'
+            body = resource 
+            pretty = 'true'
+
+            if kind == 'VirtualService':
+                plural = 'virtualservices'
+            elif kind == 'Target':
+                plural == 'targets'
+            elif kind == 'Rule':
+                plural == 'rules'
+
+            try:
+                api_response = api_instance.create_cluster_custom_object(group, 
+                            version, plural, body, pretty=pretty)
+                pprint(api_response)
+            except client.ApiException as e:
+                print(f'Cannot create {protocol} {kind}: {e}\n')
+
+        print(f'{protocol} {kind} created!')
         
-    def create_vsvc(self, participant, rtcp = False):
+    def create_vsvc(self, participant):
         ''' Create a virtual service based on the participants data. 
 
         Args:
@@ -31,23 +57,17 @@ class KubernetesAPIClient():
             call_id: ID of the call.
             tag: ng message from-tag. 
             local_ip: Sender or receiver local IP.
-            local_port: Sender or receiver local port.
-            remote_port: Port given by RTPengine. 
-        rtcp: When it is True will create RTCP objects. 
+            local_rtp_port: Sender or Receiver local RTP port.
+            remote_rtp_port: RTP Port given by RTPengine.
+            local_rtcp_port: Sender or Receiver local RTCP port.
+            remote_rtcp_port_ RTCP port given by RTPengine.
         '''
-
-        if rtcp:
-            name = f'ingress-rtcp-vsvc-{str(participant["call_id"])}-{str(participant["tag"])}'
-            destination_ref = f'/apis/l7mp.io/v1/namespaces/default/targets/ingress-rtcp-target-{str(participant["call_id"])}-{str(participant["tag"])}'
-        else:
-            name = f'ingress-rtp-vsvc-{str(participant["call_id"])}-{str(participant["tag"])}'
-            destination_ref = f'/apis/l7mp.io/v1/namespaces/default/targets/ingress-rtp-target-{str(participant["call_id"])}-{str(participant["tag"])}'
 
         resource = {
             'apiVersion': 'l7mp.io/v1',
             'kind': 'VirtualService',
             'metadata': {
-                'name': name
+                'name': f'ingress-rtp-vsvc-{str(participant["call_id"])}-{str(participant["tag"])}'
             },
             'spec': {
                 'updateOwners': True,
@@ -59,10 +79,10 @@ class KubernetesAPIClient():
                 'listener': {
                     'spec': {
                         'UDP': {
-                            'port': {str(participant["remote_port"])},
+                            'port': {str(participant["remote_rtp_port"])},
                             'connect': {
                                 'address': {str(participant["local_ip"])},
-                                'port': {str(participant["local_port"])}
+                                'port': {str(participant["local_rtp_port"])}
                             },
                             'options': {
                                 'mode': 'server'
@@ -83,7 +103,7 @@ class KubernetesAPIClient():
                                     }
                                 ],
                                 'route': {
-                                    'destinationRef': destination_ref,
+                                    'destinationRef':  f'/apis/l7mp.io/v1/namespaces/default/targets/ingress-rtp-target-{str(participant["call_id"])}-{str(participant["tag"])}',
                                     'retry': {
                                         'retry_on': 'always',
                                         'num_retries': 1000,
@@ -100,27 +120,17 @@ class KubernetesAPIClient():
             }
         }
 
-        # Enter a context with an instance of the API kubernetes.client
-        with client.ApiClient(self.configuration) as api_client:
-            # Create an instance of the API class
-            api_instance = client.CustomObjectsApi(api_client)
-            group = 'l7mp.io' 
-            version = 'v1' 
-            plural = 'virtualservices'
-            body = resource 
-            pretty = 'true'
+        self.send_custom_obj(resource, 'VirtualService', 'RTP')
 
-            try:
-                api_response = api_instance.create_cluster_custom_object(group, 
-                            version, plural, body, pretty=pretty)
-                pprint(api_response)
-            except ApiException as e:
-                print("Cannot create VirtualService: %s\n" % e)
+        resource['metadata']['name'] = f'ingress-rtcp-vsvc-{str(participant["call_id"])}-{str(participant["tag"])}'
+        resource['spec']['listener']['spec']['UDP']['port'] = str(participant["remote_rtcp_port"])
+        resource['spec']['listener']['spec']['UDP']['connect']['port'] = str(participant["local_rtcp_port"])
+        resource['spec']['listener']['rules'][0]['action']['route']['destinationRef'] = f'/apis/l7mp.io/v1/namespaces/default/targets/ingress-rtcp-target-{str(participant["call_id"])}-{str(participant["tag"])}'
 
-        print("VirtualService created!")
+        self.send_custom_obj(resource, 'VirtualService', 'RTCP')
 
 
-    def create_target(self, participant, rtcp = False):
+    def create_target(self, participant):
         ''' Create a Target based on the participant data. 
 
         Args:
@@ -128,19 +138,13 @@ class KubernetesAPIClient():
             following keys:
             call_id: ID of the call. 
             tag: ng message from-tag. 
-        rtcp: When it is True will create RTCP objects.
         '''
-
-        if rtcp:
-            name = f'ingress-rtcp-target-{str(participant["callid"])}-{str(participant["tag"])}'
-        else:
-            name = f'ingress-rtp-target-{str(participant["callid"])}-{str(participant["tag"])}'
 
         resource = {
             'apiVersion': 'l7mp.io/v1',
             'kind': 'Target',
             'metadata': {
-                'name': name
+                'name': f'ingress-rtp-target-{str(participant["callid"])}-{str(participant["tag"])}'
             },
             'spec': {
                 'selector': {
@@ -183,27 +187,15 @@ class KubernetesAPIClient():
             }
         }
 
-         # Enter a context with an instance of the API kubernetes.client
-        with client.ApiClient(self.configuration) as api_client:
-            # Create an instance of the API class
-            api_instance = client.CustomObjectsApi(api_client)
-            group = 'l7mp.io' 
-            version = 'v1' 
-            plural = 'targets'
-            body = resource 
-            pretty = 'true'
 
-            try:
-                api_response = api_instance.create_cluster_custom_object(group, 
-                            version, plural, body, pretty=pretty)
-                pprint(api_response)
-            except ApiException as e:
-                print("Cannot create Target: %s\n" % e)
+        self.send_custom_obj(resource, 'Target', 'RTP')
 
-        print("Target created!")
+        resource['metadata']['name'] = f'ingress-rtcp-target-{str(participant["callid"])}-{str(participant["tag"])}'
+
+        self.send_custom_obj(resource, 'Target', 'RTCP')
 
 
-    def create_rule(self, participant, rtcp = False):
+    def create_rule(self, participant):
         ''' Create a Rule based on the participant data. 
 
         Args:
@@ -211,21 +203,17 @@ class KubernetesAPIClient():
             following keys:
             call_id: ID of the call.
             tag: ng message from-tag.
-            remote_port: Port given by RTPengine.
-            local_port: Sender or Receiver local port.
-        rtcp: When it is True will create RTCP objects.
+            remote_port: RTP Port given by RTPengine.
+            local_port: Sender or Receiver local rtp port.
+            local_rtcp_port: Sender or Receiver local rtcp port.
+            remote_rtcp_port: RTCP port given by RTPengine.
         '''
-
-        if rtcp:
-            name = f'worker-rtcp-rule-{str(participant["call_id"])}-{str(participant["tag"])}'
-        else:
-            name = f'worker-rtp-rule-{str(participant["call_id"])}-{str(participant["tag"])}'
 
         resource = {
             'apiVersion': 'l7mp.io/v1',
             'kind': 'Rule',
             'metadata': {
-                'name': name
+                'name': f'worker-rtcp-rule-{str(participant["call_id"])}-{str(participant["tag"])}'
             },
             'spec': {
                 'updateOwners': True,
@@ -257,10 +245,10 @@ class KubernetesAPIClient():
                             'destination': {
                                 'spec': {
                                     'UDP': {
-                                        'port': {str(participant["remote_port"])},
+                                        'port': {str(participant["remote_rtcp_port"])},
                                         'bind': {
                                             'address': '127.0.0.1',
-                                            'port': {str(participant["local_port"])}
+                                            'port': {str(participant["local_rtcp_port"])}
                                         }
                                     }
                                 },
@@ -283,25 +271,12 @@ class KubernetesAPIClient():
             }
         }
 
-        if not rtcp:
-            resource["spec"]["rule"]["action"]["route"]["ingress"] =  [{'clusterRef': 'ingress-metric-counter'}]
-            resource["spec"]["rule"]["action"]["route"]["egress"] =  [{'clusterRef': 'egress-metric-counter'}]
+        self.send_custom_obj(resource, 'Rule', 'RTCP')
 
-         # Enter a context with an instance of the API kubernetes.client
-        with client.ApiClient(self.configuration) as api_client:
-            # Create an instance of the API class
-            api_instance = client.CustomObjectsApi(api_client)
-            group = 'l7mp.io' 
-            version = 'v1' 
-            plural = 'rules'
-            body = resource 
-            pretty = 'true'
+        resource['metadata']['name'] = f'worker-rtp-rule-{str(participant["call_id"])}-{str(participant["tag"])}'
+        resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['port'] = str(participant["remote_rtp_port"])
+        resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['bind']['port'] = str(participant["local_rtp_port"])
+        resource["spec"]["rule"]["action"]["route"]["ingress"] =  [{'clusterRef': 'ingress-metric-counter'}]
+        resource["spec"]["rule"]["action"]["route"]["egress"] =  [{'clusterRef': 'egress-metric-counter'}]
 
-            try:
-                api_response = api_instance.create_cluster_custom_object(group, 
-                            version, plural, body, pretty=pretty)
-                pprint(api_response)
-            except ApiException as e:
-                print("Cannot create Rule: %s\n" % e)
-
-        print("Rule created!")
+        self.send_custom_obj(resource, 'Rule', 'RTP')

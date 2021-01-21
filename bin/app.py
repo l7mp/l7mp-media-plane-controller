@@ -6,7 +6,6 @@ import sdp_transform
 import socket
 import time
 
-
 def main():
     args = arguments()
 
@@ -26,7 +25,8 @@ def main():
                 args.addr, args.port, 
                 args.answer, args.bind_answer, "answer")
         if args.generate_calls:
-            generate_calls(args, args.generate_calls)
+            generate_calls(args.addr, args.port, args.sdpaddr, args.audio_file,
+            args.token, args.generate_calls)
     else:
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.bind((args.server_address, args.server_port))
