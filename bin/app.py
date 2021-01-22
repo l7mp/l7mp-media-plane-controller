@@ -57,7 +57,7 @@ if __name__ == '__main__':
         apis = g_calls.get_apis()
         for a in apis:
             a.delete_resources()
-    finally:
+    else:
         apis = g_calls.get_apis()
         for a in apis:
             a.delete_resources()

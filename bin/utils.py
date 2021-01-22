@@ -41,7 +41,9 @@ def send(address, port, file, bind_address, bind_port):
 
     # Generate and send ng message
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind((bind_address, bind_port))
+    if bind_address != '127.0.0.1':
+        sock.bind((bind_address, bind_port))
+    
     logging.debug("Socket bound to %s, %s", str(bind_address), str(bind_port))
 
     cookie = gen_cookie(5)
@@ -50,9 +52,8 @@ def send(address, port, file, bind_address, bind_port):
     logging.debug("Message generated: %s", message)
     byte_sent = sock.sendto(message.encode('utf-8'), (address, port))
     logging.debug("%s, byte sent.", str(byte_sent))
-
+    
     response = sock.recv(4096)
-
     data = response.decode()
     data = data.split(" ", 1)
     result = bc.decode(data[1])

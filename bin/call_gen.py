@@ -46,7 +46,8 @@ class GenerateCall():
             )
             offer = send(
                 self.address, self.port, sdp_offer,
-                self.sdp_address, start_port)
+                self.sdp_address, start_port
+            )
 
             # Answer
             start_port += 2
@@ -57,7 +58,8 @@ class GenerateCall():
             )
             answer = send(
                 self.address, self.port, sdp_answer,
-                self.sdp_address, start_port)
+                self.sdp_address, start_port
+            )
             
             parsed_offer = sdp_transform.parse(offer.get('sdp'))
             parsed_answer = sdp_transform.parse(answer.get('sdp'))
