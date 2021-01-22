@@ -24,7 +24,7 @@ def parse(args, file):
             if line[0] == '#':
                 continue
 
-            split_line = re.split('= | \s', line)
+            split_line = re.split('=|\s', line)
 
             if len(split_line) > 2:
                 setattr(args, split_line[0], [split_line[1], split_line[2]])
@@ -51,6 +51,8 @@ def arguments():
     # Kubernetes
     parser.add_argument('--token', '-t', type=str, dest='token',
                         help='Specify the BearerToken location.')
+    parser.add_argument('--host', type=str, dest='host',
+                        help='Define the cluster IP.')
 
     # RTPengine server args
     parser.add_argument('--port', '-p', default=22222, type=int, dest='port',

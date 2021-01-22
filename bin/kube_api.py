@@ -1,4 +1,4 @@
-from kubernetes import client
+from kubernetes import client, config
 from pprint import pprint
 
 class KubernetesAPIClient():
@@ -8,43 +8,62 @@ class KubernetesAPIClient():
     that yous should provide the BearerToken.
     '''
 
-    def __init__(self, token):
+    def __init__(self, token, host):
         ''' Constructor to set up connection with Kubernetes cluster.
 
         Args:
           token: Path to the BearerToken. 
         '''
         
-        self.configuration = client.Configuration()
-        # Configure API key authorization: BearerToken
-        with open(token, 'r') as ft:
-            data = ft.read().replace('\n', '')
+        # Will used when the remote cluster is up!
+        # TODO: Find a way to make it work!
+        # self.configuration = client.Configuration()
+        # # Configure API key authorization: BearerToken
+        # with open(token, 'r') as ft:
+        #     data = ft.read().replace('\n', '')
 
-        self.configuration.api_key['authorization'] = data
+        # self.configuration.host = f'http://{host}:8443'
+
+        # self.configuration.api_key_prefix['authorization'] = 'Bearer'
+        # self.configuration.api_key['authorization'] = data
+
+        config.load_kube_config()
+
+        self.api = client.CustomObjectsApi()
+
 
     def send_custom_obj(self, resource, kind, protocol):
-         # Enter a context with an instance of the API kubernetes.client
-        with client.ApiClient(self.configuration) as api_client:
-            # Create an instance of the API class
-            api_instance = client.CustomObjectsApi(api_client)
-            group = 'l7mp.io' 
-            version = 'v1'
-            body = resource 
-            pretty = 'true'
+        # Enter a context with an instance of the API kubernetes.client
+        # TODO: With remote cluster
+        # with client.ApiClient(self.configuration) as api_client:
+        #     # Create an instance of the API class
+        #     api_instance = client.CustomObjectsApi(api_client)
+        #     group = 'l7mp.io' 
+        #     version = 'v1'
+        #     body = resource 
+        #     pretty = 'true'
 
-            if kind == 'VirtualService':
-                plural = 'virtualservices'
-            elif kind == 'Target':
-                plural == 'targets'
-            elif kind == 'Rule':
-                plural == 'rules'
+        if kind == 'VirtualService':
+            plural = 'virtualservices'
+        elif kind == 'Target':
+            plural = 'targets'
+        elif kind == 'Rule':
+            plural = 'rules'
 
-            try:
-                api_response = api_instance.create_cluster_custom_object(group, 
-                            version, plural, body, pretty=pretty)
-                pprint(api_response)
-            except client.ApiException as e:
-                print(f'Cannot create {protocol} {kind}: {e}\n')
+        #     try:
+        #         api_response = api_instance.create_cluster_custom_object(group, 
+        #                     version, plural, body, pretty=pretty)
+        #         pprint(api_response)
+        #     except client.ApiException as e:
+        #         print(f'Cannot create {protocol} {kind}: {e}\n')
+
+        self.api.create_namespaced_custom_object(
+            group="l7mp.io",
+            version="v1",
+            namespace="default",
+            plural=plural,
+            body=resource
+        )
 
         print(f'{protocol} {kind} created!')
         
@@ -79,10 +98,10 @@ class KubernetesAPIClient():
                 'listener': {
                     'spec': {
                         'UDP': {
-                            'port': {str(participant["remote_rtp_port"])},
+                            'port': participant["remote_rtp_port"],
                             'connect': {
-                                'address': {str(participant["local_ip"])},
-                                'port': {str(participant["local_rtp_port"])}
+                                'address': str(participant["local_ip"]),
+                                'port': participant["local_rtp_port"]
                             },
                             'options': {
                                 'mode': 'server'
@@ -95,11 +114,11 @@ class KubernetesAPIClient():
                                 'rewrite': [
                                     {
                                         'path': '/labels/callid',
-                                        'valueStr': {str(participant["call_id"])}
+                                        'valueStr': str(participant["call_id"])
                                     },
                                     {
                                         'path': '/labels/tag',
-                                        'valueStr': {str(participant["tag"])}
+                                        'valueStr': str(participant["tag"])
                                     }
                                 ],
                                 'route': {
@@ -120,11 +139,13 @@ class KubernetesAPIClient():
             }
         }
 
+        print(isinstance(resource, dict))
+
         self.send_custom_obj(resource, 'VirtualService', 'RTP')
 
         resource['metadata']['name'] = f'ingress-rtcp-vsvc-{str(participant["call_id"])}-{str(participant["tag"])}'
-        resource['spec']['listener']['spec']['UDP']['port'] = str(participant["remote_rtcp_port"])
-        resource['spec']['listener']['spec']['UDP']['connect']['port'] = str(participant["local_rtcp_port"])
+        resource['spec']['listener']['spec']['UDP']['port'] = participant["remote_rtcp_port"]
+        resource['spec']['listener']['spec']['UDP']['connect']['port'] = participant["local_rtcp_port"]
         resource['spec']['listener']['rules'][0]['action']['route']['destinationRef'] = f'/apis/l7mp.io/v1/namespaces/default/targets/ingress-rtcp-target-{str(participant["call_id"])}-{str(participant["tag"])}'
 
         self.send_custom_obj(resource, 'VirtualService', 'RTCP')
@@ -144,7 +165,7 @@ class KubernetesAPIClient():
             'apiVersion': 'l7mp.io/v1',
             'kind': 'Target',
             'metadata': {
-                'name': f'ingress-rtp-target-{str(participant["callid"])}-{str(participant["tag"])}'
+                'name': f'ingress-rtp-target-{str(participant["call_id"])}-{str(participant["tag"])}'
             },
             'spec': {
                 'selector': {
@@ -190,7 +211,7 @@ class KubernetesAPIClient():
 
         self.send_custom_obj(resource, 'Target', 'RTP')
 
-        resource['metadata']['name'] = f'ingress-rtcp-target-{str(participant["callid"])}-{str(participant["tag"])}'
+        resource['metadata']['name'] = f'ingress-rtcp-target-{str(participant["call_id"])}-{str(participant["tag"])}'
 
         self.send_custom_obj(resource, 'Target', 'RTCP')
 
@@ -245,10 +266,10 @@ class KubernetesAPIClient():
                             'destination': {
                                 'spec': {
                                     'UDP': {
-                                        'port': {str(participant["remote_rtcp_port"])},
+                                        'port': participant["remote_rtcp_port"],
                                         'bind': {
                                             'address': '127.0.0.1',
-                                            'port': {str(participant["local_rtcp_port"])}
+                                            'port': participant["local_rtcp_port"]
                                         }
                                     }
                                 },
@@ -274,8 +295,8 @@ class KubernetesAPIClient():
         self.send_custom_obj(resource, 'Rule', 'RTCP')
 
         resource['metadata']['name'] = f'worker-rtp-rule-{str(participant["call_id"])}-{str(participant["tag"])}'
-        resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['port'] = str(participant["remote_rtp_port"])
-        resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['bind']['port'] = str(participant["local_rtp_port"])
+        resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['port'] = participant["remote_rtp_port"]
+        resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['bind']['port'] = participant["local_rtp_port"]
         resource["spec"]["rule"]["action"]["route"]["ingress"] =  [{'clusterRef': 'ingress-metric-counter'}]
         resource["spec"]["rule"]["action"]["route"]["egress"] =  [{'clusterRef': 'egress-metric-counter'}]
 

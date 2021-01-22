@@ -5,7 +5,7 @@ import time
 import json
 from kube_api import KubernetesAPIClient
 
-def generate_calls(address, port, sdp_address, audio_file, token, cnt):
+def generate_calls(address, port, sdp_address, audio_file, token, host, cnt):
     ''' Generate a given number of calls.
 
     The first call will have these ports: offer - 3002 and answer - 
@@ -25,7 +25,7 @@ def generate_calls(address, port, sdp_address, audio_file, token, cnt):
     start_port = 3000
     offers = []; answers = []
     if token:
-        api = KubernetesAPIClient(token)
+        api = KubernetesAPIClient(token, host)
     
     for _ in range(cnt):
         # Offer
@@ -84,7 +84,7 @@ def generate_calls(address, port, sdp_address, audio_file, token, cnt):
             })
             api.create_target({
                 "call_id": str(start_port - 2) + "-" + str(start_port),
-                "tag": "from-tag" + str(start_port - 2)
+                "tag": "from-tag" + str(start_port)
             })
 
             api.create_rule({
