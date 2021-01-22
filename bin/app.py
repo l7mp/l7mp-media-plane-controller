@@ -1,6 +1,6 @@
 from parse import arguments
 from utils import send, ffmpeg, handle_oa
-from call_gen import generate_calls
+from call_gen import GenerateCall
 import json
 import sdp_transform
 import socket
@@ -25,8 +25,11 @@ def main():
                 args.addr, args.port, 
                 args.answer, args.bind_answer, "answer")
         if args.generate_calls:
-            generate_calls(args.addr, args.port, args.sdpaddr, args.audio_file,
-            args.token, args.host, args.generate_calls)
+            global g_calls
+            g_calls = GenerateCall(
+                args.addr, args.port, args.sdpaddr, args.audio_file,
+                args.token, args.host)
+            g_calls.generate_calls(args.generate_calls)
     else:
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.bind((args.server_address, args.server_port))
@@ -48,4 +51,13 @@ def main():
         ffmpeg(args, 1, offer_rtp_address, answer_rtp_address)
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        apis = g_calls.get_apis()
+        for a in apis:
+            a.delete_resources()
+    finally:
+        apis = g_calls.get_apis()
+        for a in apis:
+            a.delete_resources()

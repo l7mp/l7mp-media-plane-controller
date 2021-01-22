@@ -8,7 +8,7 @@ class KubernetesAPIClient():
     that yous should provide the BearerToken.
     '''
 
-    def __init__(self, token, host):
+    def __init__(self, token, host, **kwargs):
         ''' Constructor to set up connection with Kubernetes cluster.
 
         Args:
@@ -31,6 +31,13 @@ class KubernetesAPIClient():
 
         self.api = client.CustomObjectsApi()
 
+        self.call_id = kwargs.get('call_id', None)
+        self.tag = kwargs.get('tag', None)
+        self.local_ip = kwargs.get('local_ip', None)
+        self.local_rtp_port = kwargs.get('local_rtp_port', None)
+        self.remote_rtp_port = kwargs.get('remote_rtp_port', None)
+        self.local_rtcp_port = kwargs.get('local_rtcp_port', None)
+        self.remote_rtcp_port = kwargs.get('remote_rtcp_port', None)
 
     def send_custom_obj(self, resource, kind, protocol):
         # Enter a context with an instance of the API kubernetes.client
@@ -67,7 +74,7 @@ class KubernetesAPIClient():
 
         print(f'{protocol} {kind} created!')
         
-    def create_vsvc(self, participant):
+    def create_vsvc(self):
         ''' Create a virtual service based on the participants data. 
 
         Args:
@@ -86,7 +93,7 @@ class KubernetesAPIClient():
             'apiVersion': 'l7mp.io/v1',
             'kind': 'VirtualService',
             'metadata': {
-                'name': f'ingress-rtp-vsvc-{str(participant["call_id"])}-{str(participant["tag"])}'
+                'name': f'ingress-rtp-vsvc-{str(self.call_id)}-{str(self.tag)}'
             },
             'spec': {
                 'updateOwners': True,
@@ -98,10 +105,10 @@ class KubernetesAPIClient():
                 'listener': {
                     'spec': {
                         'UDP': {
-                            'port': participant["remote_rtp_port"],
+                            'port': self.remote_rtp_port,
                             'connect': {
-                                'address': str(participant["local_ip"]),
-                                'port': participant["local_rtp_port"]
+                                'address': str(self.local_ip),
+                                'port': self.local_rtp_port
                             },
                             'options': {
                                 'mode': 'server'
@@ -114,15 +121,15 @@ class KubernetesAPIClient():
                                 'rewrite': [
                                     {
                                         'path': '/labels/callid',
-                                        'valueStr': str(participant["call_id"])
+                                        'valueStr': str(self.call_id)
                                     },
                                     {
                                         'path': '/labels/tag',
-                                        'valueStr': str(participant["tag"])
+                                        'valueStr': str(self.tag)
                                     }
                                 ],
                                 'route': {
-                                    'destinationRef':  f'/apis/l7mp.io/v1/namespaces/default/targets/ingress-rtp-target-{str(participant["call_id"])}-{str(participant["tag"])}',
+                                    'destinationRef':  f'/apis/l7mp.io/v1/namespaces/default/targets/ingress-rtp-target-{str(self.call_id)}-{str(self.tag)}',
                                     'retry': {
                                         'retry_on': 'always',
                                         'num_retries': 1000,
@@ -143,15 +150,14 @@ class KubernetesAPIClient():
 
         self.send_custom_obj(resource, 'VirtualService', 'RTP')
 
-        resource['metadata']['name'] = f'ingress-rtcp-vsvc-{str(participant["call_id"])}-{str(participant["tag"])}'
-        resource['spec']['listener']['spec']['UDP']['port'] = participant["remote_rtcp_port"]
-        resource['spec']['listener']['spec']['UDP']['connect']['port'] = participant["local_rtcp_port"]
-        resource['spec']['listener']['rules'][0]['action']['route']['destinationRef'] = f'/apis/l7mp.io/v1/namespaces/default/targets/ingress-rtcp-target-{str(participant["call_id"])}-{str(participant["tag"])}'
+        resource['metadata']['name'] = f'ingress-rtcp-vsvc-{str(self.call_id)}-{str(self.tag)}'
+        resource['spec']['listener']['spec']['UDP']['port'] = self.remote_rtcp_port
+        resource['spec']['listener']['spec']['UDP']['connect']['port'] = self.local_rtcp_port
+        resource['spec']['listener']['rules'][0]['action']['route']['destinationRef'] = f'/apis/l7mp.io/v1/namespaces/default/targets/ingress-rtcp-target-{str(self.call_id)}-{str(self.tag)}'
 
         self.send_custom_obj(resource, 'VirtualService', 'RTCP')
 
-
-    def create_target(self, participant):
+    def create_target(self):
         ''' Create a Target based on the participant data. 
 
         Args:
@@ -165,7 +171,7 @@ class KubernetesAPIClient():
             'apiVersion': 'l7mp.io/v1',
             'kind': 'Target',
             'metadata': {
-                'name': f'ingress-rtp-target-{str(participant["call_id"])}-{str(participant["tag"])}'
+                'name': f'ingress-rtp-target-{str(self.call_id)}-{str(self.tag)}'
             },
             'spec': {
                 'selector': {
@@ -211,12 +217,11 @@ class KubernetesAPIClient():
 
         self.send_custom_obj(resource, 'Target', 'RTP')
 
-        resource['metadata']['name'] = f'ingress-rtcp-target-{str(participant["call_id"])}-{str(participant["tag"])}'
+        resource['metadata']['name'] = f'ingress-rtcp-target-{str(self.call_id)}-{str(self.tag)}'
 
         self.send_custom_obj(resource, 'Target', 'RTCP')
 
-
-    def create_rule(self, participant):
+    def create_rule(self):
         ''' Create a Rule based on the participant data. 
 
         Args:
@@ -234,7 +239,7 @@ class KubernetesAPIClient():
             'apiVersion': 'l7mp.io/v1',
             'kind': 'Rule',
             'metadata': {
-                'name': f'worker-rtcp-rule-{str(participant["call_id"])}-{str(participant["tag"])}'
+                'name': f'worker-rtcp-rule-{str(self.call_id)}-{str(self.tag)}'
             },
             'spec': {
                 'updateOwners': True,
@@ -252,12 +257,12 @@ class KubernetesAPIClient():
                             {
                                 'op': 'test',
                                 'path': '/JSONSocket/labels/callid',
-                                'value': str(participant["call_id"])
+                                'value': str(self.call_id)
                             },
                             {
                                 'op': 'test',
                                 'path': '/JSONSocket/labels/tag',
-                                'value': str(participant["tag"])
+                                'value': str(self.tag)
                             }
                         ]
                     },
@@ -266,10 +271,10 @@ class KubernetesAPIClient():
                             'destination': {
                                 'spec': {
                                     'UDP': {
-                                        'port': participant["remote_rtcp_port"],
+                                        'port': self.remote_rtcp_port,
                                         'bind': {
                                             'address': '127.0.0.1',
-                                            'port': participant["local_rtcp_port"]
+                                            'port': self.local_rtcp_port
                                         }
                                     }
                                 },
@@ -294,10 +299,60 @@ class KubernetesAPIClient():
 
         self.send_custom_obj(resource, 'Rule', 'RTCP')
 
-        resource['metadata']['name'] = f'worker-rtp-rule-{str(participant["call_id"])}-{str(participant["tag"])}'
-        resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['port'] = participant["remote_rtp_port"]
-        resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['bind']['port'] = participant["local_rtp_port"]
+        resource['metadata']['name'] = f'worker-rtp-rule-{str(self.call_id)}-{str(self.tag)}'
+        resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['port'] = self.remote_rtp_port
+        resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['bind']['port'] = self.local_rtp_port
         resource["spec"]["rule"]["action"]["route"]["ingress"] =  [{'clusterRef': 'ingress-metric-counter'}]
         resource["spec"]["rule"]["action"]["route"]["egress"] =  [{'clusterRef': 'egress-metric-counter'}]
 
         self.send_custom_obj(resource, 'Rule', 'RTP')
+
+    def create_resources(self):
+        self.create_vsvc()
+        self.create_target()
+        self.create_rule()
+
+    def delete_resource(self, kind, name):
+        if kind == 'VirtualService':
+            plural = 'virtualservices'
+        elif kind == 'Target':
+            plural = 'targets'
+        elif kind == 'Rule':
+            plural = 'rules'
+
+        self.api.delete_namespaced_custom_object(
+            group="l7mp.io",
+            version="v1",
+            name=name,
+            namespace="default",
+            plural=plural,
+            body=client.V1DeleteOptions(),
+        )
+
+        print(f'{kind} with name: {name} deleted.')
+
+    def delete_resources(self):
+        self.delete_resource(
+            'VirtualService',
+            f'ingress-rtp-vsvc-{str(self.call_id)}-{str(self.tag)}'
+        )
+        self.delete_resource(
+            'VirtualService',
+            f'ingress-rtcp-vsvc-{str(self.call_id)}-{str(self.tag)}'
+        )
+        self.delete_resource(
+            'Target',
+            f'ingress-rtp-target-{str(self.call_id)}-{str(self.tag)}'
+        )
+        self.delete_resource(
+            'Target',
+            f'ingress-rtcp-target-{str(self.call_id)}-{str(self.tag)}'
+        )
+        self.delete_resource(
+            'Rule',
+            f'worker-rtcp-rule-{str(self.call_id)}-{str(self.tag)}'
+        )
+        self.delete_resource(
+            'Rule',
+            f'worker-rtp-rule-{str(self.call_id)}-{str(self.tag)}'
+        )
