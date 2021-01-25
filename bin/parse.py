@@ -24,7 +24,7 @@ def parse(args, file):
             if line[0] == '#':
                 continue
 
-            split_line = re.split('=|\s', line)
+            split_line = re.split('=| ', line)
 
             if len(split_line) > 2:
                 setattr(args, split_line[0], [split_line[1], split_line[2]])
@@ -53,6 +53,10 @@ def arguments():
                         help='Specify the BearerToken location.')
     parser.add_argument('--host', type=str, dest='host',
                         help='Define the cluster IP.')
+
+    # Commands
+    parser.add_argument('--ping', type=int, dest='ping', default=0, 
+                        help='Play ping pong with RTPengine.')
 
     # RTPengine server args
     parser.add_argument('--port', '-p', default=22222, type=int, dest='port',

@@ -1,14 +1,21 @@
 from parse import arguments
 from utils import send, ffmpeg, handle_oa
 from call_gen import GenerateCall
+from commands import Commands
 import json
 import sdp_transform
 import socket
 import time
 
 def main():
+    global args
     args = arguments()
+    commands = Commands()
 
+    if args.ping:
+        response = send(args.addr, args.port, json.loads(commands.ping()), 
+                    args.sdpaddr, 3000)
+        print(response)
     if not args.server:
         if args.file:
             with open(args.file) as f:
@@ -58,6 +65,8 @@ if __name__ == '__main__':
         for a in apis:
             a.delete_resources()
     else:
-        apis = g_calls.get_apis()
-        for a in apis:
-            a.delete_resources()
+        if args.generate_calls: 
+            apis = g_calls.get_apis()
+            for a in apis:
+                a.delete_resources()
+        print("Finished!")

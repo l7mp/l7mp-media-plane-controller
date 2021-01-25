@@ -1,5 +1,5 @@
 from utils import send, ffmpeg
-import commands
+from commands import Commands
 import sdp_transform
 import time
 import json
@@ -15,6 +15,7 @@ class GenerateCall():
         self.token = token
         self.host = host
         self.apis = []
+        self.commands = Commands()
 
     def generate_calls(self, cnt):
         ''' Generate a given number of calls.
@@ -40,7 +41,7 @@ class GenerateCall():
             # Offer
             start_port += 2
             sdp_offer = json.loads(
-                commands.offer("remove", str(start_port) + "-" + str(start_port + 2), 
+                self.commands.offer("remove", str(start_port) + "-" + str(start_port + 2), 
                 "from-tag" + str(start_port), "caller" + str(start_port), 
                 self.sdp_address, start_port)
             )
@@ -52,7 +53,7 @@ class GenerateCall():
             # Answer
             start_port += 2
             sdp_answer = json.loads(
-                commands.answer("remove", str(start_port - 2) + "-" + str(start_port),
+                self.commands.answer("remove", str(start_port - 2) + "-" + str(start_port),
                 "from-tag" + str(start_port), "to-tag" + str(start_port), 
                 "callee" + str(start_port), self.sdp_address, start_port)
             )
