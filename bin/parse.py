@@ -57,6 +57,8 @@ def arguments():
     # Commands
     parser.add_argument('--ping', type=int, dest='ping', default=0, 
                         help='Play ping pong with RTPengine.')
+    parser.add_argument('--query', type=str, dest='query', 
+                        help='Return details from a specific call.')
 
     # RTPengine server args
     parser.add_argument('--port', '-p', default=22222, type=int, dest='port',

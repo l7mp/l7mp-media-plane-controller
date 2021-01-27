@@ -1,49 +1,124 @@
+import json
+
 class Commands:
     def ping(self):
-        return f'''
-        {{
-            "command": "ping"
-        }}
+        data = {
+            'command': 'ping'
+        }
+        return data
+
+    def offer(self, sdp, call_id, from_tag, **kwargs):
+        '''
+        
+        Args:
+            sdp: Session Description Protocol string.
+            call_id: Id of the call. 
+            from_tag: The SIP From tag as string.
+            kwargs:
+                via-branch: The SIP Via branch as string.
+                label: string.
+                flags: List of strings.
+                replace: List of strings.
+                direction: List of two string.
+                received-from: List of two strings.
+                drop-traffic: "start" or "stop".
+                ICE: string.
+                ICE-lite: string.
+                transport-protocol: string.
+                media-address: string. 
+                address-family: string.
+                rtcp-mux: List of strings.
+                TOS: Integer. 
+                DTLS: string.
+                DTLS-reverse: string.
+                DTLS-fingerprint: string.
+                SDES: List of strings.
+                OSRTP: string.
+                record-call: string. 
+                metadata: string.
+                codec: dictionary. 
+                ptime: integer.
+                ptime-reverse: integer.
+                T.38: List of strings.
+                supports: List of strings. 
+                xmlrpc-callback: string.
         '''
 
-    def offer(self, ice, call_id, from_tag, label, sdpaddr, port):
-        # TODO: Somehow pass an argument that contains all the unnecessary keys 
-        # and only write it to a string if it is defined, otherwise not.
-        return fr'''
-        {{
-            "ICE": "{ice}",
-            "call-id": "{str(call_id)}",
-            "command": "offer",
-            "from-tag": "{str(from_tag)}",
-            "label": "{str(label)}",
-            "sdp": "v=0\r\no=- 1607444729 1 IN IP4 {sdpaddr}\r\ns=tester\r\nt=0 0\r\nm=audio {str(port)} RTP/AVP 0\r\nc=IN IP4 {sdpaddr}\r\na=sendrecv\r\na=rtcp: {str(port + 1)}"
-        }}
+        data = {
+            'command': 'offer',
+            'sdp': sdp,
+            'call-id': str(call_id),
+            'from-tag': str(from_tag)
+        }
+
+        for arg in kwargs:
+            data[arg] = kwargs.get(arg)
+
+        return data
+
+    def answer(self, sdp, call_id, from_tag, to_tag, **kwargs):
+        '''
+        
+        Args:
+            sdp: Session Description Protocol string.
+            call_id: Id of the call. 
+            from_tag: The SIP From tag as string.
+            kwargs:
+                via-branch: The SIP Via branch as string.
+                label: string.
+                flags: List of strings.
+                replace: List of strings.
+                direction: List of two string.
+                received-from: List of two strings.
+                drop-traffic: "start" or "stop".
+                ICE: string.
+                ICE-lite: string.
+                transport-protocol: string.
+                media-address: string. 
+                address-family: string.
+                rtcp-mux: List of strings.
+                TOS: Integer. 
+                DTLS: string.
+                DTLS-reverse: string.
+                DTLS-fingerprint: string.
+                SDES: List of strings.
+                OSRTP: string.
+                record-call: string. 
+                metadata: string.
+                codec: dictionary. 
+                ptime: integer.
+                ptime-reverse: integer.
+                T.38: List of strings.
+                supports: List of strings. 
+                xmlrpc-callback: string.
         '''
 
-    def answer(self, ice, call_id, from_tag, to_tag, label, sdpaddr, port):
-        # TODO: Somehow pass an argument that contains all the unnecessary keys 
-        # and only write it to a string if it is defined, otherwise not.
-        return fr'''
-        {{
-            "ICE": "{ice}",
-            "call-id": "{str(call_id)}",
-            "command": "answer",
-            "from-tag": "{str(from_tag)}",
-            "label": "{str(label)}",
-            "sdp": "v=0\r\no=- 1607446271 1 IN IP4 {sdpaddr}\r\ns=tester\r\nt=0 0\r\nm=audio {str(port)} RTP/AVP 0\r\nc=IN IP4 {sdpaddr}\r\na=sendrecv\r\na=rtcp: {str(port + 1)}",
-            "to-tag": "{str(to_tag)}"
-        }}
-        '''
+        data = {
+            'command': 'offer',
+            'sdp': sdp,
+            'call-id': str(call_id),
+            'from-tag': str(from_tag),
+            'to-tag': str(to_tag)
+        }
 
-    def delete(self, call_id, from_tag):
-        # TODO: Add conditionally: to-tag, via-branch, flags, delete delay
-        return f'''
-        {{
-            "command": "delete",
-            "call-id": "{str(call_id)}",
-            "from-tag": "{str(from_tag)}"
-        }}
-        '''
+        for arg in kwargs:
+            data[arg] = kwargs.get(arg)
+
+        return data
+
+    def delete(self, call_id, from_tag, **kwargs):
+        # flags is an array flags=[fatal, ...]
+        
+        data = {
+            'command': 'delete',
+            'call-id': str(call_id),
+            'from-tag': str(from_tag)
+        }
+
+        for arg in kwargs:
+            data[arg] = kwargs.get(arg)
+                    
+        return data
 
     def list_calls(self, limit = 32):
         ''' Get a list of call-ids
@@ -52,29 +127,30 @@ class Commands:
         value is 32. 
         '''
 
-        return f'''
-        {{
-            "command": "list",
-            "limit": "{str(limit)}"
-        }}
-        '''
+        data = {
+            'command': 'list',
+            'limit': str(limit)
+        }
 
-    def query(self, call_id, from_tag = '-1', to_tag = '-1'):
+        return data
+
+    def query(self, call_id, **kwargs):
         ''' Query data about a call by call_id.
 
-        It will contain data about packets, protcols, etc. 
+        It will contain data about packets, protcols, etc.
         '''
 
-        return f'''
-        {{
-            "command": "query",
-            "call-id:" "{str(call_id)}",
-            {'"from-tag": "' + str(from_tag) + '",' if from_tag != '-1' else ''}
-            {'"to-tag": "' + str(to_tag) + '",' if to_tag != '-1' else ''}
-        }}
-        '''
+        data = {
+            'command': 'query',
+            'call-id': str(call_id),
+        }
 
-    def start_recording(self, call_id, from_tag = '-1', to_tag = '-1', via_branch = '-1'):
+        for arg in kwargs:
+            data[arg] = arg.get(arg)
+        
+        return data
+
+    def start_recording(self, call_id, **kwargs):
         ''' Enables call recording for the call. 
 
         Either for the entire call or for only the specified call leg. 
@@ -83,28 +159,33 @@ class Commands:
         keys other than call-id are currently ignored.
         '''
 
-        return f'''
-        {{
-            "command": "start recording",
-            "call-id": "{str(call_id)}",
-            {'"from-tag": "' + str(from_tag) + '",' if from_tag != '-1' else ''}
-            {'"to-tag": "' + str(to_tag) + '",' if to_tag != '-1' else ''}
-            {'"via-branch": "' + str(via_branch) + '",' if via_branch != '-1' else ''}
-        }}
-        '''
+        data = {
+            'command': 'start-recording',
+            'call-id': str(call_id)
+        }
 
-    def stop_recording(self, call_id):
+        for arg in kwargs:
+            data[arg] = kwargs.get(arg) 
+
+        return data
+
+    def stop_recording(self, call_id, **kwargs):
         ''' Disables call recording for the call. This can be sent during a
         call to immediately stop recording it.
         '''
 
-        return f'''
-        {{
-            "command": "stop recording"
-        }}
-        '''
+        data = {
+            'command': 'stop-recording',
+            'call-id': str(call_id)
+        }
 
-    def block_dtmf(self, call_id, from_tag = '-1', address = '-1', label = '-1'):
+        for arg in kwargs:
+            if arg == 'all':
+                data['flags'] = [kwargs.get(arg)]
+
+        return data
+
+    def block_dtmf(self, call_id, **kwargs):
         ''' Disable DTMF events. (RFC 4733)
         
         If only the call_id is presence will block DTMF for the entire call
@@ -112,17 +193,17 @@ class Commands:
         address (SDP media address) or label. 
         '''
 
-        return f'''
-        {{
-            "command": "block dtmf",
-            "call-id": "{str(call_id)}",
-            {'"from-tag": "' + str(from_tag) + '",' if from_tag != '-1' else ''}
-            {'"address": "' + str(address) + '",' if address != '-1' else ''}
-            {'"label": "' + str(label) + '",' if label != '-1' else ''}
-        }}
-        '''
+        data = {
+            'command': 'block-dtmf',
+            'call-id': str(call_id)
+        }
 
-    def unblock_dtmf(self, call_id, all = False):
+        for arg in kwargs:
+            data[arg] = kwargs.get(arg)
+
+        return data
+
+    def unblock_dtmf(self, call_id, **kwargs):
         ''' Unblock DTMF. 
 
         Unblocking packets for the entire call (i.e. only call-id is given)
@@ -131,47 +212,53 @@ class Commands:
         included in the flags section of the message.
         '''
 
-        return f'''
-        {{
-            "command": "unblock dtmf",
-            "call-id": "{str(call_id)}",
-            {'"flags": ["all"],' if all else ''}
-        }}
-        '''
+        data = {
+            'command': 'unblock-dtmf',
+            'call-id': str(call_id)
+        }
 
-    def block_media(self, call_id, from_tag = '-1', address = '-1', label = '-1'):
+        for arg in kwargs:
+            if arg == 'all':
+                data['flags'] = [kwargs.get(arg)]
+
+        return data
+
+    def block_media(self, call_id, **kwargs):
         ''' Block media packets. 
 
         DTMF packets can still pass through when media blocking is enabled.
         Media packets can be blocked fo an entire call, or directionally for
         individual participants.
-
-        '''
-        return f'''
-        {{
-            "command": "block media",
-            "call-id": "{str(call_id)}",
-            {'"from-tag": "' + str(from_tag) + '",' if from_tag != '-1' else ''}
-            {'"address": "' + str(address) + '",' if address != '-1' else ''}
-            {'"label": "' + str(label) + '",' if label != '-1' else ''}
-        }}
         '''
 
-    def unblock_media(self, call_id, all = False):
+        data = {
+            'command': 'block-media',
+            'call-id': str(call_id)
+        }
+
+        for arg in kwargs:
+            data[arg] = kwargs.get(arg)
+
+        return data
+
+    def unblock_media(self, call_id, **kwargs):
         ''' Unblock media packets. 
         
         Works like unblock_dtmf(...). 
         '''
 
-        return f'''
-        {{
-            "command": "unblock media",
-            "call-id": "{str(call_id)}",
-            {'"flags": ["all"],' if all else ''}
-        }}
-        '''
+        data = {
+            'command': 'unblock-media',
+            'call-id': str(call_id)
+        }
 
-    def start_forwarding(self, call_id, from_tag = '-1', address = '-1', label = '-1'):
+        for arg in kwargs:
+            if arg == 'all':
+                data['flags'] = [kwargs.get(arg)]
+
+        return data
+
+    def start_forwarding(self, call_id, **kwargs):
         ''' Forward PCM via TCP/TLS.
 
         These messages control the recording daemon's mechanism to forward
@@ -179,32 +266,34 @@ class Commands:
         be enabled for individual participants (directionally) only.
         '''
 
-        return f'''
-        {{
-            "command": "start forwarding",
-            "call-id": "{str(call_id)}",
-            {'"from-tag": "' + str(from_tag) + '",' if from_tag != '-1' else ''}
-            {'"address": "' + str(address) + '",' if address != '-1' else ''}
-            {'"label": "' + str(label) + '",' if label != '-1' else ''}
-        }}
-        '''
+        data = {
+            'command': 'start-forwarding',
+            'call-id': str(call_id)
+        }
 
-    def stop_forwarding(self, call_id, all = False):
+        for arg in kwargs:
+            data[arg] = kwargs.get(arg)
+
+        return data
+
+    def stop_forwarding(self, call_id, **kwargs):
         ''' Stop forwarding.
 
         Works like unblock_dtmf(...).
         '''
 
-        return f'''
-        {{
-            "command": "stop forwarding",
-            "call-id": "{str(call_id)}",
-            {'"flags": ["all"],' if all else ''}
-        }}
-        '''
+        data = {
+            'command': 'stop-forwarding',
+            'call-id': str(call_id)
+        }
 
-    def play_media(self, call_id, file, from_tag = '-1', address = '-1', label = '-1',
-                    all = False):
+        for arg in kwargs:
+            if arg == 'all':
+                data['flags'] = [kwargs.get(arg)]
+
+        return data
+
+    def play_media(self, call_id, file, **kwargs):
         ''' Starts playback of provided media file. 
 
         Important: Only available if the rtpengine was compiled with 
@@ -217,21 +306,21 @@ class Commands:
         The played media could be anything what ffmpeg supports. 
         '''
 
-        # TODO: Add all the possible file provider keys. 
-        return f'''
-        {{
-            "command": "play media",
-            "call-id": "{str(call_id)}",
-            "file": "{str(file)}",
-            {'"from-tag": "' + str(from_tag) + '",' if from_tag != '-1' else ''}
-            {'"address": "' + str(address) + '",' if address != '-1' else ''}
-            {'"label": "' + str(label) + '",' if label != '-1' else ''}
-            {'"flags": ["all"],' if all else ''}
-        }}
-        '''
+        data = {
+            'command': 'play-media',
+            'call-id': str(call_id),
+            'file': str(file)
+        }
 
-    def stop_media(self, call_id, from_tag = '-1', address = '-1', label = '-1',
-                    all = False):
+        for arg in kwargs:
+            if arg == 'all':
+                data['flags'] = [kwargs.get(arg)]
+            else:
+                data[arg] = kwargs.get(arg)
+
+        return data
+        
+    def stop_media(self, call_id, **kwargs):
         ''' Stop playback. 
 
         Stops the playback previously started by a play media message. Media
@@ -240,43 +329,46 @@ class Commands:
         playback.
         '''
 
-        return f'''
-        {{
-            "command": "stop media",
-            "call-id": "{str(call_id)}"
-            {'"from-tag": "' + str(from_tag) + '",' if from_tag != '-1' else ''}
-            {'"address": "' + str(address) + '",' if address != '-1' else ''}
-            {'"label": "' + str(label) + '",' if label != '-1' else ''}
-            {'"flags": ["all"],' if all else ''}
-        }}
-        '''
+        data = {
+            'command': 'stop-media',
+            'call-id': str(call_id),
+        }
 
-    def play_dtmf(self, call_id, file, code, from_tag = '-1', address = '-1', 
-                label = '-1', all = False):
+        for arg in kwargs:
+            if arg == 'all':
+                data['flags'] = [kwargs.get(arg)]
+            else:
+                data[arg] = kwargs.get(arg)
+
+        return data
+
+    def play_dtmf(self, call_id, code, **kwargs):
         ''' Inject DTMF tone or event into a running audio stream.
 
         The selected call participant is the one generating the DTMF event, 
         not the one receiving it.
         '''
 
-        # TODO: Add these: duration, volume, pause
-        return f'''
-        {{
-            "command": "play dtmf",
-            "call-id": "{str(call_id)}",
-            "code": "{str(code)}",
-            {'"from-tag": "' + str(from_tag) + '",' if from_tag != '-1' else ''}
-            {'"address": "' + str(address) + '",' if address != '-1' else ''}
-            {'"label": "' + str(label) + '",' if label != '-1' else ''}
-            {'"flags": ["all"],' if all else ''}
-        }}
-        '''
+        data = {
+            'command': 'play-dtmf',
+            'call-id': str(call_id),
+            'code': str(code)
+        }
+
+        for arg in kwargs:
+            if arg == 'all':
+                data['flags'] = kwargs.get(arg)
+            else:
+                data[arg] = kwargs.get(arg)
+
+        return data
 
     def statistics(self):
         ''' Returns a set of general statistics metrics. 
         '''
-        return f'''
-        {{
-            "command": "statistics"
-        }}
-        '''
+
+        data = {
+            'command': 'statistics'
+        }
+
+        return data

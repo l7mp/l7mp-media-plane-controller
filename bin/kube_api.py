@@ -106,10 +106,10 @@ class KubernetesAPIClient():
                     'spec': {
                         'UDP': {
                             'port': self.remote_rtp_port,
-                            # 'connect': {
-                            #     'address': str(self.local_ip),
-                            #     'port': self.local_rtp_port
-                            # },
+                            'connect': {
+                                'address': str(self.local_ip),
+                                'port': self.local_rtp_port
+                            },
                             'options': {
                                 'mode': 'server'
                             }
@@ -150,7 +150,7 @@ class KubernetesAPIClient():
 
         resource['metadata']['name'] = f'ingress-rtcp-vsvc-{str(self.call_id)}-{str(self.tag)}'
         resource['spec']['listener']['spec']['UDP']['port'] = self.remote_rtcp_port
-        # resource['spec']['listener']['spec']['UDP']['connect']['port'] = self.local_rtcp_port
+        resource['spec']['listener']['spec']['UDP']['connect']['port'] = self.local_rtcp_port
         resource['spec']['listener']['rules'][0]['action']['route']['destinationRef'] = f'/apis/l7mp.io/v1/namespaces/default/targets/ingress-rtcp-target-{str(self.call_id)}-{str(self.tag)}'
 
         self.send_custom_obj(resource, 'VirtualService', 'RTCP')
@@ -247,7 +247,7 @@ class KubernetesAPIClient():
                     }
                 },
                 'position': 0,
-                'rulelist': 'worker-rtp-rulelist',
+                'rulelist': 'worker-rtcp-rulelist',
                 'rule': {
                     'match': {
                         'op': 'and',
@@ -298,6 +298,7 @@ class KubernetesAPIClient():
         self.send_custom_obj(resource, 'Rule', 'RTCP')
 
         resource['metadata']['name'] = f'worker-rtp-rule-{str(self.call_id)}-{str(self.tag)}'
+        resource['spec']['rulelist'] = 'worker-rtp-rulelist'
         resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['port'] = self.remote_rtp_port
         resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['bind']['port'] = self.local_rtp_port
         resource["spec"]["rule"]["action"]["route"]["ingress"] =  [{'clusterRef': 'ingress-metric-counter'}]

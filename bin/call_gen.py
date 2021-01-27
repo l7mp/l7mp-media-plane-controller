@@ -4,6 +4,7 @@ import sdp_transform
 import time
 import json
 from kube_api import KubernetesAPIClient
+from pprint import pprint
 
 class GenerateCall():
 
@@ -40,10 +41,12 @@ class GenerateCall():
         for _ in range(cnt):
             # Offer
             start_port += 2
-            sdp_offer = json.loads(
-                self.commands.offer("remove", str(start_port) + "-" + str(start_port + 2), 
-                "from-tag" + str(start_port), "caller" + str(start_port), 
-                self.sdp_address, start_port)
+            sdp_offer = self.commands.offer(
+                f'v=0\r\no=- 1607444729 1 IN IP4 {self.sdp_address}\r\ns=tester\r\nt=0 0\r\nm=audio {str(start_port)} RTP/AVP 0\r\nc=IN IP4 {self.sdp_address}\r\na=sendrecv\r\na=rtcp {str(start_port + 1)}',
+                str(start_port) + "-" + str(start_port + 2),
+                "from-tag" + str(start_port),
+                ICE="remove",
+                label="caller" + str(start_port)
             )
             offer = send(
                 self.address, self.port, sdp_offer,
@@ -52,18 +55,26 @@ class GenerateCall():
 
             # Answer
             start_port += 2
-            sdp_answer = json.loads(
-                self.commands.answer("remove", str(start_port - 2) + "-" + str(start_port),
-                "from-tag" + str(start_port), "to-tag" + str(start_port), 
-                "callee" + str(start_port), self.sdp_address, start_port)
-            )
+            sdp_answer = self.commands.answer(
+                f'v=0\r\no=- 1607446271 1 IN IP4 {self.sdp_address}\r\ns=tester\r\nt=0 0\r\nm=audio {str(start_port)} RTP/AVP 0\r\nc=IN IP4 {self.sdp_address}\r\na=sendrecv\r\na=rtcp {str(start_port + 1)}',
+                str(start_port - 2) + "-" + str(start_port),
+                "from-tag" + str(start_port), "to-tag" + str(start_port - 2),
+                ICE="remove",
+                label="callee" + str(start_port)
+            ) 
             answer = send(
                 self.address, self.port, sdp_answer,
                 self.sdp_address, start_port
             )
-            
+
             parsed_offer = sdp_transform.parse(offer.get('sdp'))
             parsed_answer = sdp_transform.parse(answer.get('sdp'))
+
+            print('Parsed Offer:')
+            pprint(parsed_offer)
+
+            print('Parsed Ansewer:')
+            pprint(parsed_answer)
             
             offer_rtp_port = parsed_offer.get('media')[0].get('port')
             answer_rtp_port = parsed_answer.get('media')[0].get('port')

@@ -2,6 +2,7 @@ from parse import arguments
 from utils import send, ffmpeg, handle_oa
 from call_gen import GenerateCall
 from commands import Commands
+from pprint import pprint
 import json
 import sdp_transform
 import socket
@@ -13,9 +14,14 @@ def main():
     commands = Commands()
 
     if args.ping:
-        response = send(args.addr, args.port, json.loads(commands.ping()), 
+        response = send(args.addr, args.port, commands.ping(), 
                     args.sdpaddr, 3000)
-        print(response)
+        pprint(response)
+    if args.query:
+        query = commands.query(args.query)
+        pprint(query)
+        response = send(args.addr, args.port, query, args.sdpaddr, 3000)
+        pprint(response)
     if not args.server:
         if args.file:
             with open(args.file) as f:
