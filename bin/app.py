@@ -12,14 +12,19 @@ def main():
     global args
     args = arguments()
     commands = Commands()
+    global call_id
 
     if args.ping:
         response = send(args.addr, args.port, commands.ping(), 
                     args.sdpaddr, 3000)
         pprint(response)
-    if args.query:
-        query = commands.query(args.query)
-        pprint(query)
+    if args.list:
+        response = send(args.addr, args.port, commands.list_calls(args.list),
+                        args.sdpaddr, 3000)
+        pprint(response)
+        call_id = response['calls'][0]
+    if args.query or args.list:
+        query = commands.query(call_id)
         response = send(args.addr, args.port, query, args.sdpaddr, 3000)
         pprint(response)
     if not args.server:
@@ -68,11 +73,13 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         apis = g_calls.get_apis()
+        g_calls.delete_calls()
         for a in apis:
             a.delete_resources()
     else:
         if args.generate_calls: 
             apis = g_calls.get_apis()
+            g_calls.delete_calls()
             for a in apis:
                 a.delete_resources()
         print("Finished!")

@@ -1,4 +1,4 @@
-from utils import send, ffmpeg
+from utils import send, ffmpeg, generate_sdp
 from commands import Commands
 import sdp_transform
 import time
@@ -16,6 +16,7 @@ class GenerateCall():
         self.token = token
         self.host = host
         self.apis = []
+        self.calls = []
         self.commands = Commands()
 
     def generate_calls(self, cnt):
@@ -42,7 +43,7 @@ class GenerateCall():
             # Offer
             start_port += 2
             sdp_offer = self.commands.offer(
-                f'v=0\r\no=- 1607444729 1 IN IP4 {self.sdp_address}\r\ns=tester\r\nt=0 0\r\nm=audio {str(start_port)} RTP/AVP 0\r\nc=IN IP4 {self.sdp_address}\r\na=sendrecv\r\na=rtcp {str(start_port + 1)}',
+                generate_sdp(self.sdp_address, start_port),
                 str(start_port) + "-" + str(start_port + 2),
                 "from-tag" + str(start_port),
                 ICE="remove",
@@ -53,10 +54,15 @@ class GenerateCall():
                 self.sdp_address, start_port
             )
 
+            self.calls.append({
+                'call_id': str(start_port) + "-" + str(start_port + 2), 
+                'from-tag': "from-tag" + str(start_port)
+            })
+
             # Answer
             start_port += 2
             sdp_answer = self.commands.answer(
-                f'v=0\r\no=- 1607446271 1 IN IP4 {self.sdp_address}\r\ns=tester\r\nt=0 0\r\nm=audio {str(start_port)} RTP/AVP 0\r\nc=IN IP4 {self.sdp_address}\r\na=sendrecv\r\na=rtcp {str(start_port + 1)}',
+                generate_sdp(self.sdp_address, start_port),
                 str(start_port - 2) + "-" + str(start_port),
                 "from-tag" + str(start_port), "to-tag" + str(start_port - 2),
                 ICE="remove",
@@ -66,6 +72,11 @@ class GenerateCall():
                 self.address, self.port, sdp_answer,
                 self.sdp_address, start_port
             )
+
+            self.calls.append({
+                'call_id': str(start_port-2) + "-" + str(start_port), 
+                'from-tag': "from-tag" + str(start_port)
+            })
 
             parsed_offer = sdp_transform.parse(offer.get('sdp'))
             parsed_answer = sdp_transform.parse(answer.get('sdp'))
@@ -118,3 +129,12 @@ class GenerateCall():
 
     def get_apis(self):
         return self.apis
+
+    def delete_calls(self):
+        for call in self.calls:
+            deleted_call = send(
+                self.address, self.port, 
+                self.commands.delete(call['call_id'], call['from-tag']), 
+                self.sdp_address, 3000
+            )
+            pprint(deleted_call)

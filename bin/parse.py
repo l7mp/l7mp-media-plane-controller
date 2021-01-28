@@ -59,6 +59,8 @@ def arguments():
                         help='Play ping pong with RTPengine.')
     parser.add_argument('--query', type=str, dest='query', 
                         help='Return details from a specific call.')
+    parser.add_argument('--list', type=int, dest='list', 
+                        help='List a specific number of call ids.')
 
     # RTPengine server args
     parser.add_argument('--port', '-p', default=22222, type=int, dest='port',
