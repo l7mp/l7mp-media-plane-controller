@@ -6,6 +6,7 @@ import subprocess
 import logging
 import sdp_transform
 import json
+from pprint import pprint
 
 bc = bencodepy.Bencode(
     encoding='utf-8'
@@ -25,6 +26,14 @@ def gen_cookie(length):
     return ''.join(random.choice(string.ascii_lowercase) for i in range(length))
 
 def random_with_N_digits(n):
+    ''' Generate a random with n digits. 
+
+    Args:
+        n: Len of digits.
+
+    Returns:
+        An int with n digits.
+    '''
     range_start = 10**(n-1)
     range_end = (10**n)-1
     return random.randint(range_start, range_end)
@@ -103,6 +112,7 @@ def ffmpeg(audio_file, cnt, offer_rtp_address, answer_rtp_address):
         )
 
     # Close the processes
+    print('# of processes: ' + str(len(processes)))
     for process in processes:
         process.communicate()
 
@@ -132,6 +142,17 @@ def handle_oa(address, port, file, bind, type):
     return rtp_port
 
 def generate_sdp(address, port, **kwargs):
+    ''' Generate a basic sdp message.
+
+    Will use PCMU.
+
+    Args:
+        address: The sender address.
+        port: The sender local port.
+
+    Returns:
+        A string which contain the sdp message.
+    '''
     sdp = [
         'v=0\r\n',
         f'o=- ' + str(random_with_N_digits(10)) + ' 1 IN IP4 ' + address + '\r\n',

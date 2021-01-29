@@ -307,11 +307,17 @@ class KubernetesAPIClient():
         self.send_custom_obj(resource, 'Rule', 'RTP')
 
     def create_resources(self):
+        ''' Create all the necessary kubernetes resources.
+        '''
+
         self.create_vsvc()
         self.create_target()
         self.create_rule()
 
     def delete_resource(self, kind, name):
+        ''' Delete one Kubernetes resource.
+        '''
+
         if kind == 'VirtualService':
             plural = 'virtualservices'
         elif kind == 'Target':
@@ -331,6 +337,9 @@ class KubernetesAPIClient():
         print(f'{kind} with name: {name} deleted.')
 
     def delete_resources(self):
+        ''' Delete all the kubernetes resources.
+        '''
+
         self.delete_resource(
             'VirtualService',
             f'ingress-rtp-vsvc-{str(self.call_id)}-{str(self.tag)}'

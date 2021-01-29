@@ -7,6 +7,8 @@ from kube_api import KubernetesAPIClient
 from pprint import pprint
 
 class GenerateCall():
+    ''' With this class you can generate calls.
+    '''
 
     def __init__(self, address, port, sdp_address, audio_file, token, host):
         self.address = address
@@ -51,7 +53,7 @@ class GenerateCall():
                 label="caller",
             )
 
-            offer = send(
+            send(
                 self.address, self.port, sdp_offer,
                 self.sdp_address, start_port
             )
@@ -71,7 +73,7 @@ class GenerateCall():
                 ICE="remove",
                 label="callee"
             ) 
-            answer = send(
+            send(
                 self.address, self.port, sdp_answer,
                 self.sdp_address, start_port
             )
@@ -87,8 +89,8 @@ class GenerateCall():
                 self.sdp_address, 2998
             )
 
-            parsed_offer = sdp_transform.parse(offer.get('sdp'))
-            parsed_answer = sdp_transform.parse(answer.get('sdp'))
+            # parsed_offer = sdp_transform.parse(offer.get('sdp'))
+            # parsed_answer = sdp_transform.parse(answer.get('sdp'))
 
             # pprint(parsed_offer)
             # pprint(parsed_answer)
@@ -145,9 +147,16 @@ class GenerateCall():
         ffmpeg(self.audio_file, cnt, offers, answers)
 
     def get_apis(self):
+        ''' Return with the generated KubernetesAPIs 
+        '''
         return self.apis
 
     def delete_calls(self):
+        ''' Delete calls from rtpengine
+
+        Iterate through the generated calls and delete them from 
+        rtpengine based on their call_id and from-tag. 
+        '''
         for call in self.calls:
             deleted_call = send(
                 self.address, self.port, 
