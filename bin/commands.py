@@ -94,7 +94,7 @@ class Commands:
         '''
 
         data = {
-            'command': 'offer',
+            'command': 'answer',
             'sdp': sdp,
             'call-id': str(call_id),
             'from-tag': str(from_tag),

@@ -61,7 +61,6 @@ def send(address, port, file, bind_address, bind_port):
     response = sock.recv(4096)
     data = response.decode()
     data = data.split(" ", 1)
-    print(data)
     result = bc.decode(data[1])
     logging.debug("Received message: %s", str(result))
 
@@ -134,14 +133,14 @@ def handle_oa(address, port, file, bind, type):
 
 def generate_sdp(address, port, **kwargs):
     sdp = [
-        r'v=0\r\n',
-        fr'o=- ' + random_with_N_digits(10) + '1 IN IP4 ' + address + r'\r\n',
-        fr's=tester\r\n',
-        fr't=0 0\r\n',
-        fr'm=audio ' + str(port) + fr'RTP/AVP 0\r\n',
-        fr'c=IN IP4 ' + address + r'\r\n',
-        fr'a=sendrecv',
-        fr'a=rtcp ' + str(port + 1) + r'\r\n'
+        'v=0\r\n',
+        f'o=- ' + str(random_with_N_digits(10)) + ' 1 IN IP4 ' + address + '\r\n',
+        f's=tester\r\n',
+        f't=0 0\r\n',
+        f'm=audio ' + str(port) + ' RTP/AVP 0\r\n',
+        f'c=IN IP4 ' + address + '\r\n',
+        f'a=sendrecv',
+        f'a=rtcp ' + str(port + 1) + '\r\n'
     ]
 
     for arg in kwargs:
