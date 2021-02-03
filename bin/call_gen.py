@@ -1,4 +1,4 @@
-from utils import send, ffmpeg, generate_sdp
+from utils import send, ffmpeg, generate_sdp, rtpsend
 from commands import Commands
 import sdp_transform
 import time
@@ -10,7 +10,8 @@ class GenerateCall():
     ''' With this class you can generate calls.
     '''
 
-    def __init__(self, address, port, sdp_address, audio_file, token, host):
+    def __init__(self, address, port, sdp_address, audio_file, token, host,
+                rtpsend):
         self.address = address
         self.port = port
         self.sdp_address = sdp_address
@@ -20,6 +21,48 @@ class GenerateCall():
         self.apis = []
         self.calls = []
         self.commands = Commands()
+        self.rtpsend = rtpsend
+
+    def send_offer(self, start_port):
+        sdp_offer = self.commands.offer(
+            generate_sdp('127.0.0.1', start_port),
+            # generate_sdp(self.sdp_address, start_port),
+            str(start_port) + "-" + str(start_port + 2),
+            "from-tag" + str(start_port),
+            ICE="remove",
+            label="caller",
+        )
+
+        send(
+            self.address, self.port, sdp_offer,
+            self.sdp_address, start_port
+        )
+
+        self.calls.append({
+            'call_id': str(start_port) + "-" + str(start_port + 2), 
+            'from-tag': "from-tag" + str(start_port)
+        })
+
+    def send_answer(self, start_port):
+        sdp_answer = self.commands.answer(
+            generate_sdp('127.0.0.1', start_port),
+            # generate_sdp(self.sdp_address, start_port),
+            str(start_port - 2) + "-" + str(start_port),
+            "from-tag" + str(start_port - 2), "to-tag" + str(start_port - 2),
+            ICE="remove",
+            label="callee"
+        ) 
+        send(
+            self.address, self.port, sdp_answer,
+            self.sdp_address, start_port
+        )
+
+        # At a time this was used also, but now it's enough to log 
+        # once.
+        # self.calls.append({
+        #     'call_id': str(start_port-2) + "-" + str(start_port), 
+        #     'from-tag': "from-tag" + str(start_port)
+        # })
 
     def generate_calls(self, cnt):
         ''' Generate a given number of calls.
@@ -40,48 +83,17 @@ class GenerateCall():
 
         start_port = 3000
         offers = []; answers = []
+        caller_source_ports = []; callee_source_ports = []
+        caller_destinations = []; callee_destinations = []
         
         for _ in range(cnt):
             # Offer
             start_port += 2
-            sdp_offer = self.commands.offer(
-                generate_sdp('127.0.0.1', start_port),
-                # generate_sdp(self.sdp_address, start_port),
-                str(start_port) + "-" + str(start_port + 2),
-                "from-tag" + str(start_port),
-                ICE="remove",
-                label="caller",
-            )
-
-            send(
-                self.address, self.port, sdp_offer,
-                self.sdp_address, start_port
-            )
-
-            self.calls.append({
-                'call_id': str(start_port) + "-" + str(start_port + 2), 
-                'from-tag': "from-tag" + str(start_port)
-            })
+            self.send_offer(start_port)
 
             # Answer
             start_port += 2
-            sdp_answer = self.commands.answer(
-                generate_sdp('127.0.0.1', start_port),
-                # generate_sdp(self.sdp_address, start_port),
-                str(start_port - 2) + "-" + str(start_port),
-                "from-tag" + str(start_port - 2), "to-tag" + str(start_port - 2),
-                ICE="remove",
-                label="callee"
-            ) 
-            send(
-                self.address, self.port, sdp_answer,
-                self.sdp_address, start_port
-            )
-
-            # self.calls.append({
-            #     'call_id': str(start_port-2) + "-" + str(start_port), 
-            #     'from-tag': "from-tag" + str(start_port)
-            # })
+            self.send_answer(start_port)
 
             query = send(
                 self.address, self.port, 
@@ -110,8 +122,15 @@ class GenerateCall():
             print(f'Offer RTP port: {offer_rtp_port}, RTCP port {offer_rtcp_port}!')
             print(f'Answer RTP port: {answer_rtp_port}, RTCP port {answer_rtcp_port}!')
 
-            offers.append(f'rtp://{self.address}:{str(offer_rtp_port)}?localrtpport={str(start_port - 2)}')
-            answers.append(f'rtp://{self.address}:{str(answer_rtp_port)}?localrtpport={str(start_port)}')
+            if not self.rtpsend:
+                offers.append(f'rtp://{self.address}:{str(offer_rtp_port)}?localrtpport={str(start_port - 2)}')
+                answers.append(f'rtp://{self.address}:{str(answer_rtp_port)}?localrtpport={str(start_port)}')
+            else:
+                caller_source_ports.append(str(start_port - 2))
+                callee_source_ports.append(str(start_port))
+                caller_destinations.append(self.address + '/' + str(offer_rtp_port))
+                callee_destinations.append(self.address + '/' + str(answer_rtp_port))
+                
 
             api_offer = KubernetesAPIClient(
                 self.token, self.host,
@@ -144,7 +163,11 @@ class GenerateCall():
             self.apis.append(api_answer)
 
         time.sleep(1)
-        ffmpeg(self.audio_file, cnt, offers, answers)
+        if not self.rtpsend: 
+            ffmpeg(self.audio_file, cnt, offers, answers)
+        else:
+            rtpsend(self.rtpsend, cnt, caller_source_ports, caller_destinations, 
+                    callee_source_ports, callee_destinations)
 
     def get_apis(self):
         ''' Return with the generated KubernetesAPIs 

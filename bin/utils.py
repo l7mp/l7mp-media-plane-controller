@@ -116,6 +116,32 @@ def ffmpeg(audio_file, cnt, offer_rtp_address, answer_rtp_address):
     for process in processes:
         process.communicate()
 
+def rtpsend(dump_file, cnt, caller_source_ports, caller_destinations,
+    callee_source_ports, callee_destinations):
+    
+    processes = []
+    for c in range(cnt):
+        processes.append(
+            subprocess.Popen(
+                ["rtpsend", "-l", "-s", caller_source_ports[c], "-f", 
+                dump_file, caller_destinations[c]]
+            )
+        )
+
+        processes.append(
+            subprocess.Popen(
+                ["rtpsend", "-l", "-s", callee_source_ports[c], "-f",
+                dump_file, callee_destinations[c]]
+            )
+        )
+
+    # Close proccesses
+    for process in processes:
+        print("The command line is: " + str(process.args))
+
+    for process in processes:
+        process.communicate()
+
 
 def handle_oa(address, port, file, bind, type):
     ''' Send an offer or answer. 

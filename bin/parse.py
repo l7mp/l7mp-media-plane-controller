@@ -89,6 +89,10 @@ def arguments():
     parser.add_argument('--sdpaddress', '-saddr', type=str, dest='sdpaddr',
                         default='127.0.0.1',
                         help='This the sender local address.')
+    parser.add_argument('--rtpsend', type=str, dest='rtpsend',
+                        help='When it is defined the traffic genearator ' + 
+                        'will use rtpsend instead of ffmpeg. Location of ' + 
+                        '.rtp file.')
 
     # Send incoming traffic to RTPengine
     parser.add_argument('--server', '-s', type=int, dest='server',

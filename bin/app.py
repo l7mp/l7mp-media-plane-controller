@@ -46,7 +46,7 @@ def main():
             global g_calls
             g_calls = GenerateCall(
                 args.addr, args.port, args.sdpaddr, args.audio_file,
-                args.token, args.host)
+                args.token, args.host, args.rtpsend)
             g_calls.generate_calls(args.generate_calls)
     else:
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
