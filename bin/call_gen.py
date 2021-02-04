@@ -11,7 +11,7 @@ class GenerateCall():
     '''
 
     def __init__(self, address, port, sdp_address, audio_file, token, host,
-                rtpsend):
+                rtpsend, without_jsonsocket):
         self.address = address
         self.port = port
         self.sdp_address = sdp_address
@@ -22,6 +22,7 @@ class GenerateCall():
         self.calls = []
         self.commands = Commands()
         self.rtpsend = rtpsend
+        self.without_jsonsocket = without_jsonsocket
 
     def send_offer(self, start_port):
         sdp_offer = self.commands.offer(
@@ -141,7 +142,8 @@ class GenerateCall():
                 local_rtp_port=start_port - 2,
                 local_rtcp_port=start_port - 1,
                 remote_rtp_port=offer_rtp_port,
-                remote_rtcp_port=offer_rtcp_port
+                remote_rtcp_port=offer_rtcp_port,
+                without_jsonsocket=self.without_jsonsocket
             )
 
             api_answer = KubernetesAPIClient(
@@ -153,7 +155,8 @@ class GenerateCall():
                 local_rtp_port=start_port,
                 local_rtcp_port=start_port + 1,
                 remote_rtp_port=answer_rtp_port,
-                remote_rtcp_port=answer_rtcp_port
+                remote_rtcp_port=answer_rtcp_port,
+                without_jsonsocket=self.without_jsonsocket
             )
 
             api_offer.create_resources()

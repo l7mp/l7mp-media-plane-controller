@@ -137,9 +137,6 @@ def rtpsend(dump_file, cnt, caller_source_ports, caller_destinations,
 
     # Close proccesses
     for process in processes:
-        print("The command line is: " + str(process.args))
-
-    for process in processes:
         process.communicate()
 
 

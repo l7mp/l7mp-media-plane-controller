@@ -53,6 +53,9 @@ def arguments():
                         help='Specify the BearerToken location.')
     parser.add_argument('--host', type=str, dest='host',
                         help='Define the cluster IP.')
+    parser.add_argument('--without_jsonsocket', type=str, 
+                        dest='without_jsonsocket', help='If it is specified ' + 
+                        'there is no jsonsocket in the cluster')
 
     # Commands
     parser.add_argument('--ping', type=int, dest='ping', default=0, 
