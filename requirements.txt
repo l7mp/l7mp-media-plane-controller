@@ -2,3 +2,6 @@ argparse==1.1
 bencode.py==4.0.0
 kubernetes==12.0.1
 sdp-transform==1.0.0
+pytest==6.2.2
+pytest-cov==2.11.1
+coveralls==3.0.0
