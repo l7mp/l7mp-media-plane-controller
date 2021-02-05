@@ -367,7 +367,7 @@ class Commands:
 
         return data
 
-    def play_media(self, call_id, file, **kwargs):
+    def play_media(self, call_id, **kwargs):
         ''' Starts playback of provided media file. 
 
         Important: Only available if the rtpengine was compiled with 

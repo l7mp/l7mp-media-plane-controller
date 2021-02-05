@@ -8,32 +8,43 @@ import sdp_transform
 import socket
 import time
 
+MULTI_PARAMETERS_COMMANDS = [
+    'file', 'delete', 'start_recording', 'stop_recording', 'block_dtmf',
+    'unblock_dtmf', 'block_media', 'unblock_media', 'start_forwarding',
+    'stop_forwarding', 'play_media', 'stop_media', 'play_dtmf', 'statistics'
+]
+
+# TODO: Test it out
+
+def options(args, commands):
+    for attr, value in args.__dict__.items():
+        if attr in ['ping', 'statistics'] and value:
+            pprint(send(args.addr, args.port, getattr(commands, attr)() ,args.sdpaddr, 3000))
+        if attr in ['list_calls', 'query'] and value:
+            pprint(send(args.addr, args.port, getattr(commands, attr)(value) ,args.sdpaddr, 3000))
+        if attr in MULTI_PARAMETERS_COMMANDS and value:
+            print(value)
+            if value[0] == '{':
+                dict_value = json.loads(value)
+                call_id = dict_value['call-id']; del dict_value['call-id']
+                if attr == 'delete':
+                    from_tag = dict_value['from-tag']; del dict_value['from-tag']
+                    pprint(send(args.addr, args.port, commands.delete(call_id, from_tag, **dict_value), args.sdpaddr, 3000))
+                elif attr == 'play_dtmf':
+                    code = dict_value['code']; del dict_value['code']
+                    pprint(send(args.addr, args.port, commands.play_dtmf(call_id, code, **dict_value), args.sdpaddr, 3000))
+                else:
+                    pprint(send(args.addr, args.port, getattr(commands, attr)(call_id, **dict_value), args.sdpaddr, 3000))
+            else:
+                with open(value, 'r') as f_value:
+                    pprint(send(args.addr, args.port, json.load(f_value), args.sdpaddr, 3000)) 
+
 def main():
     global args
     args = arguments()
     commands = Commands()
-    global call_id
-
-    if args.ping:
-        response = send(args.addr, args.port, commands.ping(), 
-                    args.sdpaddr, 3000)
-        pprint(response)
-    if args.list:
-        response = send(args.addr, args.port, commands.list_calls(args.list),
-                        args.sdpaddr, 3000)
-        pprint(response)
-        call_id = response['calls'][0]
-    if args.query or args.list:
-        query = commands.query(call_id)
-        response = send(args.addr, args.port, query, args.sdpaddr, 3000)
-        pprint(response)
+    options(args, commands)
     if not args.server:
-        if args.file:
-            with open(args.file) as f:
-                file = json.load(f)
-            response = send(args.addr, args.port, file, args.sdpaddr, 3000)
-            print(response)
-        # Read files
         if args.offer:
             offer_rtp_port = handle_oa(
                 args.addr, args.port, 
@@ -68,18 +79,19 @@ def main():
         answer_rtp_address = [f'rtp://{args.addr}:{str(answer_rtp_port)}?localrtpport={str(args.bind_answer[1])}']
         ffmpeg(args, 1, offer_rtp_address, answer_rtp_address)
 
+def delete():
+    apis = g_calls.get_apis()
+    g_calls.delete_calls()
+    for a in apis:
+        a.delete_resources()
+
 if __name__ == '__main__':
     try:
         main()
     except KeyboardInterrupt:
-        apis = g_calls.get_apis()
-        g_calls.delete_calls()
-        for a in apis:
-            a.delete_resources()
+        delete()
+    except:
+        delete()
     else:
         if args.generate_calls: 
-            apis = g_calls.get_apis()
-            g_calls.delete_calls()
-            for a in apis:
-                a.delete_resources()
-        print("Finished!")
+            delete()

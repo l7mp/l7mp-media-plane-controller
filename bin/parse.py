@@ -24,12 +24,15 @@ def parse(args, file):
             if line[0] == '#':
                 continue
 
-            split_line = re.split('=| ', line)
-
-            if len(split_line) > 2:
-                setattr(args, split_line[0], [split_line[1], split_line[2]])
-            elif split_line[1].isdigit():
-                setattr(args, split_line[0], int(split_line[1]))
+            split_line = re.split('=', line)
+            if split_line[1][0] != '{':
+                split_line = re.split('=| ', line)
+                if len(split_line) > 2:
+                    setattr(args, split_line[0], [split_line[1], split_line[2]])
+                elif split_line[1].isdigit():
+                    setattr(args, split_line[0], int(split_line[1]))
+                else:
+                    setattr(args, split_line[0], split_line[1])
             else:
                 setattr(args, split_line[0], split_line[1])
 
@@ -60,10 +63,41 @@ def arguments():
     # Commands
     parser.add_argument('--ping', type=int, dest='ping', default=0, 
                         help='Play ping pong with RTPengine.')
+    parser.add_argument('--offer', '-o', type=str, dest='offer',
+                        help='Offer JSON file location.')
+    parser.add_argument('--answer', '-a', type=str, dest='answer',
+                        help='Answer JSON file location.')
+    parser.add_argument('--delete', type=str, dest='delete', 
+                        help='Delete a call.')
     parser.add_argument('--query', type=str, dest='query', 
                         help='Return details from a specific call.')
     parser.add_argument('--list', type=int, dest='list', 
                         help='List a specific number of call ids.')
+    parser.add_argument('--start_recording', type=str, dest='start_recording',
+                        help='Start the call recording.')
+    parser.add_argument('--stop_recording', type=str, dest='stop_recording',
+                        help='Stop the call recording.')
+    parser.add_argument('--block_dtmf', type=str, dest='bloc_dtmf',
+                        help='Block DTMF traffic.')
+    parser.add_argument('--unblock_dtmf', type=str, dest='unblock_dtmf',
+                        help='Unblock DTMF traffic.')
+    parser.add_argument('--block_media', type=str, dest='block_media',
+                        help='Block media packets.')
+    parser.add_argument('--unblock_media', type=str, dest='unblock_media',
+                        help='Unblock media packets.')
+    parser.add_argument('--start_forwarding', type=str, dest='start_forwarding',
+                        help='Forward PCM via TCP/TLS.')
+    parser.add_argument('--stop_forwarding', type=str, dest='stop_forwarding',
+                        help='Stop forwarding PCM via TCP/TLS.')
+    parser.add_argument('--play_media', type=str, dest='play_media',
+                        help='Play media for participants.')
+    parser.add_argument('--stop_media', type=str, dest='stop_media',
+                        help='Stop media play for participants.')
+    parser.add_argument('--play_dtmf', type=str, dest='play_dtmf',
+                        help='Play DTMF in audio stream.')
+    parser.add_argument('--statistics', type=str, dest='statistics',
+                        help='Receive statistics.')
+
 
     # RTPengine server args
     parser.add_argument('--port', '-p', default=22222, type=int, dest='port',
@@ -72,10 +106,6 @@ def arguments():
                         dest='addr', help='RTPengine server address.')
 
     # Client
-    parser.add_argument('--offer', '-o', type=str, dest='offer',
-                        help='Offer JSON file location.')
-    parser.add_argument('--answer', '-a', type=str, dest='answer',
-                        help='Answer JSON file location.')
     parser.add_argument('--bind_offer', '-bo', nargs=2,
                         default=['127.0.0.1', '2000'], dest='bind_offer',
                         help='Offer source address and port.')
