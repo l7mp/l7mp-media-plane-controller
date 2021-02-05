@@ -1,0 +1,26 @@
+name: "release"
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  push_to_registry:
+    name: Push image to Docker Hub
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Login to Docker Hub Registry
+        run: echo ${{ secrets.DOCKER_TOKEN }} | docker login -u ${{ secrets.DOCKER_USER }} --password-stdin
+      - name: Get release tag
+        id: vars
+        run: echo ::set-output name=tag::$(echo ${GITHUB_REF:11})
+      - name: Build the tagged Docker image
+        run: docker build . --file Dockerfile --tag vidarhun/rtpe-operator:${{ steps.vars.outputs.tag }}
+      - name: Push tagged Docker image
+        run: docker push vidarhun/rtpe-operator:${{ steps.vars.outputs.tag }}
+      - name: Build the latest Docker image
+        run: docker build . --file Dockerfile --tag vidarhun/rtpe-operator:latest
+      - name: Push the latest Docker image
+        run: docker push vidarhun/rtpe-operator:latest
