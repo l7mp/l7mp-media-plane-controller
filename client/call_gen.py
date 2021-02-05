@@ -1,9 +1,9 @@
-from utils import send, ffmpeg, generate_sdp, rtpsend
-from commands import Commands
+from client.utils import send, ffmpeg, generate_sdp, rtpsend
+from client.commands import Commands
+from rtpe_operator.kube_api import KubernetesAPIClient
 import sdp_transform
 import time
 import json
-from kube_api import KubernetesAPIClient
 from pprint import pprint
 
 class GenerateCall():

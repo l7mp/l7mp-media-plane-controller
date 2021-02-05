@@ -1,7 +1,7 @@
-from parse import arguments
-from utils import send, ffmpeg, handle_oa
-from call_gen import GenerateCall
-from commands import Commands
+from client.parse import arguments
+from client.utils import send, ffmpeg, handle_oa
+from client.call_gen import GenerateCall
+from client.commands import Commands
 from pprint import pprint
 import json
 import sdp_transform
@@ -13,8 +13,6 @@ MULTI_PARAMETERS_COMMANDS = [
     'unblock_dtmf', 'block_media', 'unblock_media', 'start_forwarding',
     'stop_forwarding', 'play_media', 'stop_media', 'play_dtmf', 'statistics'
 ]
-
-# TODO: Test it out
 
 def options(args, commands):
     for attr, value in args.__dict__.items():

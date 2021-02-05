@@ -38,7 +38,7 @@ def parse(args, file):
 
 
 def arguments():
-    """ Handle the user settings.
+    """ Handle user settings.
 
     Returns:
       Ans object with the user settings.
