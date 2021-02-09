@@ -3,6 +3,14 @@
 This is a python client to make it possible to configure RTPengine in 
 kubernetes. The SIP server will see as the same as RTPengine. 
 
+## Before you run
+
+Please set the `PYTHONPATH` environmental variable:
+
+``` bash
+export PYTHONPATH="${PYTHONPATH}:<path-to-your-cloned-repo>"
+```
+
 ## Warning
 
 The docker image will not work properly because the kubernetes operator
