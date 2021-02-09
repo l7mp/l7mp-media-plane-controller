@@ -10,10 +10,9 @@ class Commands:
         If the rtpengine is reachable will return a pong.
         '''
 
-        data = {
+        return {
             'command': 'ping'
         }
-        return data
 
     def offer(self, sdp, call_id, from_tag, **kwargs):
         ''' Send an offer message.
@@ -52,17 +51,13 @@ class Commands:
                 xmlrpc-callback: string.
         '''
 
-        data = {
+        return {
             'command': 'offer',
             'sdp': sdp,
             'call-id': str(call_id),
-            'from-tag': str(from_tag)
+            'from-tag': str(from_tag),
+            **kwargs
         }
-
-        for arg in kwargs:
-            data[arg] = kwargs.get(arg)
-
-        return data
 
     def answer(self, sdp, call_id, from_tag, to_tag, **kwargs):
         ''' Send an answer message.
@@ -101,18 +96,14 @@ class Commands:
                 xmlrpc-callback: string.
         '''
 
-        data = {
+        return {
             'command': 'answer',
             'sdp': sdp,
             'call-id': str(call_id),
             'from-tag': str(from_tag),
-            'to-tag': str(to_tag)
+            'to-tag': str(to_tag),
+            **kwargs
         }
-
-        for arg in kwargs:
-            data[arg] = kwargs.get(arg)
-
-        return data
 
     def delete(self, call_id, from_tag, **kwargs):
         ''' Delete a call session from rtpengine.
@@ -126,16 +117,12 @@ class Commands:
                 flags: List of strings. ['fatal']
         '''
         
-        data = {
+        return {
             'command': 'delete',
             'call-id': str(call_id),
-            'from-tag': str(from_tag)
+            'from-tag': str(from_tag),
+            **kwargs
         }
-
-        for arg in kwargs:
-            data[arg] = kwargs.get(arg)
-                    
-        return data
 
     def list_calls(self, limit = 32):
         ''' Get a list of call-ids.
@@ -147,12 +134,10 @@ class Commands:
             limit: How many calls should return.
         '''
 
-        data = {
+        return {
             'command': 'list',
             'limit': str(limit)
         }
-
-        return data
 
     def query(self, call_id, **kwargs):
         ''' Query data about a call by call_id.
@@ -166,15 +151,11 @@ class Commands:
                 to-tag: string.
         '''
 
-        data = {
+        return {
             'command': 'query',
             'call-id': str(call_id),
+            **kwargs
         }
-
-        for arg in kwargs:
-            data[arg] = arg.get(arg)
-        
-        return data
 
     def start_recording(self, call_id, **kwargs):
         ''' Enables call recording for the call. 
@@ -192,15 +173,11 @@ class Commands:
                 via-branch: string.
         '''
 
-        data = {
+        return {
             'command': 'start-recording',
-            'call-id': str(call_id)
+            'call-id': str(call_id),
+            **kwargs
         }
-
-        for arg in kwargs:
-            data[arg] = kwargs.get(arg) 
-
-        return data
 
     def stop_recording(self, call_id, **kwargs):
         ''' Disables call recording for the call. 
@@ -209,18 +186,15 @@ class Commands:
         
         Args:
             call_id: ID of the call.
+            kwargs:
+                flags = ['all']
         '''
 
-        data = {
+        return {
             'command': 'stop-recording',
-            'call-id': str(call_id)
+            'call-id': str(call_id),
+            **kwargs
         }
-
-        for arg in kwargs:
-            if arg == 'all':
-                data['flags'] = [kwargs.get(arg)]
-
-        return data
 
     def block_dtmf(self, call_id, **kwargs):
         ''' Disable DTMF events. (RFC 4733)
@@ -237,15 +211,11 @@ class Commands:
                 label: string.
         '''
 
-        data = {
+        return {
             'command': 'block-dtmf',
-            'call-id': str(call_id)
+            'call-id': str(call_id),
+            **kwargs
         }
-
-        for arg in kwargs:
-            data[arg] = kwargs.get(arg)
-
-        return data
 
     def unblock_dtmf(self, call_id, **kwargs):
         ''' Unblock DTMF. 
@@ -261,16 +231,11 @@ class Commands:
                 flags: List of strings. ['all'].
         '''
 
-        data = {
+        return {
             'command': 'unblock-dtmf',
-            'call-id': str(call_id)
+            'call-id': str(call_id),
+            **kwargs
         }
-
-        for arg in kwargs:
-            if arg == 'all':
-                data['flags'] = [kwargs.get(arg)]
-
-        return data
 
     def block_media(self, call_id, **kwargs):
         ''' Block media packets. 
@@ -287,15 +252,11 @@ class Commands:
                 label: string.
         '''
 
-        data = {
+        return {
             'command': 'block-media',
-            'call-id': str(call_id)
+            'call-id': str(call_id),
+            **kwargs
         }
-
-        for arg in kwargs:
-            data[arg] = kwargs.get(arg)
-
-        return data
 
     def unblock_media(self, call_id, **kwargs):
         ''' Unblock media packets. 
@@ -308,16 +269,11 @@ class Commands:
                 flags: List of strings. ['all'].
         '''
 
-        data = {
+        return {
             'command': 'unblock-media',
-            'call-id': str(call_id)
+            'call-id': str(call_id),
+            **kwargs
         }
-
-        for arg in kwargs:
-            if arg == 'all':
-                data['flags'] = [kwargs.get(arg)]
-
-        return data
 
     def start_forwarding(self, call_id, **kwargs):
         ''' Forward PCM via TCP/TLS.
@@ -335,15 +291,11 @@ class Commands:
                 label: string.
         '''
 
-        data = {
+        return {
             'command': 'start-forwarding',
-            'call-id': str(call_id)
+            'call-id': str(call_id),
+            **kwargs
         }
-
-        for arg in kwargs:
-            data[arg] = kwargs.get(arg)
-
-        return data
 
     def stop_forwarding(self, call_id, **kwargs):
         ''' Stop forwarding.
@@ -356,16 +308,11 @@ class Commands:
                 flags: List of strings. ['all'].
         '''
 
-        data = {
+        return {
             'command': 'stop-forwarding',
-            'call-id': str(call_id)
+            'call-id': str(call_id),
+            **kwargs
         }
-
-        for arg in kwargs:
-            if arg == 'all':
-                data['flags'] = [kwargs.get(arg)]
-
-        return data
 
     def play_media(self, call_id, **kwargs):
         ''' Starts playback of provided media file. 
@@ -394,18 +341,11 @@ class Commands:
                 duration: integer (ms)
         '''
 
-        data = {
+        return {
             'command': 'play-media',
-            'call-id': str(call_id)
+            'call-id': str(call_id),
+            **kwargs
         }
-
-        for arg in kwargs:
-            if arg == 'all':
-                data['flags'] = [kwargs.get(arg)]
-            else:
-                data[arg] = kwargs.get(arg)
-
-        return data
         
     def stop_media(self, call_id, **kwargs):
         ''' Stop playback. 
@@ -419,18 +359,11 @@ class Commands:
             call_id: ID of the call.
         '''
 
-        data = {
+        return {
             'command': 'stop-media',
             'call-id': str(call_id),
+            **kwargs
         }
-
-        for arg in kwargs:
-            if arg == 'all':
-                data['flags'] = [kwargs.get(arg)]
-            else:
-                data[arg] = kwargs.get(arg)
-
-        return data
 
     def play_dtmf(self, call_id, code, **kwargs):
         ''' Inject DTMF tone or event into a running audio stream.
@@ -453,26 +386,17 @@ class Commands:
                 pause: integer (ms)
         '''
 
-        data = {
+        return {
             'command': 'play-dtmf',
             'call-id': str(call_id),
-            'code': str(code)
+            'code': str(code),
+            **kwargs
         }
-
-        for arg in kwargs:
-            if arg == 'all':
-                data['flags'] = kwargs.get(arg)
-            else:
-                data[arg] = kwargs.get(arg)
-
-        return data
 
     def statistics(self):
         ''' Returns a set of general statistics metrics. 
         '''
 
-        data = {
+        return {
             'command': 'statistics'
         }
-
-        return data
