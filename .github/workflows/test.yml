@@ -17,5 +17,6 @@ jobs:
           pip install -r requirements.txt
       - name: Test with pytest
         run: |
-          echo "::set-env name=PYTHONPATH::home/runner/work/rptengine-kubernetes"
           pytest --cov=client
+        env:
+          PYTHONPATH: '/home/runner/work/rptengine-kubernetes'
