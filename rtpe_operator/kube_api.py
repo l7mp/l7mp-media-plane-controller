@@ -8,24 +8,12 @@ class KubernetesAPIClient():
     that yous should provide the BearerToken.
     '''
 
-    def __init__(self, token, host, **kwargs):
+    def __init__(self, **kwargs):
         ''' Constructor to set up connection with Kubernetes cluster.
 
         Args:
           token: Path to the BearerToken. 
         '''
-        
-        # Will used when the remote cluster is up!
-        # TODO: Find a way to make it work!
-        # self.configuration = client.Configuration()
-        # # Configure API key authorization: BearerToken
-        # with open(token, 'r') as ft:
-        #     data = ft.read().replace('\n', '')
-
-        # self.configuration.host = f'http://{host}:8443'
-
-        # self.configuration.api_key_prefix['authorization'] = 'Bearer'
-        # self.configuration.api_key['authorization'] = data
 
         config.load_kube_config()
 
