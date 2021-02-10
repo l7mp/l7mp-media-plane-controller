@@ -17,4 +17,4 @@ jobs:
           pip install -r requirements.txt
       - name: Test with pytest
         run: |
-          run pytest --cov=client
+          pytest --cov=client
