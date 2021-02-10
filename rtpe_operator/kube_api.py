@@ -8,14 +8,17 @@ class KubernetesAPIClient():
     that yous should provide the BearerToken.
     '''
 
-    def __init__(self, **kwargs):
+    def __init__(self, in_cluster=False, **kwargs):
         ''' Constructor to set up connection with Kubernetes cluster.
 
         Args:
           token: Path to the BearerToken. 
         '''
-
-        config.load_kube_config()
+        
+        if in_cluster:
+            config.load_incluster_config()
+        else:
+            config.load_kube_config()
 
         self.api = client.CustomObjectsApi()
 

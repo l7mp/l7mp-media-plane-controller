@@ -10,12 +10,13 @@ class GenerateCall():
     ''' With this class you can generate calls.
     '''
 
-    def __init__(self, address, port, sdp_address, audio_file,
+    def __init__(self, address, port, sdp_address, audio_file, in_cluster,
                 rtpsend, without_jsonsocket):
         self.address = address
         self.port = port
         self.sdp_address = sdp_address
         self.audio_file = audio_file
+        self.in_cluster = in_cluster
         self.apis = []
         self.calls = []
         self.commands = Commands()
@@ -132,6 +133,7 @@ class GenerateCall():
                 
 
             api_offer = KubernetesAPIClient(
+                self.in_cluster,
                 call_id=str(start_port - 2) + "-" + str(start_port),
                 tag="from-tag" + str(start_port - 2),
                 # local_ip='127.0.0.1',
@@ -144,6 +146,7 @@ class GenerateCall():
             )
 
             api_answer = KubernetesAPIClient(
+                self.in_cluster,
                 call_id=str(start_port - 2) + "-" + str(start_port),
                 tag="to-tag" + str(start_port - 2),
                 # local_ip='127.0.0.1',

@@ -55,6 +55,8 @@ def arguments():
     parser.add_argument('--without_jsonsocket', type=str, 
                         dest='without_jsonsocket', help='If it is specified ' + 
                         'there is no jsonsocket in the cluster')
+    parser.add_argument('--in_cluster', type=str, dest='in_cluster',
+                        help='Run like an operator.')
 
     # Commands
     parser.add_argument('--ping', type=int, dest='ping', default=0, 
