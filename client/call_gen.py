@@ -131,38 +131,37 @@ class GenerateCall():
                 caller_destinations.append(self.address + '/' + str(offer_rtp_port))
                 callee_destinations.append(self.address + '/' + str(answer_rtp_port))
                 
-
-            api_offer = KubernetesAPIClient(
-                self.in_cluster,
-                call_id=str(start_port - 2) + "-" + str(start_port),
-                tag="from-tag" + str(start_port - 2),
-                # local_ip='127.0.0.1',
-                local_ip=self.sdp_address,
-                local_rtp_port=start_port - 2,
-                local_rtcp_port=start_port - 1,
-                remote_rtp_port=offer_rtp_port,
-                remote_rtcp_port=offer_rtcp_port,
-                without_jsonsocket=self.without_jsonsocket
+            # Offer
+            self.apis.append(
+                KubernetesAPIClient(
+                    self.in_cluster,
+                    call_id=str(start_port - 2) + "-" + str(start_port),
+                    tag="from-tag" + str(start_port - 2),
+                    # local_ip='127.0.0.1',
+                    local_ip=self.sdp_address,
+                    local_rtp_port=start_port - 2,
+                    local_rtcp_port=start_port - 1,
+                    remote_rtp_port=offer_rtp_port,
+                    remote_rtcp_port=offer_rtcp_port,
+                    without_jsonsocket=self.without_jsonsocket
+                )
             )
-
-            api_answer = KubernetesAPIClient(
-                self.in_cluster,
-                call_id=str(start_port - 2) + "-" + str(start_port),
-                tag="to-tag" + str(start_port - 2),
-                # local_ip='127.0.0.1',
-                local_ip=self.sdp_address,
-                local_rtp_port=start_port,
-                local_rtcp_port=start_port + 1,
-                remote_rtp_port=answer_rtp_port,
-                remote_rtcp_port=answer_rtcp_port,
-                without_jsonsocket=self.without_jsonsocket
+            
+            # Answer
+            self.apis.append(
+                KubernetesAPIClient(
+                    self.in_cluster,
+                    call_id=str(start_port - 2) + "-" + str(start_port),
+                    tag="to-tag" + str(start_port - 2),
+                    # local_ip='127.0.0.1',
+                    local_ip=self.sdp_address,
+                    local_rtp_port=start_port,
+                    local_rtcp_port=start_port + 1,
+                    remote_rtp_port=answer_rtp_port,
+                    remote_rtcp_port=answer_rtcp_port,
+                    without_jsonsocket=self.without_jsonsocket
+                )
             )
-
-            api_offer.create_resources()
-            api_answer.create_resources()
-
-            self.apis.append(api_offer)
-            self.apis.append(api_answer)
 
         time.sleep(1)
         if not self.rtpsend: 

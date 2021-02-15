@@ -51,6 +51,12 @@ def arguments():
     parser.add_argument('--config_file', '-c', type=str, dest='config',
                         help='Specify the config file place.')
 
+    # Operator
+    parser.add_argument('--sidecar_port', type=str, dest='sidecar_port',
+                        help='The envoy sidecar\'s port.')
+    parser.add_argument('--sidecar_type', type=str, dest='sidecar_type',
+                        help='envoy or l7mp.')
+
     # Kubernetes
     parser.add_argument('--without_jsonsocket', type=str, 
                         dest='without_jsonsocket', help='If it is specified ' + 

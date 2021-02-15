@@ -4,4 +4,5 @@ COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 COPY . .
 EXPOSE 22222
-CMD ["python3", "bin/app.py", "--config_file", "config/sample-config.conf"]
+ENTRYPOINT [ "/app/entrypoint.sh" ]
+# CMD ["python3", "app.py", "--config_file", "config/sample-config.conf"]

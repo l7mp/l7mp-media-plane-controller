@@ -57,19 +57,7 @@ def main():
                 args.addr, args.port, args.sdpaddr, args.audio_file,
                 args.rtpsend, args.in_cluster, args.without_jsonsocket)
             g_calls.generate_calls(args.generate_calls)
-    else:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.bind((args.server_address, args.server_port))
-        print("Listening on %s:%d" % (args.server_address, args.server_port))
-        while True:
-            data, addr = sock.recvfrom(1024)
-            time.sleep(1)
-            response = send(args.addr, args.port, json.loads(data.decode()), addr[0], int(addr[1]))
-            parsed_sdp_dict = sdp_transform.parse(response.get('sdp'))
-            print("RTP port from rtpengine: %d" % parsed_sdp_dict.get('media')[0]
-                .get('port'))
-            print("RTCP port from rtpengine: %d\n" % parsed_sdp_dict.get('media')[0]
-                .get('rtcp').get('port'))
+        
 
     if args.offer and args.answer and args.ffmpeg:
         time.sleep(1)

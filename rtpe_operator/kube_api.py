@@ -31,6 +31,8 @@ class KubernetesAPIClient():
         self.remote_rtcp_port = kwargs.get('remote_rtcp_port', None)
         self.without_jsonsocket = kwargs.get('without_jsonsocket', None)
 
+        self.create_resources()
+
     def send_custom_obj(self, resource, kind, protocol):
         # Enter a context with an instance of the API kubernetes.client
         # TODO: With remote cluster
