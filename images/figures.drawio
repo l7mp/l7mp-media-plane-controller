@@ -1,64 +1,64 @@
-<mxfile host="65bd71144e" modified="2021-02-15T09:11:42.531Z" agent="5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Code/1.53.2 Chrome/87.0.4280.141 Electron/11.2.1 Safari/537.36" version="14.2.4" etag="nuA8ipCtjK6HINHNP7-V" type="embed">
+<mxfile host="65bd71144e" modified="2021-02-17T14:25:26.961Z" agent="5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Code/1.53.2 Chrome/87.0.4280.141 Electron/11.2.1 Safari/537.36" etag="ADidj9fTPG2dRvjj8ofX" version="14.2.4" type="embed">
     <diagram id="HTxiJRCHUvkafheIfM6i" name="Page-1">
-        <mxGraphModel dx="922" dy="643" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+        <mxGraphModel dx="1160" dy="502" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
-                <mxCell id="5" value="" style="group" vertex="1" connectable="0" parent="1">
+                <mxCell id="5" value="" style="group" parent="1" vertex="1" connectable="0">
                     <mxGeometry x="490" y="40" width="80" height="68" as="geometry"/>
                 </mxCell>
-                <mxCell id="2" value="" style="html=1;dashed=0;whitespace=wrap;fillColor=#2875E2;strokeColor=#ffffff;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.kubernetes.icon;prIcon=ing" vertex="1" parent="5">
+                <mxCell id="2" value="" style="html=1;dashed=0;whitespace=wrap;fillColor=#2875E2;strokeColor=#ffffff;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.kubernetes.icon;prIcon=ing" parent="5" vertex="1">
                     <mxGeometry x="15" width="50" height="48" as="geometry"/>
                 </mxCell>
-                <mxCell id="4" value="l7mp-ingress" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" vertex="1" parent="5">
+                <mxCell id="4" value="l7mp-ingress" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" parent="5" vertex="1">
                     <mxGeometry y="48" width="80" height="20" as="geometry"/>
                 </mxCell>
-                <mxCell id="18" value="" style="group" vertex="1" connectable="0" parent="1">
+                <mxCell id="18" value="" style="group" parent="1" vertex="1" connectable="0">
                     <mxGeometry x="385" y="40" width="80" height="68" as="geometry"/>
                 </mxCell>
-                <mxCell id="16" value="" style="html=1;dashed=0;whitespace=wrap;fillColor=#2875E2;strokeColor=#ffffff;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.kubernetes.icon;prIcon=svc" vertex="1" parent="18">
+                <mxCell id="16" value="" style="html=1;dashed=0;whitespace=wrap;fillColor=#2875E2;strokeColor=#ffffff;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.kubernetes.icon;prIcon=svc" parent="18" vertex="1">
                     <mxGeometry x="15" width="50" height="48" as="geometry"/>
                 </mxCell>
-                <mxCell id="17" value="l7mp-worker" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" vertex="1" parent="18">
+                <mxCell id="17" value="l7mp-worker" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" parent="18" vertex="1">
                     <mxGeometry y="48" width="80" height="20" as="geometry"/>
                 </mxCell>
-                <mxCell id="29" value="Incoming rtp traffic and&amp;nbsp;&lt;br&gt;ng commands" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" vertex="1" parent="1">
+                <mxCell id="29" value="Incoming rtp traffic and&amp;nbsp;&lt;br&gt;ng commands" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" parent="1" vertex="1">
                     <mxGeometry x="600" y="59" width="140" height="30" as="geometry"/>
                 </mxCell>
-                <mxCell id="43" value="" style="group" vertex="1" connectable="0" parent="1">
-                    <mxGeometry x="40" y="40" width="310" height="188" as="geometry"/>
+                <mxCell id="43" value="" style="group" parent="1" vertex="1" connectable="0">
+                    <mxGeometry x="40" y="40" width="315" height="188" as="geometry"/>
                 </mxCell>
-                <mxCell id="6" value="" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="43">
+                <mxCell id="6" value="" style="rounded=1;whiteSpace=wrap;html=1;" parent="43" vertex="1">
                     <mxGeometry width="310" height="188" as="geometry"/>
                 </mxCell>
-                <mxCell id="10" value="rtpengine" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;darkOpacity2=0.1;" vertex="1" parent="43">
+                <mxCell id="10" value="rtpengine" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;darkOpacity2=0.1;" parent="43" vertex="1">
                     <mxGeometry x="110" y="128" width="90" height="50" as="geometry"/>
                 </mxCell>
-                <mxCell id="15" value="rtpe-operator" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;darkOpacity2=0.1;" vertex="1" parent="43">
+                <mxCell id="15" value="rtpe-operator" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;darkOpacity2=0.1;" parent="43" vertex="1">
                     <mxGeometry x="110" y="70" width="90" height="50" as="geometry"/>
                 </mxCell>
-                <mxCell id="7" value="l7mp-sidecar" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;darkOpacity2=0.1;" vertex="1" parent="43">
+                <mxCell id="7" value="l7mp-sidecar" style="shape=cube;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;darkOpacity=0.05;darkOpacity2=0.1;" parent="43" vertex="1">
                     <mxGeometry x="110" y="10" width="90" height="50" as="geometry"/>
                 </mxCell>
-                <mxCell id="32" value="" style="endArrow=classic;html=1;entryX=0;entryY=0;entryDx=90;entryDy=20;entryPerimeter=0;exitX=0;exitY=0;exitDx=90;exitDy=35;exitPerimeter=0;edgeStyle=entityRelationEdgeStyle;" edge="1" parent="43" source="7" target="15">
+                <mxCell id="32" value="" style="endArrow=classic;html=1;entryX=0;entryY=0;entryDx=90;entryDy=20;entryPerimeter=0;exitX=0;exitY=0;exitDx=90;exitDy=35;exitPerimeter=0;edgeStyle=entityRelationEdgeStyle;" parent="43" source="7" target="15" edge="1">
                     <mxGeometry width="50" height="50" relative="1" as="geometry">
                         <mxPoint x="202" y="60" as="sourcePoint"/>
                         <mxPoint x="202" y="70" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="33" value="Receive ng&lt;br&gt;commands&lt;br&gt;on port&lt;br&gt;22222" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" vertex="1" parent="43">
+                <mxCell id="33" value="Receive ng&lt;br&gt;commands&lt;br&gt;on port&lt;br&gt;2000" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" parent="43" vertex="1">
                     <mxGeometry x="230" y="40" width="80" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="34" value="" style="endArrow=classic;html=1;exitX=0;exitY=0;exitDx=90;exitDy=35;exitPerimeter=0;entryX=0;entryY=0;entryDx=90;entryDy=20;entryPerimeter=0;edgeStyle=entityRelationEdgeStyle;" edge="1" parent="43" source="15" target="10">
+                <mxCell id="34" value="" style="endArrow=classic;html=1;exitX=0;exitY=0;exitDx=90;exitDy=35;exitPerimeter=0;entryX=0;entryY=0;entryDx=90;entryDy=20;entryPerimeter=0;edgeStyle=entityRelationEdgeStyle;" parent="43" source="15" target="10" edge="1">
                     <mxGeometry width="50" height="50" relative="1" as="geometry">
                         <mxPoint x="250" y="220" as="sourcePoint"/>
                         <mxPoint x="300" y="170" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="35" value="Send the&lt;br&gt;transformed&amp;nbsp;&lt;br&gt;commands" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" vertex="1" parent="43">
-                    <mxGeometry x="230" y="108" width="80" height="50" as="geometry"/>
+                <mxCell id="35" value="Send the&lt;br&gt;transformed&amp;nbsp;&lt;br&gt;commands to&lt;br&gt;port 22222" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" parent="43" vertex="1">
+                    <mxGeometry x="225" y="103" width="90" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="36" value="" style="endArrow=classic;html=1;entryX=0;entryY=0;entryDx=0;entryDy=30;entryPerimeter=0;exitX=0;exitY=0;exitDx=0;exitDy=15;exitPerimeter=0;edgeStyle=orthogonalEdgeStyle;curved=1;" edge="1" parent="43" source="10" target="15">
+                <mxCell id="36" value="" style="endArrow=classic;html=1;entryX=0;entryY=0;entryDx=0;entryDy=30;entryPerimeter=0;exitX=0;exitY=0;exitDx=0;exitDy=15;exitPerimeter=0;edgeStyle=orthogonalEdgeStyle;curved=1;" parent="43" source="10" target="15" edge="1">
                     <mxGeometry width="50" height="50" relative="1" as="geometry">
                         <mxPoint x="95" y="143" as="sourcePoint"/>
                         <mxPoint x="95" y="100" as="targetPoint"/>
@@ -68,19 +68,19 @@
                         </Array>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="38" value="Return with&lt;br&gt;remote ports" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" vertex="1" parent="43">
+                <mxCell id="38" value="Return with&lt;br&gt;remote ports" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" parent="43" vertex="1">
                     <mxGeometry x="10" y="108" width="80" height="30" as="geometry"/>
                 </mxCell>
-                <mxCell id="39" value="" style="endArrow=classic;html=1;exitX=0;exitY=0;exitDx=0;exitDy=15;exitPerimeter=0;" edge="1" parent="43" source="15" target="40">
+                <mxCell id="39" value="" style="endArrow=classic;html=1;exitX=0;exitY=0;exitDx=0;exitDy=15;exitPerimeter=0;" parent="43" source="15" target="40" edge="1">
                     <mxGeometry width="50" height="50" relative="1" as="geometry">
                         <mxPoint x="60" y="268" as="sourcePoint"/>
                         <mxPoint x="10" y="238" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="40" value="Create Targets&lt;br&gt;and Vsvcs" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" vertex="1" parent="43">
+                <mxCell id="40" value="Create Targets&lt;br&gt;and Vsvcs" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" parent="43" vertex="1">
                     <mxGeometry y="70" width="90" height="30" as="geometry"/>
                 </mxCell>
-                <mxCell id="41" value="" style="endArrow=classic;html=1;entryX=0;entryY=0;entryDx=0;entryDy=30;entryPerimeter=0;exitX=0;exitY=0;exitDx=0;exitDy=0;exitPerimeter=0;edgeStyle=orthogonalEdgeStyle;curved=1;" edge="1" parent="43" source="15" target="7">
+                <mxCell id="41" value="" style="endArrow=classic;html=1;entryX=0;entryY=0;entryDx=0;entryDy=30;entryPerimeter=0;exitX=0;exitY=0;exitDx=0;exitDy=0;exitPerimeter=0;edgeStyle=orthogonalEdgeStyle;curved=1;" parent="43" source="15" target="7" edge="1">
                     <mxGeometry width="50" height="50" relative="1" as="geometry">
                         <mxPoint x="100" y="288" as="sourcePoint"/>
                         <mxPoint x="150" y="238" as="targetPoint"/>
@@ -90,31 +90,31 @@
                         </Array>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="42" value="Send back&lt;br&gt;remote ports" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" vertex="1" parent="43">
+                <mxCell id="42" value="Send back&lt;br&gt;remote ports" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;" parent="43" vertex="1">
                     <mxGeometry x="5" y="38" width="80" height="30" as="geometry"/>
                 </mxCell>
-                <mxCell id="48" value="" style="html=1;dashed=0;whitespace=wrap;fillColor=#2875E2;strokeColor=#ffffff;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.kubernetes.icon;prIcon=pod" vertex="1" parent="43">
+                <mxCell id="48" value="" style="html=1;dashed=0;whitespace=wrap;fillColor=#2875E2;strokeColor=#ffffff;points=[[0.005,0.63,0],[0.1,0.2,0],[0.9,0.2,0],[0.5,0,0],[0.995,0.63,0],[0.72,0.99,0],[0.5,1,0],[0.28,0.99,0]];shape=mxgraph.kubernetes.icon;prIcon=pod" parent="43" vertex="1">
                     <mxGeometry x="10" y="-10" width="30" height="30" as="geometry"/>
                 </mxCell>
-                <mxCell id="44" value="" style="endArrow=classic;startArrow=classic;html=1;entryX=0.005;entryY=0.63;entryDx=0;entryDy=0;entryPerimeter=0;exitX=1;exitY=0.25;exitDx=0;exitDy=0;" edge="1" parent="1" source="6" target="16">
+                <mxCell id="44" value="" style="endArrow=classic;startArrow=classic;html=1;entryX=0.005;entryY=0.63;entryDx=0;entryDy=0;entryPerimeter=0;exitX=1;exitY=0.25;exitDx=0;exitDy=0;" parent="1" source="6" target="16" edge="1">
                     <mxGeometry width="50" height="50" relative="1" as="geometry">
                         <mxPoint x="380" y="90" as="sourcePoint"/>
                         <mxPoint x="470" y="230" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="45" value="" style="endArrow=classic;startArrow=classic;html=1;entryX=0.005;entryY=0.63;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.995;exitY=0.63;exitDx=0;exitDy=0;exitPerimeter=0;" edge="1" parent="1" source="16" target="2">
+                <mxCell id="45" value="" style="endArrow=classic;startArrow=classic;html=1;entryX=0.005;entryY=0.63;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.995;exitY=0.63;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="16" target="2" edge="1">
                     <mxGeometry width="50" height="50" relative="1" as="geometry">
                         <mxPoint x="465" y="130" as="sourcePoint"/>
                         <mxPoint x="600" y="190" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="46" value="" style="endArrow=classic;html=1;entryX=0.995;entryY=0.63;entryDx=0;entryDy=0;entryPerimeter=0;" edge="1" parent="1" target="2">
+                <mxCell id="46" value="" style="endArrow=classic;html=1;entryX=0.995;entryY=0.63;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" target="2" edge="1">
                     <mxGeometry width="50" height="50" relative="1" as="geometry">
                         <mxPoint x="600" y="70" as="sourcePoint"/>
                         <mxPoint x="780" y="160" as="targetPoint"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="47" value="&lt;h1 style=&quot;font-size: 19px&quot;&gt;Note&lt;/h1&gt;&lt;p&gt;This scenario only describe the session creation. If the session is created the l7mp-worker will open the required ports and the traffic don't go throught the rtpe-operator at all.&amp;nbsp;&lt;/p&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;" vertex="1" parent="1">
+                <mxCell id="47" value="&lt;h1 style=&quot;font-size: 19px&quot;&gt;Note&lt;/h1&gt;&lt;p&gt;This scenario only describe the session creation. If the session is created the l7mp-worker will open the required ports and the traffic don't go throught the rtpe-operator at all.&amp;nbsp;&lt;/p&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=0;" parent="1" vertex="1">
                     <mxGeometry x="360" y="126" width="370" height="102" as="geometry"/>
                 </mxCell>
             </root>

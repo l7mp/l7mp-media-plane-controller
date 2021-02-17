@@ -1,7 +1,11 @@
 # Client
 
 This is a python client to make it possible to configure RTPengine in 
-kubernetes. The SIP server will see as the same as RTPengine. 
+kubernetes. The SIP server will see as the same as RTPengine.
+
+## Operator setup
+
+![rtpe-l7mp-operator](images/rtpe-l7mp-operator.svg)
 
 ## Before you run
 
