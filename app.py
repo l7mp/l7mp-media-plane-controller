@@ -7,6 +7,7 @@ import json
 import sdp_transform
 import socket
 import time
+import os
 
 MULTI_PARAMETERS_COMMANDS = [
     'file', 'delete', 'start_recording', 'stop_recording', 'block_dtmf',
@@ -42,22 +43,40 @@ def main():
     args = arguments()
     commands = Commands()
     options(args, commands)
-    if not args.server:
-        if args.offer:
-            offer_rtp_port = handle_oa(
-                args.addr, args.port, 
-                args.offer, args.bind_offer, "offer")
-        if args.answer:
-            answer_rtp_port = handle_oa(
-                args.addr, args.port, 
-                args.answer, args.bind_answer, "answer")
-        if args.generate_calls:
-            global g_calls
+    if args.offer:
+        offer_rtp_port = handle_oa(
+            args.addr, args.port, 
+            args.offer, args.bind_offer, "offer")
+    if args.answer:
+        answer_rtp_port = handle_oa(
+            args.addr, args.port, 
+            args.answer, args.bind_answer, "answer")
+    if args.generate_calls:
+        global g_calls
+        if not args.sidecar_type:
             g_calls = GenerateCall(
-                args.addr, args.port, args.sdpaddr, args.audio_file,
-                args.rtpsend, args.in_cluster, args.without_jsonsocket)
+                address=args.addr, 
+                port=args.port, 
+                sdp_address=args.sdpaddr, 
+                audio_file=args.audio_file,
+                rtpsend=args.rtpsend, 
+                in_cluster=args.in_cluster, 
+                without_jsonsocket=args.without_jsonsocket,
+                sidecar=""
+            )
             g_calls.generate_calls(args.generate_calls)
-        
+        elif args.sidecar_type == 'l7mp':
+            g_calls = GenerateCall(
+                address=args.addr, 
+                port=args.port, 
+                sdp_address=args.sdpaddr, 
+                audio_file=args.audio_file,
+                rtpsend=args.rtpsend, 
+                in_cluster=args.in_cluster, 
+                without_jsonsocket=args.without_jsonsocket,
+                sidecar=args.sidecar_type
+            )
+            g_calls.generate_calls(args.generate_calls)
 
     if args.offer and args.answer and args.ffmpeg:
         time.sleep(1)
@@ -68,8 +87,10 @@ def main():
 def delete():
     apis = g_calls.get_apis()
     g_calls.delete_calls()
-    for a in apis:
-        a.delete_resources()
+    if os.getenv('RTPE_OPERATOR'):
+        print('test')
+        for a in apis:
+            a.delete_resources()
 
 if __name__ == '__main__':
     try:

@@ -10,18 +10,18 @@ class GenerateCall():
     ''' With this class you can generate calls.
     '''
 
-    def __init__(self, address, port, sdp_address, audio_file, in_cluster,
-                rtpsend, without_jsonsocket):
-        self.address = address
-        self.port = port
-        self.sdp_address = sdp_address
-        self.audio_file = audio_file
-        self.in_cluster = in_cluster
+    def __init__(self, **kwargs):
+        self.address = kwargs['address']
+        self.port = kwargs['port']
+        self.sdp_address = kwargs['sdp_address']
+        self.audio_file = kwargs['audio_file']
+        self.in_cluster = kwargs['in_cluster']
         self.apis = []
         self.calls = []
         self.commands = Commands()
-        self.rtpsend = rtpsend
-        self.without_jsonsocket = without_jsonsocket
+        self.rtpsend = kwargs['rtpsend']
+        self.without_jsonsocket = kwargs['without_jsonsocket']
+        self.sidecar = kwargs['sidecar']
 
     def send_offer(self, start_port):
         sdp_offer = self.commands.offer(
@@ -95,6 +95,7 @@ class GenerateCall():
             start_port += 2
             self.send_answer(start_port)
 
+            print(str(start_port - 2) + "-" + str(start_port))
             query = send(
                 self.address, self.port, 
                 self.commands.query(str(start_port - 2) + "-" + str(start_port)),
@@ -130,40 +131,44 @@ class GenerateCall():
                 callee_source_ports.append(str(start_port))
                 caller_destinations.append(self.address + '/' + str(offer_rtp_port))
                 callee_destinations.append(self.address + '/' + str(answer_rtp_port))
-                
-            # Offer
-            self.apis.append(
-                KubernetesAPIClient(
-                    self.in_cluster,
-                    call_id=str(start_port - 2) + "-" + str(start_port),
-                    tag="from-tag" + str(start_port - 2),
-                    # local_ip='127.0.0.1',
-                    local_ip=self.sdp_address,
-                    local_rtp_port=start_port - 2,
-                    local_rtcp_port=start_port - 1,
-                    remote_rtp_port=offer_rtp_port,
-                    remote_rtcp_port=offer_rtcp_port,
-                    without_jsonsocket=self.without_jsonsocket
-                )
-            )
             
-            # Answer
-            self.apis.append(
-                KubernetesAPIClient(
-                    self.in_cluster,
-                    call_id=str(start_port - 2) + "-" + str(start_port),
-                    tag="to-tag" + str(start_port - 2),
-                    # local_ip='127.0.0.1',
-                    local_ip=self.sdp_address,
-                    local_rtp_port=start_port,
-                    local_rtcp_port=start_port + 1,
-                    remote_rtp_port=answer_rtp_port,
-                    remote_rtcp_port=answer_rtcp_port,
-                    without_jsonsocket=self.without_jsonsocket
+            if not self.sidecar:
+                # Offer
+                print('test before offer')
+                self.apis.append(
+                    KubernetesAPIClient(
+                        self.in_cluster,
+                        call_id=str(start_port - 2) + "-" + str(start_port),
+                        tag="from-tag" + str(start_port - 2),
+                        # local_ip='127.0.0.1',
+                        local_ip=self.sdp_address,
+                        local_rtp_port=start_port - 2,
+                        local_rtcp_port=start_port - 1,
+                        remote_rtp_port=offer_rtp_port,
+                        remote_rtcp_port=offer_rtcp_port,
+                        without_jsonsocket=self.without_jsonsocket
+                    )
                 )
-            )
+                
+                # Answer
+                print('test before answer')
+                self.apis.append(
+                    KubernetesAPIClient(
+                        self.in_cluster,
+                        call_id=str(start_port - 2) + "-" + str(start_port),
+                        tag="to-tag" + str(start_port - 2),
+                        # local_ip='127.0.0.1',
+                        local_ip=self.sdp_address,
+                        local_rtp_port=start_port,
+                        local_rtcp_port=start_port + 1,
+                        remote_rtp_port=answer_rtp_port,
+                        remote_rtcp_port=answer_rtcp_port,
+                        without_jsonsocket=self.without_jsonsocket
+                    )
+                )
 
         time.sleep(1)
+        print('test before stream')
         if not self.rtpsend: 
             ffmpeg(self.audio_file, cnt, offers, answers)
         else:
@@ -182,9 +187,8 @@ class GenerateCall():
         rtpengine based on their call_id and from-tag. 
         '''
         for call in self.calls:
-            deleted_call = send(
+            send(
                 self.address, self.port, 
                 self.commands.delete(call['call_id'], call['from-tag']), 
                 self.sdp_address, 3000
             )
-            pprint(deleted_call)

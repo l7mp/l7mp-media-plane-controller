@@ -3,6 +3,6 @@ WORKDIR /app
 COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 COPY . .
-EXPOSE 22222
+# EXPOSE 22222
 ENTRYPOINT [ "/app/entrypoint.sh" ]
 # CMD ["python3", "app.py", "--config_file", "config/sample-config.conf"]
