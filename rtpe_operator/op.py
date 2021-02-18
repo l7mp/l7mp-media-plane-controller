@@ -116,7 +116,7 @@ def main():
             sock.sendto(bc.encode(response), client_address) # Send back response
             a = socket.gethostbyname_ex(os.getenv('ENVOY_MGM_ADDRESS'))
             print(a)
-            envoy_address = (repr(a), int(os.getenv('ENVOY_MGM_PORT')))
+            envoy_address = (repr(a[2]), int(os.getenv('ENVOY_MGM_PORT')))
             print(envoy_address)
             if data['command'] == 'answer':
                 query = send(
