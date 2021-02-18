@@ -99,9 +99,9 @@ def main():
         print('test1')
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
-        sock.bind(('127.0.0.1', 2000))
+        sock.bind(('0.0.0.0', 2000))
         sock.settimeout(10)
-        print("Listening on %s:%d" % ('127.0.0.1', 2000))
+        print("Listening on %s:%d" % ('0.0.0.0', 2000))
         while True:
             print('listening')
             try:
@@ -112,32 +112,31 @@ def main():
                 continue
         
             time.sleep(1)
-            response = send(RTPE_ADDRESS, RTPE_PORT, data, '127.0.0.1', 2001)
+            response = send(RTPE_ADDRESS, RTPE_PORT, data, '0.0.0.0', 2001)
             sock.sendto(bc.encode(response), client_address) # Send back response
             a = socket.gethostbyname_ex(os.getenv('ENVOY_MGM_ADDRESS'))
             print(a)
             envoy_address = (a[2][0], int(os.getenv('ENVOY_MGM_PORT')))
             print(envoy_address)
+            print(type(envoy_address))
             if data['command'] == 'answer':
                 query = send(
                     RTPE_ADDRESS, RTPE_PORT, 
                     commands.query(data['call-id']),
-                    '127.0.0.1', 2998
+                    '0.0.0.0', 2998
                 )
                 pprint(query)
                 caller_port = query['tags'][data['from-tag']]['medias'][0]['streams'][0]['local port']
                 callee_port = query['tags'][data['to-tag']]['medias'][0]['streams'][0]['local port']
                 print("caller_port: " + str(caller_port))
                 print("callee_port: " + str(callee_port))
-                sock.sendto(
-                    json.dumps({
+                json_data = json.dumps({
                         "caller_rtp": caller_port,
                         "caller_rtcp": caller_port + 1,
                         "callee_rtp": callee_port,
                         "callee_rtcp": callee_port + 1
-                    }).encode('utf-8'), 
-                    envoy_address
-                )
+                    }).encode('utf-8')
+                sock.sendto(json_data,  envoy_address)
 
 if __name__ == '__main__':
     main()
