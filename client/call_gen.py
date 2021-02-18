@@ -96,7 +96,6 @@ class GenerateCall():
             start_port += 2
             self.send_answer(start_port, self.codecs[1])
 
-            print(str(start_port - 2) + "-" + str(start_port))
             query = send(
                 self.address, self.port, 
                 self.commands.query(str(start_port - 2) + "-" + str(start_port)),

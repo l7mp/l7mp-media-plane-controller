@@ -84,7 +84,7 @@ def main():
         time.sleep(1)
         offer_rtp_address = [f'rtp://{args.addr}:{str(offer_rtp_port)}?localrtpport={str(args.bind_offer[1])}']
         answer_rtp_address = [f'rtp://{args.addr}:{str(answer_rtp_port)}?localrtpport={str(args.bind_answer[1])}']
-        ffmpeg(args, 1, offer_rtp_address, answer_rtp_address)
+        ffmpeg(args, 1, offer_rtp_address, answer_rtp_address, args.codecs)
 
 def delete():
     apis = g_calls.get_apis()

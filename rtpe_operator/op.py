@@ -15,103 +15,127 @@ bc = bencodepy.Bencode(
 
 kubernets_apis = []
 commands = Commands()
-print(os.getenv('RTPE_ADDRESS'))
-print(os.getenv('RTPE_PORT'))
-print(os.getenv('WITHOUT_JSONSOCKET'))
 RTPE_ADDRESS = os.getenv('RTPE_ADDRESS')
 RTPE_PORT = int(os.getenv('RTPE_PORT'))
+RTPE_OPERATOR = os.getenv('RTPE_OPERATOR')
+
+def check_delete():
+    for a in kubernets_apis:
+        query = send(
+            RTPE_ADDRESS, RTPE_PORT,
+            commands.query(a.call_id), '127.0.0.1', 2002 
+        )
+        if query['result'] == 'error':
+            a.delete_resources()      
+            kubernets_apis.remove(a)
+
+def parse_data(data):
+    return bc.decode(data.decode().split(" ", 1)[1])
+
+def delete_kube_resources(call_id):
+    for a in kubernets_apis:
+        if a.call_id == call_id:
+            a.delete_resources()
+            kubernets_apis.remove(a)
+
+def create_resource(call_id, tag, c_address, c_port):
+    query = send(
+        RTPE_ADDRESS, RTPE_PORT, 
+        commands.query(call_id),
+        '127.0.0.1', 2998
+    )
+    port = query['tags'][tag]['medias'][0]['streams'][0]['local port']
+    kubernets_apis.append(
+        KubernetesAPIClient(
+            in_cluster=True,
+            call_id=call_id,
+            tag=tag,
+            local_ip=c_address,
+            local_rtp_port=c_port,
+            local_rtcp_port=c_port,
+            remote_rtp_port=port,
+            remote_rtcp_port=port + 1,
+            without_jsonsocket=os.getenv('WITHOUT_JSONSOCKET')
+        )
+    )
 
 def main():
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
-    sock.bind(('127.0.0.1', 2000))
-    sock.settimeout(10)
-    print("Listening on %s:%d" % ('127.0.0.1', 2000))
-    while True:
-        # Check if some calls are destroyed or not. 
-        for a in kubernets_apis:
-            print(a.call_id)
-            query = send(
-                RTPE_ADDRESS, RTPE_PORT,
-                commands.query(a.call_id), '127.0.0.1', 2002 
-            )
-            if query['result'] == 'error':
-                a.delete_resources()      
-                kubernets_apis.remove(a)         
+    if RTPE_OPERATOR == 'l7mp':
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
+        sock.bind(('127.0.0.1', 2000))
+        sock.settimeout(10)
+        print("Listening on %s:%d" % ('127.0.0.1', 2000))
+        while True:
+            check_delete()
+            try:
+                data, client_address = sock.recvfrom(4096)
+                data = parse_data(data)
+                print(data)
+            except Exception:
+                continue
+            
+            time.sleep(1)
+            response = send(RTPE_ADDRESS, RTPE_PORT, data, '127.0.0.1', 2001)
+            sock.sendto(bc.encode(response), client_address) # Send back response
 
-        try:
-            data, client_address = sock.recvfrom(4096)
-            data = data.decode()
-            data = data.split(" ", 1)
-            data = bc.decode(data[1])
-            pprint(data)
-            print('Client Address:')
-            print(client_address,sep=';')
-        except Exception:
-            continue
+            if data['command'] == 'delete':
+                delete_kube_resources(data['call-id'])
+            if data['command'] == 'offer':
+                sdp = sdp_transform.parse(data['sdp'])
+                create_resource(
+                    data['call-id'], data['from-tag'], 
+                    sdp['origin']['address'], 
+                    sdp['media'][0]['port']
+                )
+            if data['command'] == 'answer':
+                sdp = sdp_transform.parse(data['sdp'])
+                create_resource(
+                    data['call-id'], data['to-tag'], 
+                    sdp['origin']['address'], 
+                    sdp['media'][0]['port']
+                )
+    if RTPE_OPERATOR == 'envoy':
+        print('test1')
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
+        sock.bind(('127.0.0.1', 2000))
+        sock.settimeout(10)
+        print("Listening on %s:%d" % ('127.0.0.1', 2000))
+        while True:
+            print('listening')
+            try:
+                data, client_address = sock.recvfrom(4096)
+                data = parse_data(data)
+                pprint(data)
+            except Exception:
+                continue
         
-        time.sleep(1)
-
-        # NOTE: Send received data to rtpengine
-        # RTPE_ADDRESS = rtpengine address 
-        # RTPE_PORT = rtpengine ng port
-        response = send(RTPE_ADDRESS, RTPE_PORT, data, '127.0.0.1', 2001)
-
-        # Send back the response
-
-        # Check this out
-        sock.sendto(bc.encode(response), client_address)
-
-        # Check whenever is delete command
-        if data['command'] == 'delete':
-            for a in kubernets_apis:
-                if a.call_id == data['call-id']:
-                    a.delete_resources()
-                    kubernets_apis.remove(a)
-        if data['command'] == 'offer':
-            query = send(
-                RTPE_ADDRESS, RTPE_PORT, 
-                commands.query(data['call-id']),
-                '127.0.0.1', 2998
-            )
-            print("query OK")
-            port = query['tags'][data['from-tag']]['medias'][0]['streams'][0]['local port']
-            kubernets_apis.append(
-                KubernetesAPIClient(
-                    in_cluster=True,
-                    call_id=data['call-id'],
-                    tag=data['from-tag'],
-                    local_ip=client_address[0],
-                    local_rtp_port=int(client_address[1]),
-                    local_rtcp_port=int(client_address[1] + 1),
-                    remote_rtp_port=port,
-                    remote_rtcp_port=port + 1,
-                    without_jsonsocket=os.getenv('WITHOUT_JSONSOCKET')
+            time.sleep(1)
+            response = send(RTPE_ADDRESS, RTPE_PORT, data, '127.0.0.1', 2001)
+            sock.sendto(bc.encode(response), client_address) # Send back response
+            envoy_address = (os.getenv('ENVOY_MGM_ADDRESS'), int(os.getenv('ENVOY_MGM_PORT')))
+            print(envoy_address)
+            if data['command'] == 'answer':
+                query = send(
+                    RTPE_ADDRESS, RTPE_PORT, 
+                    commands.query(data['call-id']),
+                    '127.0.0.1', 2998
                 )
-            )
-            print('API OK')
-        if data['command'] == 'answer':
-            query = send(
-                RTPE_ADDRESS, RTPE_PORT, 
-                commands.query(data['call-id']),
-                '127.0.0.1', 2998
-            )
-            print('Query OK')
-            port = query['tags'][data['to-tag']]['medias'][0]['streams'][0]['local port']
-            kubernets_apis.append(
-                KubernetesAPIClient(
-                    in_cluster=True,
-                    call_id=data['call-id'],
-                    tag=data['to-tag'],
-                    local_ip=client_address[0],
-                    local_rtp_port=int(client_address[1]),
-                    local_rtcp_port=int(client_address[1] + 1),
-                    remote_rtp_port=port,
-                    remote_rtcp_port=port + 1,
-                    without_jsonsocket=os.getenv('WITHOUT_JSONSOCKET')
+                pprint(query)
+                caller_port = query['tags'][data['from-tag']]['medias'][0]['streams'][0]['local port']
+                callee_port = query['tags'][data['to-tag']]['medias'][0]['streams'][0]['local port']
+                print("caller_port: " + str(caller_port))
+                print("callee_port: " + str(callee_port))
+                sock.sendto(
+                    json.dumps({
+                        "caller_rtp": caller_port,
+                        "caller_rtcp": caller_port + 1,
+                        "callee_rtp": callee_port,
+                        "callee_rtcp": callee_port + 1
+                    }).encode('utf-8'), 
+                    envoy_address
                 )
-            )
-            print('API OK')
 
 if __name__ == '__main__':
     main()
