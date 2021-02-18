@@ -114,7 +114,9 @@ def main():
             time.sleep(1)
             response = send(RTPE_ADDRESS, RTPE_PORT, data, '127.0.0.1', 2001)
             sock.sendto(bc.encode(response), client_address) # Send back response
-            envoy_address = (os.getenv('ENVOY_MGM_ADDRESS'), int(os.getenv('ENVOY_MGM_PORT')))
+            a = socket.gethostbyname_ex(os.getenv('ENVOY_MGM_ADDRESS'))
+            print(a)
+            envoy_address = (repr(a), int(os.getenv('ENVOY_MGM_PORT')))
             print(envoy_address)
             if data['command'] == 'answer':
                 query = send(
