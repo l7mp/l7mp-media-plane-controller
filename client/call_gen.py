@@ -22,10 +22,11 @@ class GenerateCall():
         self.rtpsend = kwargs['rtpsend']
         self.without_jsonsocket = kwargs['without_jsonsocket']
         self.sidecar = kwargs['sidecar']
+        self.codecs = kwargs['codecs']
 
-    def send_offer(self, start_port):
+    def send_offer(self, start_port, payload):
         sdp_offer = self.commands.offer(
-            generate_sdp('127.0.0.1', start_port),
+            generate_sdp('127.0.0.1', start_port, payload=payload),
             # generate_sdp(self.sdp_address, start_port),
             str(start_port) + "-" + str(start_port + 2),
             "from-tag" + str(start_port),
@@ -43,9 +44,9 @@ class GenerateCall():
             'from-tag': "from-tag" + str(start_port)
         })
 
-    def send_answer(self, start_port):
+    def send_answer(self, start_port, payload):
         sdp_answer = self.commands.answer(
-            generate_sdp('127.0.0.1', start_port),
+            generate_sdp('127.0.0.1', start_port, payload=payload),
             # generate_sdp(self.sdp_address, start_port),
             str(start_port - 2) + "-" + str(start_port),
             "from-tag" + str(start_port - 2), "to-tag" + str(start_port - 2),
@@ -89,11 +90,11 @@ class GenerateCall():
         for _ in range(cnt):
             # Offer
             start_port += 2
-            self.send_offer(start_port)
+            self.send_offer(start_port, self.codecs[0])
 
             # Answer
             start_port += 2
-            self.send_answer(start_port)
+            self.send_answer(start_port, self.codecs[1])
 
             print(str(start_port - 2) + "-" + str(start_port))
             query = send(
@@ -104,9 +105,6 @@ class GenerateCall():
 
             # parsed_offer = sdp_transform.parse(offer.get('sdp'))
             # parsed_answer = sdp_transform.parse(answer.get('sdp'))
-
-            # pprint(parsed_offer)
-            # pprint(parsed_answer)
             
             # offer_rtp_port = parsed_offer.get('media')[0].get('port')
             # answer_rtp_port = parsed_answer.get('media')[0].get('port')
@@ -170,7 +168,7 @@ class GenerateCall():
         time.sleep(1)
         print('test before stream')
         if not self.rtpsend: 
-            ffmpeg(self.audio_file, cnt, offers, answers)
+            ffmpeg(self.audio_file, cnt, offers, answers, self.codecs)
         else:
             rtpsend(self.rtpsend, cnt, caller_source_ports, caller_destinations, 
                     callee_source_ports, callee_destinations)

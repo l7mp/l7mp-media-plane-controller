@@ -130,6 +130,8 @@ def arguments():
                         help='When it is defined the traffic genearator ' + 
                         'will use rtpsend instead of ffmpeg. Location of ' + 
                         '.rtp file.')
+    parser.add_argument('--codecs', nargs=2, default=[0, 0], dest='codecs',
+                        help='Codecs by number. Only two types of codecs.')
 
     # Send incoming traffic to RTPengine
     parser.add_argument('--server', '-s', type=int, dest='server',

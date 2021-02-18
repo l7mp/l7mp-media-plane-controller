@@ -83,7 +83,7 @@ def send(address, port, file, bind_address, bind_port):
     return result
 
 
-def ffmpeg(audio_file, cnt, offer_rtp_address, answer_rtp_address):
+def ffmpeg(audio_file, cnt, offer_rtp_address, answer_rtp_address, codecs):
     """ Send RTP traffic to a given address with ffmpeg.
 
     With ffmpeg you can control how the media stream should be send
@@ -97,19 +97,26 @@ def ffmpeg(audio_file, cnt, offer_rtp_address, answer_rtp_address):
             A list of answer addresses with the answer port. 
     """
 
+    codecs_alphabet = []
+    for c in codecs:
+        if c == '0':
+            codecs_alphabet.append('pcm_mulaw')
+        else:
+            codecs_alphabet.append('gsm')
+
     processes = []
     for c in range(cnt):
         processes.append(
           subprocess.Popen(
             ["ffmpeg", "-re", "-i", audio_file, "-ar", "8000", "-ac", "1",
-            "-acodec", "pcm_mulaw", "-f", "rtp", offer_rtp_address[c]
+            "-acodec", codecs_alphabet[0], "-f", "rtp", offer_rtp_address[c]
             ]
           )
         )
         processes.append(
           subprocess.Popen(
               ["ffmpeg", "-re", "-i", audio_file, "-ar", "8000", "-ac", "1",
-              "-acodec", "pcm_mulaw", "-f", "rtp", answer_rtp_address[c]
+              "-acodec", codecs_alphabet[1], "-f", "rtp", answer_rtp_address[c]
               ]
           )
         )
@@ -179,18 +186,31 @@ def generate_sdp(address, port, **kwargs):
     Returns:
         A string which contain the sdp message.
     '''
-    sdp = [
-        'v=0\r\n',
-        f'o=- ' + str(random_with_N_digits(10)) + ' 1 IN IP4 ' + address + '\r\n',
-        f's=tester\r\n',
-        f't=0 0\r\n',
-        f'm=audio ' + str(port) + ' RTP/AVP 0\r\n',
-        f'c=IN IP4 ' + address + '\r\n',
-        f'a=sendrecv',
-        f'a=rtcp ' + str(port + 1) + '\r\n'
-    ]
 
-    for arg in kwargs:
-        sdp.append(str(arg) + '=' + str(kwargs.get(arg)) + r'\r\n')
+    sdp = {
+        'version': 0,
+        'origin': {
+            'address': address,
+            'ipVer': 4,
+            'netType': 'IN',
+            'sessionId': random_with_N_digits(10),
+            'sessionVersion': 1,
+            'username': '-'
+        },
+        'name': 'tester',
+        'timing': {'start': 0, 'stop': 0},
+        'media': [
+            {
+                'connection': {'ip': address, 'version': 4},
+                'direction': 'sendrecv',
+                'fmtp': [],
+                'payloads': kwargs['payload'],
+                'port': port,
+                'protocol': 'RTP/AVP',
+                'rtp': [],
+                'type': 'audio'
+            }
+        ]
+    }
 
-    return ''.join([elem for elem in sdp])
+    return sdp_transform.write(sdp)

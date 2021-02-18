@@ -38,4 +38,13 @@ is not separated from the client.
 - [x] Create docker image. 
 - [x] Automate image release
 - [ ] Automate tests
-- [ ] Write some unit test.  
+- [ ] Write some unit test.
+- [ ] Create test framework
+- [ ] Check rtpengine transcoding
+- [ ] Create state machine diagrams about:
+  - [ ] Call setup
+  - [ ] Cluster
+  - [ ] etc
+- [ ] scale to call number
+- [ ] Check calls is in redis instead of rtpengine
+

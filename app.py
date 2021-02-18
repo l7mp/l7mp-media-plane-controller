@@ -62,7 +62,8 @@ def main():
                 rtpsend=args.rtpsend, 
                 in_cluster=args.in_cluster, 
                 without_jsonsocket=args.without_jsonsocket,
-                sidecar=""
+                sidecar="",
+                codecs=args.codecs
             )
             g_calls.generate_calls(args.generate_calls)
         elif args.sidecar_type == 'l7mp':
@@ -74,7 +75,8 @@ def main():
                 rtpsend=args.rtpsend, 
                 in_cluster=args.in_cluster, 
                 without_jsonsocket=args.without_jsonsocket,
-                sidecar=args.sidecar_type
+                sidecar=args.sidecar_type,
+                codecs=args.codecs
             )
             g_calls.generate_calls(args.generate_calls)
 
