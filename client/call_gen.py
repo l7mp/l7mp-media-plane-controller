@@ -164,7 +164,7 @@ class GenerateCall():
                     )
                 )
 
-        time.sleep(1)
+        # time.sleep(1)
         print('test before stream')
         if not self.rtpsend: 
             ffmpeg(self.audio_file, cnt, offers, answers, self.codecs)

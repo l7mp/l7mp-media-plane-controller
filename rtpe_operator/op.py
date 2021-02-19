@@ -38,23 +38,41 @@ def delete_kube_resources(call_id):
             a.delete_resources()
             kubernets_apis.remove(a)
 
-def create_resource(call_id, tag, c_address, c_port):
+def create_resource(call_id, from_tag, to_tag):
     query = send(
         RTPE_ADDRESS, RTPE_PORT, 
         commands.query(call_id),
         '127.0.0.1', 2998
     )
-    port = query['tags'][tag]['medias'][0]['streams'][0]['local port']
+    from_port = query['tags'][from_tag]['medias'][0]['streams'][0]['local port']
+    from_c_address = query['tags'][from_tag]['medias'][0]['streams'][0]['endpoint']['address']
+    from_c_port = query['tags'][from_tag]['medias'][0]['streams'][0]['endpoint']['port']
+    to_port = query['tags'][to_tag]['medias'][0]['streams'][0]['local port']
+    to_c_address = query['tags'][to_tag]['medias'][0]['streams'][0]['endpoint']['address']
+    to_c_port = query['tags'][to_tag]['medias'][0]['streams'][0]['endpoint']['port']
     kubernets_apis.append(
         KubernetesAPIClient(
             in_cluster=True,
             call_id=call_id,
-            tag=tag,
-            local_ip=c_address,
-            local_rtp_port=c_port,
-            local_rtcp_port=c_port,
-            remote_rtp_port=port,
-            remote_rtcp_port=port + 1,
+            tag=from_tag,
+            local_ip=from_c_address,
+            local_rtp_port=from_c_port,
+            local_rtcp_port=from_c_port,
+            remote_rtp_port=from_port,
+            remote_rtcp_port=from_port + 1,
+            without_jsonsocket=os.getenv('WITHOUT_JSONSOCKET')
+        )
+    )
+    kubernets_apis.append(
+        KubernetesAPIClient(
+            in_cluster=True,
+            call_id=call_id,
+            tag=to_tag,
+            local_ip=to_c_address,
+            local_rtp_port=to_c_port,
+            local_rtcp_port=to_c_port,
+            remote_rtp_port=to_port,
+            remote_rtcp_port=to_port + 1,
             without_jsonsocket=os.getenv('WITHOUT_JSONSOCKET')
         )
     )
@@ -81,20 +99,16 @@ def main():
 
             if data['command'] == 'delete':
                 delete_kube_resources(data['call-id'])
-            if data['command'] == 'offer':
-                sdp = sdp_transform.parse(data['sdp'])
-                create_resource(
-                    data['call-id'], data['from-tag'], 
-                    sdp['origin']['address'], 
-                    sdp['media'][0]['port']
-                )
+            # if data['command'] == 'offer':
+            #     sdp = sdp_transform.parse(data['sdp'])
+            #     create_resource(
+            #         data['call-id'], data['from-tag'], 
+            #         sdp['origin']['address'], 
+            #         sdp['media'][0]['port']
+            #     )
             if data['command'] == 'answer':
                 sdp = sdp_transform.parse(data['sdp'])
-                create_resource(
-                    data['call-id'], data['to-tag'], 
-                    sdp['origin']['address'], 
-                    sdp['media'][0]['port']
-                )
+                create_resource(data['call-id'], data['from-tag'], data['to-tag'])
     if RTPE_OPERATOR == 'envoy':
         print('test1')
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
