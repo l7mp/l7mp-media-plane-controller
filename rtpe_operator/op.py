@@ -15,7 +15,7 @@ bc = bencodepy.Bencode(
 
 kubernets_apis = []
 commands = Commands()
-RTPE_ADDRESS = os.getenv('RTPE_ADDRESS')
+RTPE_ADDRESS = socket.gethostbyname_ex(os.getenv('RTPE_ADDRESS'))[2][0]
 RTPE_PORT = int(os.getenv('RTPE_PORT'))
 RTPE_OPERATOR = os.getenv('RTPE_OPERATOR')
 
@@ -107,7 +107,7 @@ def main():
             #         sdp['media'][0]['port']
             #     )
             if data['command'] == 'answer':
-                sdp = sdp_transform.parse(data['sdp'])
+                # sdp = sdp_transform.parse(data['sdp'])
                 create_resource(data['call-id'], data['from-tag'], data['to-tag'])
     if RTPE_OPERATOR == 'envoy':
         print('test1')
