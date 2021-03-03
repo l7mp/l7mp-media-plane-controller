@@ -1,6 +1,6 @@
 from client.utils import send, ffmpeg, generate_sdp, rtpsend
 from client.commands import Commands
-from rtpe_operator.kube_api import KubernetesAPIClient
+from rtpe_controller.kube_api import KubernetesAPIClient
 import sdp_transform
 import time
 import json

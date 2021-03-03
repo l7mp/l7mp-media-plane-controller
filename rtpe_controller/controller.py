@@ -78,7 +78,7 @@ def create_resource(call_id, from_tag, to_tag):
     )
 
 def main():
-    if RTPE_OPERATOR == 'l7mp':
+    if RTPE_CONTROLLER == 'l7mp':
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
         sock.bind(('127.0.0.1', 2000))
@@ -109,7 +109,7 @@ def main():
             if data['command'] == 'answer':
                 # sdp = sdp_transform.parse(data['sdp'])
                 create_resource(data['call-id'], data['from-tag'], data['to-tag'])
-    if RTPE_OPERATOR == 'envoy':
+    if RTPE_CONTROLLER == 'envoy':
         print('test1')
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt( socket.SOL_SOCKET, socket.SO_REUSEADDR, 1 )
