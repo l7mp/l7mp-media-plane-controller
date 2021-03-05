@@ -17,10 +17,10 @@ jobs:
         id: vars
         run: echo ::set-output name=tag::$(echo ${GITHUB_REF:11})
       - name: Build the tagged Docker image
-        run: docker build . --file Dockerfile --tag vidarhun/rtpe-operator:${{ steps.vars.outputs.tag }}
+        run: docker build . --file Dockerfile --tag vidarhun/rtpe-controller:${{ steps.vars.outputs.tag }}
       - name: Push tagged Docker image
-        run: docker push vidarhun/rtpe-operator:${{ steps.vars.outputs.tag }}
+        run: docker push vidarhun/rtpe-controller:${{ steps.vars.outputs.tag }}
       - name: Build the latest Docker image
-        run: docker build . --file Dockerfile --tag vidarhun/rtpe-operator:latest
+        run: docker build . --file Dockerfile --tag vidarhun/rtpe-controller:latest
       - name: Push the latest Docker image
-        run: docker push vidarhun/rtpe-operator:latest
+        run: docker push vidarhun/rtpe-controller:latest
