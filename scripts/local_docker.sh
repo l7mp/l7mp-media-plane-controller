@@ -4,7 +4,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$DIR"/..
 
 registry=localhost:5000
-name=rtpe-operator
+name=rtpe-controller
 tag=$registry/$name
 
 # POD=$(kubectl get pods --namespace kube-system -l k8s-app=registry \
