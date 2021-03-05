@@ -1,7 +1,7 @@
-from client.parse import arguments
-from client.utils import send, ffmpeg, handle_oa
-from client.call_gen import GenerateCall
-from client.commands import Commands
+from parse import arguments
+from utils import send, ffmpeg, handle_oa
+from call_gen import GenerateCall
+from commands import Commands
 from pprint import pprint
 import json
 import sdp_transform
@@ -89,7 +89,7 @@ def main():
 def delete():
     apis = g_calls.get_apis()
     g_calls.delete_calls()
-    if os.getenv('RTPE_OPERATOR'):
+    if os.getenv('RTPE_CONTROLLER'):
         print('test')
         for a in apis:
             a.delete_resources()

@@ -1,4 +1,4 @@
-from client.commands import Commands
+from rtpeController.commands import Commands
 
 commands = Commands()
 

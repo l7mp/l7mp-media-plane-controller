@@ -51,7 +51,7 @@ def arguments():
     parser.add_argument('--config_file', '-c', type=str, dest='config',
                         help='Specify the config file place.')
 
-    # Operator
+    # Controller
     parser.add_argument('--sidecar_port', type=str, dest='sidecar_port',
                         help='The envoy sidecar\'s port.')
     parser.add_argument('--sidecar_type', type=str, dest='sidecar_type',
@@ -62,7 +62,7 @@ def arguments():
                         dest='without_jsonsocket', help='If it is specified ' + 
                         'there is no jsonsocket in the cluster')
     parser.add_argument('--in_cluster', type=str, dest='in_cluster',
-                        help='Run like an operator.')
+                        help='Run like an controller.')
 
     # Commands
     parser.add_argument('--ping', type=int, dest='ping', default=0, 

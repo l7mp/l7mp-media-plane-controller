@@ -1,6 +1,6 @@
-from client.utils import send, ffmpeg, generate_sdp, rtpsend
-from client.commands import Commands
-from rtpe_controller.kube_api import KubernetesAPIClient
+from utils import send, ffmpeg, generate_sdp, rtpsend
+from commands import Commands
+from kube_api import KubernetesAPIClient
 import sdp_transform
 import time
 import json
@@ -25,13 +25,17 @@ class GenerateCall():
         self.codecs = kwargs['codecs']
 
     def send_offer(self, start_port, payload):
+        options = {
+            "ICE": "remove",
+            "label": "caller",
+            "generate RTCP": "on"
+        }
         sdp_offer = self.commands.offer(
             generate_sdp('127.0.0.1', start_port, payload=payload),
             # generate_sdp(self.sdp_address, start_port),
             str(start_port) + "-" + str(start_port + 2),
             "from-tag" + str(start_port),
-            ICE="remove",
-            label="caller",
+            **options
         )
 
         send(
@@ -45,13 +49,17 @@ class GenerateCall():
         })
 
     def send_answer(self, start_port, payload):
+        options = {
+            "ICE": "remove",
+            "label": "callee",
+            "generate RTCP": "on"
+        }
         sdp_answer = self.commands.answer(
             generate_sdp('127.0.0.1', start_port, payload=payload),
             # generate_sdp(self.sdp_address, start_port),
             str(start_port - 2) + "-" + str(start_port),
             "from-tag" + str(start_port - 2), "to-tag" + str(start_port - 2),
-            ICE="remove",
-            label="callee"
+            **options
         ) 
         send(
             self.address, self.port, sdp_answer,

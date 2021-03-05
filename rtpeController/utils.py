@@ -70,7 +70,7 @@ def send(address, port, file, bind_address, bind_port):
     
     response = sock.recv(4096)
     data = response.decode()
-    if os.getenv('RTPE_OPERATOR'):
+    if os.getenv('RTPE_CONTROLLER'):
         data = data.split(" ", 1)
         result = bc.decode(data[1])
     else:

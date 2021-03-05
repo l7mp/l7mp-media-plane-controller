@@ -1,0 +1,200 @@
+# Base: https://github.com/l7mp/rtpengine-k8s-l7mp-test/blob/master/kubernetes/rtpengine-worker.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: l7mp-worker-config
+data:
+  l7mp-worker.yaml: |
+    # Controller listening on 1234, plus some useful debug clusters
+    admin:
+      log_level: info
+      log_file: stdout
+      access_log_path: /tmp/admin_access.log
+    listeners:
+      - name: controller-listener
+        spec: { protocol: HTTP, port: 1234 }
+        rules:
+          - action:
+              route:
+                destination:
+                  spec: { protocol: L7mpController }
+    clusters:
+      - name: ingress-metric-counter
+        spec: { protocol: Metric }
+      - name: egress-metric-counter
+        spec: { protocol: Metric }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rtpengine-config
+  namespace: default
+data:
+  rtpengine.conf: |
+    [rtpengine]
+    # access only via the sidecar proxy
+    # listen-ng=MY_IP:22222
+    # interface=MY_IP
+    listen-ng=127.0.0.1:22222
+    interface=lo
+
+    foreground=true
+    log-stderr=true
+
+    port-min=10000
+    port-max=20000
+
+    recording-dir=/tmp
+    recording-method=pcap
+    recording-format=eth
+
+    log-level=7
+    delete-delay=0
+
+    timeout=600
+
+    # redis = 127.0.0.1:6379/5
+    # redis-write = password@12.23.34.45:6379/42
+    # redis-num-threads = 8
+    # no-redis-required = false
+    # redis-expires = 86400
+    # redis-allowed-errors = -1
+    # redis-disable-time = 10
+    # redis-cmd-timeout = 0
+    # redis-connect-timeout = 1000
+
+    # sip-source = false
+    # dtls-passive = false
+---
+# rtpengine-ng
+apiVersion: l7mp.io/v1
+kind: VirtualService
+metadata:
+  name: udp-ingress-rtpengine-ng
+spec:
+  selector:
+    matchLabels:
+      app: l7mp-ingress
+  listener:
+    spec:
+      UDP:
+        port: 22222
+    rules:
+      - action:
+          route:
+            destinationRef: /apis/l7mp.io/v1/namespaces/default/targets/udp-ingress-rtpengine-ng-target
+---
+apiVersion: l7mp.io/v1
+kind: Target
+metadata:
+  name: udp-ingress-rtpengine-ng-target
+spec:
+  selector:
+    matchLabels:
+      app: l7mp-ingress
+  cluster:
+    spec: 
+      UDP:
+        port: 22222
+    endpoints:
+      - selector:
+          matchLabels:
+            app: l7mp-worker
+---
+apiVersion: l7mp.io/v1
+kind: VirtualService
+metadata:
+  name: udp-worker-rtpengine-ng
+spec:
+  selector:
+    matchLabels:
+      app: l7mp-worker
+  listener:
+    spec:
+      UDP:
+        port: 22222
+    rules:
+      - action:
+          route:
+            destinationRef: /apis/l7mp.io/v1/namespaces/default/targets/udp-worker-rtpengine-ng-target
+---
+apiVersion: l7mp.io/v1
+kind: Target
+metadata:
+  name: udp-worker-rtpengine-ng-target
+spec:
+  selector:
+    matchLabels:
+      app: l7mp-worker
+  cluster:
+    spec: 
+      UDP:
+        port: 22222
+    endpoints:
+      - { spec: { address: "127.0.0.1" } }
+---
+apiVersion: l7mp.io/v1
+kind: VirtualService
+metadata:
+  name: udp-ingress-rtpengine-controller
+spec:
+  selector:
+    matchLabels:
+      app: l7mp-ingress
+  listener:
+    spec:
+      UDP:
+        port: 2000
+    rules:
+      - action:
+          route:
+            destinationRef: /apis/l7mp.io/v1/namespaces/default/targets/udp-ingress-rtpengine-controller-target
+---
+apiVersion: l7mp.io/v1
+kind: Target
+metadata:
+  name: udp-ingress-rtpengine-controller-target
+spec:
+  selector:
+    matchLabels:
+      app: l7mp-ingress
+  cluster:
+    spec: 
+      UDP:
+        port: 2000
+    endpoints:
+      - selector:
+          matchLabels:
+            app: rtpe-controller
+---
+apiVersion: l7mp.io/v1
+kind: VirtualService
+metadata:
+  name: udp-worker-rtpengine-controller
+spec:
+  selector:
+    matchLabels:
+      app: rtpe-controller
+  listener:
+    spec:
+      UDP:
+        port: 2000
+    rules:
+      - action:
+          route:
+            destinationRef: /apis/l7mp.io/v1/namespaces/default/targets/udp-worker-rtpengine-controller-target
+---
+apiVersion: l7mp.io/v1
+kind: Target
+metadata:
+  name: udp-worker-rtpengine-controller-target
+spec:
+  selector:
+    matchLabels:
+      app: rtpe-controller
+  cluster:
+    spec: 
+      UDP:
+        port: 2000
+    endpoints:
+      - { spec: { address: "127.0.0.1" } }

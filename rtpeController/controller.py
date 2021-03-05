@@ -1,11 +1,11 @@
 import socket
 import os
 import json
-from client.utils import send
-from client.commands import Commands
+from utils import send
+from commands import Commands
 import time
 import sdp_transform
-from rtpe_operator.kube_api import KubernetesAPIClient
+from kube_api import KubernetesAPIClient
 from pprint import pprint
 import bencodepy
 
@@ -17,7 +17,7 @@ kubernets_apis = []
 commands = Commands()
 RTPE_ADDRESS = socket.gethostbyname_ex(os.getenv('RTPE_ADDRESS'))[2][0]
 RTPE_PORT = int(os.getenv('RTPE_PORT'))
-RTPE_OPERATOR = os.getenv('RTPE_OPERATOR')
+RTPE_CONTROLLER = os.getenv('RTPE_CONTROLLER')
 
 def check_delete():
     for a in kubernets_apis:
@@ -31,6 +31,7 @@ def check_delete():
 
 def parse_data(data):
     return bc.decode(data.decode().split(" ", 1)[1])
+    # return data.decode().split(" ", 1)[1]
 
 def delete_kube_resources(call_id):
     for a in kubernets_apis:
