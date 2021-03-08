@@ -174,11 +174,13 @@ class GenerateCall():
 
         # time.sleep(1)
         print('test before stream')
-        if not self.rtpsend: 
+        if self.audio_file: 
             ffmpeg(self.audio_file, cnt, offers, answers, self.codecs)
-        else:
+        elif self.rtpsend:
             rtpsend(self.rtpsend, cnt, caller_source_ports, caller_destinations, 
                     callee_source_ports, callee_destinations)
+        else:
+            time.sleep(600)
 
     def get_apis(self):
         ''' Return with the generated KubernetesAPIs 
