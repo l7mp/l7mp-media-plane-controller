@@ -99,7 +99,9 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         delete()
-    except:
+    except Exception as e:
+        print(e)
+        traceback.print_tb(e.__traceback__)
         delete()
     else:
         if args.generate_calls: 
