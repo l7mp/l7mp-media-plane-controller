@@ -5,3 +5,5 @@ sdp-transform==1.0.0
 pytest==6.2.2
 pytest-cov==2.11.1
 coveralls==3.0.0
+websockets==8.1
+asyncio==3.4.3

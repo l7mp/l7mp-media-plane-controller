@@ -353,7 +353,6 @@ class KubernetesAPIClient():
 
         self.send_custom_obj(resource, 'VirtualService', 'RTCP')
 
-
     def create_without_jsonsocket_target(self):
         resource = {
             'apiVersion': 'l7mp.io/v1',
@@ -447,30 +446,12 @@ class KubernetesAPIClient():
         '''
 
         if not self.without_jsonsocket:
-            self.delete_resource(
-                'VirtualService',
-                f'ingress-rtp-vsvc-{str(self.call_id)}-{str(self.tag)}'
-            )
-            self.delete_resource(
-                'VirtualService',
-                f'ingress-rtcp-vsvc-{str(self.call_id)}-{str(self.tag)}'
-            )
-            self.delete_resource(
-                'Target',
-                f'ingress-rtp-target-{str(self.call_id)}-{str(self.tag)}'
-            )
-            self.delete_resource(
-                'Target',
-                f'ingress-rtcp-target-{str(self.call_id)}-{str(self.tag)}'
-            )
-            self.delete_resource(
-                'Rule',
-                f'worker-rtcp-rule-{str(self.call_id)}-{str(self.tag)}'
-            )
-            self.delete_resource(
-                'Rule',
-                f'worker-rtp-rule-{str(self.call_id)}-{str(self.tag)}'
-            )
+            self.delete_resource('VirtualService', f'ingress-rtp-vsvc-{str(self.call_id)}-{str(self.tag)}')
+            self.delete_resource('VirtualService', f'ingress-rtcp-vsvc-{str(self.call_id)}-{str(self.tag)}')
+            self.delete_resource('Target', f'ingress-rtp-target-{str(self.call_id)}-{str(self.tag)}')
+            self.delete_resource('Target',f'ingress-rtcp-target-{str(self.call_id)}-{str(self.tag)}')
+            self.delete_resource('Rule', f'worker-rtcp-rule-{str(self.call_id)}-{str(self.tag)}')
+            self.delete_resource('Rule', f'worker-rtp-rule-{str(self.call_id)}-{str(self.tag)}')
         else:
             self.delete_resource('VirtualService', f'rtp-ingress-{self.call_id}-{self.tag}')
             self.delete_resource('VirtualService', f'rtcp-ingress-{self.call_id}-{self.tag}')
@@ -480,3 +461,14 @@ class KubernetesAPIClient():
             self.delete_resource('Target', f'rtcp-ingress-target-{self.call_id}-{self.tag}')
             self.delete_resource('Target', f'rtp-worker-target-{self.call_id}-{self.tag}')
             self.delete_resource('Target', f'rtcp-worker-target-{self.call_id}-{self.tag}')
+
+    def __str__(self):
+        return f'''
+        call-id: {str(self.call_id)}
+        tag: {str(self.tag)}
+        local-ip: {str(self.local_ip)}
+        local-rtp-port: {str(self.local_rtp_port)}
+        local-rtcp-port: {str(self.local_rtcp_port)}
+        remote-port: {str(self.remote_rtp_port)}
+        remote-rtcp-port: {str(self.remote_rtcp_port)}
+        without-jsonsocket: {str(self.without_jsonsocket)}'''

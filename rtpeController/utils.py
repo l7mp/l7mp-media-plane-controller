@@ -3,11 +3,12 @@ import string
 import bencodepy
 import socket
 import subprocess
-import logging
 import sdp_transform
 import json
 import os
+import time
 from pprint import pprint
+from websocket import create_connection, enableTrace
 
 bc = bencodepy.Bencode(
     encoding='utf-8'
@@ -39,7 +40,6 @@ def random_with_N_digits(n):
     range_end = (10**n)-1
     return random.randint(range_start, range_end)
 
-
 def send(address, port, file, bind_address, bind_port):
     """ Send a JSON file to RTPengine on the given ports.
 
@@ -59,14 +59,10 @@ def send(address, port, file, bind_address, bind_port):
     if bind_address != '127.0.0.1':
         sock.bind((bind_address, bind_port))
     
-    logging.debug("Socket bound to %s, %s", str(bind_address), str(bind_port))
-
     cookie = gen_cookie(5)
     data = bencodepy.encode(file).decode()
     message = str(cookie) + " " + str(data)
-    logging.debug("Message generated: %s", message)
-    byte_sent = sock.sendto(message.encode('utf-8'), (address, port))
-    logging.debug("%s, byte sent.", str(byte_sent))
+    sock.sendto(message.encode('utf-8'), (address, port))
     
     response = sock.recv(4096)
     data = response.decode()
@@ -77,11 +73,56 @@ def send(address, port, file, bind_address, bind_port):
         result = bc.decode(data)
 
     sock.close()
-    logging.debug("Socket closed.")
-    logging.info("Message sent to RTPengine and got response.")
 
     return result
 
+def ws_send(address, port, file, bind_address, bind_port, delay=0):
+    """ Send a JSON file to RTPengine on the given port with via ws
+
+    Args:
+        address: RTPengine server websocket address.
+        port: RTPengine server port. 
+        file: A dictionary which describes the RTPengine commands.
+        bind_address: Source address. 
+        bind_port: Source port.
+
+    Returns:
+        An object containing the RTPengine response.
+    """
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    if bind_address != '127.0.0.1':
+        sock.bind((bind_address, bind_port))
+    sock.connect((address, port))
+    
+    cookie = gen_cookie(5)
+    data = bencodepy.encode(file).decode()
+    message = str(cookie) + " " + str(data)
+    
+    # enableTrace(True)
+    ws = create_connection(
+        f'ws://{address}:{port}', 
+        subprotocols=["ng.rtpengine.com"],
+        origin=bind_address,
+        socket=sock
+    )
+
+    time.sleep(delay)
+    ws.send(message)
+    response = ws.recv()
+
+    # print("response: " + str(response))
+    data = response.decode()
+    if os.getenv('RTPE_CONTROLLER'):
+        data = data.split(" ", 1)
+        result = bc.decode(data[1])
+    else:
+        result = bc.decode(data)
+
+    ws.close()
+    sock.close()
+
+    return result
 
 def ffmpeg(audio_file, cnt, offer_rtp_address, answer_rtp_address, codecs):
     """ Send RTP traffic to a given address with ffmpeg.
@@ -128,7 +169,6 @@ def ffmpeg(audio_file, cnt, offer_rtp_address, answer_rtp_address, codecs):
 
 def rtpsend(dump_file, cnt, caller_source_ports, caller_destinations,
     callee_source_ports, callee_destinations):
-    
     processes = []
     for c in range(cnt):
         processes.append(
@@ -149,8 +189,7 @@ def rtpsend(dump_file, cnt, caller_source_ports, caller_destinations,
     for process in processes:
         process.communicate()
 
-
-def handle_oa(address, port, file, bind, type):
+def handle_oa(address, port, file, bind, type, ws=False):
     ''' Send an offer or answer. 
 
     Args:
@@ -166,7 +205,10 @@ def handle_oa(address, port, file, bind, type):
     
     with open(file) as f:
         command = json.load(f)
-    response = send(address, port, command, bind[0], int(bind[1]))
+    if ws:
+        response = ws_send(address, port, command, bind[0], int(bind[1]))
+    else:
+        response = send(address, port, command, bind[0], int(bind[1]))
     parsed_sdp_dict = sdp_transform.parse(response.get('sdp'))
     rtp_port = parsed_sdp_dict.get('media')[0].get('port')
     rtcp_port = parsed_sdp_dict.get('media')[0].get('rtcp').get('port')

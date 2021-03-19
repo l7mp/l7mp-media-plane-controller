@@ -55,6 +55,8 @@ spec:
               value: "22222"
             - name: WITHOUT_JSONSOCKET
               value: "yes"
+            - name: RTPE_PROTOCOL
+              value: 'ws'
 ---
 # l7mp-worker
 apiVersion: apps/v1
@@ -143,8 +145,8 @@ spec:
       protocol: TCP
       targetPort: 1234
     - port: 22222
-      name: udp-rtpengine-ng-port
-      protocol: UDP
+      name: ws-rtpengine-ng-port
+      protocol: TCP
       targetPort: 22222
   selector:
     app: l7mp-worker
@@ -165,7 +167,7 @@ spec:
       targetPort: 1234
     - port: 2000
       name: rtpe-controller-port
-      protocol: UDP
+      protocol: TCP
       targetPort: 2000
   selector:
     app: rtpe-controller

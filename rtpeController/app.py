@@ -8,6 +8,7 @@ import sdp_transform
 import socket
 import time
 import os
+import traceback
 
 MULTI_PARAMETERS_COMMANDS = [
     'file', 'delete', 'start_recording', 'stop_recording', 'block_dtmf',
@@ -43,54 +44,61 @@ def main():
     args = arguments()
     commands = Commands()
     options(args, commands)
+
+    if args.ws_address:
+        address = args.ws_address
+        port = args.ws_port
+        ws = True
+    else:
+        address = args.addr
+        port = args.port
+        ws = False
+
     if args.offer:
-        offer_rtp_port = handle_oa(
-            args.addr, args.port, 
-            args.offer, args.bind_offer, "offer")
+        offer_rtp_port = handle_oa(address, port, args.offer, args.bind_offer, "offer", ws)
     if args.answer:
-        answer_rtp_port = handle_oa(
-            args.addr, args.port, 
-            args.answer, args.bind_answer, "answer")
+        answer_rtp_port = handle_oa(address, port, args.answer, args.bind_answer, "answer", ws)
     if args.generate_calls:
         global g_calls
         if not args.sidecar_type:
             g_calls = GenerateCall(
-                address=args.addr, 
-                port=args.port, 
+                address=address, 
+                port=port, 
                 sdp_address=args.sdpaddr, 
                 audio_file=args.audio_file,
                 rtpsend=args.rtpsend, 
                 in_cluster=args.in_cluster, 
                 without_jsonsocket=args.without_jsonsocket,
                 sidecar="",
-                codecs=args.codecs
+                codecs=args.codecs,
+                ws=ws
             )
             g_calls.generate_calls(args.generate_calls)
         elif args.sidecar_type == 'l7mp':
             g_calls = GenerateCall(
-                address=args.addr, 
-                port=args.port, 
+                address=address, 
+                port=port, 
                 sdp_address=args.sdpaddr, 
                 audio_file=args.audio_file,
                 rtpsend=args.rtpsend, 
                 in_cluster=args.in_cluster, 
                 without_jsonsocket=args.without_jsonsocket,
                 sidecar=args.sidecar_type,
-                codecs=args.codecs
+                codecs=args.codecs,
+                ws=ws
             )
             g_calls.generate_calls(args.generate_calls)
 
     if args.offer and args.answer and args.ffmpeg:
         time.sleep(1)
-        offer_rtp_address = [f'rtp://{args.addr}:{str(offer_rtp_port)}?localrtpport={str(args.bind_offer[1])}']
-        answer_rtp_address = [f'rtp://{args.addr}:{str(answer_rtp_port)}?localrtpport={str(args.bind_answer[1])}']
+        offer_rtp_address = [f'rtp://{address}:{str(offer_rtp_port)}?localrtpport={str(args.bind_offer[1])}']
+        answer_rtp_address = [f'rtp://{address}:{str(answer_rtp_port)}?localrtpport={str(args.bind_answer[1])}']
         ffmpeg(args, 1, offer_rtp_address, answer_rtp_address, args.codecs)
 
 def delete():
     apis = g_calls.get_apis()
     g_calls.delete_calls()
     if os.getenv('RTPE_CONTROLLER'):
-        print('test')
         for a in apis:
             a.delete_resources()
 
@@ -99,7 +107,9 @@ if __name__ == '__main__':
         main()
     except KeyboardInterrupt:
         delete()
-    except:
+    except Exception as e:
+        print(e)
+        traceback.print_tb(e.__traceback__)
         delete()
     else:
         if args.generate_calls: 

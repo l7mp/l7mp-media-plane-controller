@@ -133,6 +133,8 @@ spec:
             value: "127.0.0.1"
           - name: RTPE_PORT
             value: "22222"
+          - name: RTPE_PROTOCOL
+            value: "udp"
           - name: WITHOUT_JSONSOCKET
             value: "yes"
           - name: ENVOY_MGM_ADDRESS

@@ -1,4 +1,4 @@
-from utils import send, ffmpeg, generate_sdp, rtpsend
+from utils import send, ffmpeg, generate_sdp, rtpsend, ws_send
 from commands import Commands
 from kube_api import KubernetesAPIClient
 import sdp_transform
@@ -23,6 +23,7 @@ class GenerateCall():
         self.without_jsonsocket = kwargs['without_jsonsocket']
         self.sidecar = kwargs['sidecar']
         self.codecs = kwargs['codecs']
+        self.ws = kwargs['ws']
 
     def send_offer(self, start_port, payload):
         options = {
@@ -37,11 +38,11 @@ class GenerateCall():
             "from-tag" + str(start_port),
             **options
         )
-
-        send(
-            self.address, self.port, sdp_offer,
-            self.sdp_address, start_port
-        )
+        
+        if not self.ws:
+            send(self.address, self.port, sdp_offer, self.sdp_address, start_port)
+        else:
+            ws_send(self.address, self.port, sdp_offer, self.sdp_address, start_port)
 
         self.calls.append({
             'call_id': str(start_port) + "-" + str(start_port + 2), 
@@ -61,17 +62,11 @@ class GenerateCall():
             "from-tag" + str(start_port - 2), "to-tag" + str(start_port - 2),
             **options
         ) 
-        send(
-            self.address, self.port, sdp_answer,
-            self.sdp_address, start_port
-        )
 
-        # At a time this was used also, but now it's enough to log 
-        # once.
-        # self.calls.append({
-        #     'call_id': str(start_port-2) + "-" + str(start_port), 
-        #     'from-tag': "from-tag" + str(start_port)
-        # })
+        if not self.ws:
+            send(self.address, self.port, sdp_answer, self.sdp_address, start_port)
+        else:
+            ws_send(self.address, self.port, sdp_answer, self.sdp_address, start_port)
 
     def generate_calls(self, cnt):
         ''' Generate a given number of calls.
@@ -104,20 +99,18 @@ class GenerateCall():
             start_port += 2
             self.send_answer(start_port, self.codecs[1])
 
-            query = send(
-                self.address, self.port, 
-                self.commands.query(str(start_port - 2) + "-" + str(start_port)),
-                self.sdp_address, 2998
-            )
-
-            # parsed_offer = sdp_transform.parse(offer.get('sdp'))
-            # parsed_answer = sdp_transform.parse(answer.get('sdp'))
-            
-            # offer_rtp_port = parsed_offer.get('media')[0].get('port')
-            # answer_rtp_port = parsed_answer.get('media')[0].get('port')
-
-            # offer_rtcp_port = parsed_offer.get('media')[0].get('rtcp').get('port')
-            # answer_rtcp_port = parsed_answer.get('media')[0].get('rtcp').get('port')
+            if not self.ws:
+                query = send(
+                    self.address, self.port, 
+                    self.commands.query(str(start_port - 2) + "-" + str(start_port)),
+                    self.sdp_address, 2998
+                )
+            else:
+                query = ws_send(
+                    self.address, self.port, 
+                    self.commands.query(str(start_port - 2) + "-" + str(start_port)),
+                    self.sdp_address, 2998
+                )
 
             offer_rtp_port = query['tags']["from-tag" + str(start_port - 2)]['medias'][0]['streams'][0]['local port']
             answer_rtp_port = query['tags']["to-tag" + str(start_port - 2)]['medias'][0]['streams'][0]['local port']
@@ -139,7 +132,6 @@ class GenerateCall():
             
             if not self.sidecar:
                 # Offer
-                print('test before offer')
                 self.apis.append(
                     KubernetesAPIClient(
                         self.in_cluster,
@@ -156,7 +148,6 @@ class GenerateCall():
                 )
                 
                 # Answer
-                print('test before answer')
                 self.apis.append(
                     KubernetesAPIClient(
                         self.in_cluster,
@@ -173,7 +164,6 @@ class GenerateCall():
                 )
 
         # time.sleep(1)
-        print('test before stream')
         if self.audio_file: 
             ffmpeg(self.audio_file, cnt, offers, answers, self.codecs)
         elif self.rtpsend:
@@ -193,9 +183,18 @@ class GenerateCall():
         Iterate through the generated calls and delete them from 
         rtpengine based on their call_id and from-tag. 
         '''
-        for call in self.calls:
-            send(
-                self.address, self.port, 
-                self.commands.delete(call['call_id'], call['from-tag']), 
-                self.sdp_address, 3000
-            )
+        
+        if not self.ws:
+            for call in self.calls:
+                send(
+                    self.address, self.port, 
+                    self.commands.delete(call['call_id'], call['from-tag']), 
+                    self.sdp_address, 3000
+                )
+        else:
+            for call in self.calls:
+                ws_send(
+                    self.address, self.port, 
+                    self.commands.delete(call['call_id'], call['from-tag']), 
+                    self.sdp_address, 3000
+                )

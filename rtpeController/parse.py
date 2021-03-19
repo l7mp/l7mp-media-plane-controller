@@ -108,6 +108,10 @@ def arguments():
                         help='RTPengine server port.')
     parser.add_argument('--address', '-addr', default='127.0.0.1', type=str,
                         dest='addr', help='RTPengine server address.')
+    parser.add_argument('--ws_port', type=int, dest='ws_port', 
+                        help='RTPengine websocket port.')
+    parser.add_argument('--ws_address', type=str, dest='ws_address', 
+                        help='RTPengine websocket address.')
 
     # Client
     parser.add_argument('--bind_offer', '-bo', nargs=2,
