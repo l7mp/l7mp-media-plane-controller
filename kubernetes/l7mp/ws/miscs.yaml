@@ -37,7 +37,7 @@ data:
     # interface=MY_IP
     listen-tcp=127.0.0.1:22223
     listen-http=127.0.0.1:22221
-    interface=lo
+    interface=127.0.0.1
 
     foreground=true
     log-stderr=true
@@ -45,16 +45,16 @@ data:
     port-min=10000
     port-max=20000
 
-    recording-dir=/tmp
-    recording-method=pcap
-    recording-format=eth
+    # recording-dir=/tmp
+    # recording-method=pcap
+    # recording-format=eth
 
     log-level=7
     delete-delay=0
 
     timeout=600
 
-    # redis = 127.0.0.1:6379/5
+    redis = redis:6379/1
     # redis-write = password@12.23.34.45:6379/42
     # redis-num-threads = 8
     # no-redis-required = false
@@ -66,6 +66,14 @@ data:
 
     # sip-source = false
     # dtls-passive = false
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+data:
+  redis-config: |
+    notify-keyspace-events KEA
 ---
 apiVersion: l7mp.io/v1
 kind: VirtualService

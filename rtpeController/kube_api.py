@@ -30,6 +30,7 @@ class KubernetesAPIClient():
         self.local_rtcp_port = kwargs.get('local_rtcp_port', None)
         self.remote_rtcp_port = kwargs.get('remote_rtcp_port', None)
         self.without_jsonsocket = kwargs.get('without_jsonsocket', None)
+        self.ws = kwargs.get('ws', None)
 
         self.create_resources()
 
@@ -332,6 +333,18 @@ class KubernetesAPIClient():
             }
         }
 
+        if self.ws:
+            resource['spec']['listener']['rules'][0]['action']['rewrite'] = [
+                {
+                    'path': "metadata",
+                    'value': {
+                        'call_id': self.call_id,
+                        'tag': self.tag
+                    }
+                }
+            ]
+            
+
         self.send_custom_obj(resource, 'VirtualService', 'RTP')
 
         resource['metadata']['name'] = f'rtcp-ingress-{self.call_id}-{self.tag}'
@@ -339,6 +352,24 @@ class KubernetesAPIClient():
         resource['spec']['listener']['rules'][0]['action']['route']['destinationRef'] = f'/apis/l7mp.io/v1/namespaces/default/targets/rtcp-ingress-target-{self.call_id}-{self.tag}'
 
         self.send_custom_obj(resource, 'VirtualService', 'RTCP')
+
+        if self.ws:
+            del resource['spec']['listener']['rules'][0]['action']['rewrite']
+            resource['spec']['listener']['rules'][0]['match'] = {
+                'op': 'and',
+                'apply': [
+                    {
+                        'op': 'test',
+                        'path': 'metadata/call_id',
+                        'value': self.call_id
+                    },
+                    {
+                        'op': 'test',
+                        'path': 'metadata/tag',
+                        'value': self.tag
+                    }
+                ]
+            }
 
         resource['spec']['selector']['matchLabels']['app'] = 'l7mp-worker'
         resource['metadata']['name'] = f'rtp-worker-{self.call_id}-{self.tag}'
@@ -395,11 +426,7 @@ class KubernetesAPIClient():
         resource['metadata']['name'] = f'rtp-worker-target-{self.call_id}-{self.tag}'
         resource['spec']['cluster']['spec']['UDP']['port'] = self.remote_rtp_port
         resource['spec']['selector']['matchLabels']['app'] = 'l7mp-worker'
-        resource['spec']['cluster']['endpoints'][0] = {
-            'spec': {
-                'address': '127.0.0.1'
-            }
-        }
+        resource['spec']['cluster']['endpoints'][0] = {'spec': {'address': '127.0.0.1'}}
 
         self.send_custom_obj(resource, 'Target', 'RTP')
 

@@ -67,7 +67,7 @@ metadata:
     app: l7mp-worker
 spec:
   # replicas: 2
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: l7mp-worker
@@ -112,7 +112,8 @@ spec:
         - name: net-debug
           image: l7mp/net-debug:0.5.3
         - name: rtpengine
-          image: drachtio/rtpengine
+          # image: drachtio/rtpengine
+          image: vidarhun/redis-rtpengine
           imagePullPolicy: IfNotPresent
           # command: ["/bin/sh"]
           # args: ["-c", "while true; do echo hello; sleep 10;done"]
@@ -130,6 +131,49 @@ spec:
           volumeMounts:
             - name: rtpengine-config-volume
               mountPath: /etc/rtpengine
+---
+# Redis keyspace
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels: 
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: redis-config
+            items:
+            - key: redis-config
+              path: redis.conf
+      containers:
+        - name: redis
+          image: redis
+          command:
+            - redis-server
+            - "/redis-master/redis.conf"
+          env:
+          - name: MASTER
+            value: "true"
+          ports:
+          - containerPort: 6379
+          volumeMounts:
+            - mountPath: /redis-master-data
+              name: data
+            - mountPath: /redis-master
+              name: config
 ---
 # l7mp-worker-service
 apiVersion: v1
@@ -171,4 +215,19 @@ spec:
       targetPort: 2000
   selector:
     app: rtpe-controller
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: redis
+  name: redis
+spec:
+  ports:
+    - port: 6379
+      protocol: TCP
+      targetPort: 6379
+  selector:
+    app: redis
   type: ClusterIP

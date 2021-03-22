@@ -72,6 +72,8 @@ def create_resource(call_id, from_tag, to_tag):
     if RTPE_PROTOCOL == 'ws':
         query = ws_send(RTPE_ADDRESS, RTPE_PORT, commands.query(call_id), '127.0.0.1', 2998)
 
+    pprint(query)
+
     from_port = query['tags'][from_tag]['medias'][0]['streams'][0]['local port']
     from_c_address = query['tags'][from_tag]['medias'][0]['streams'][0]['endpoint']['address']
     from_c_port = query['tags'][from_tag]['medias'][0]['streams'][0]['endpoint']['port']
@@ -89,7 +91,8 @@ def create_resource(call_id, from_tag, to_tag):
             local_rtcp_port=from_c_port + 1,
             remote_rtp_port=from_port,
             remote_rtcp_port=from_port + 1,
-            without_jsonsocket=os.getenv('WITHOUT_JSONSOCKET')
+            without_jsonsocket=os.getenv('WITHOUT_JSONSOCKET'),
+            ws=True
         )
     )
     kubernetes_apis.append(
@@ -102,7 +105,8 @@ def create_resource(call_id, from_tag, to_tag):
             local_rtcp_port=to_c_port + 1,
             remote_rtp_port=to_port,
             remote_rtcp_port=to_port + 1,
-            without_jsonsocket=os.getenv('WITHOUT_JSONSOCKET')
+            without_jsonsocket=os.getenv('WITHOUT_JSONSOCKET'),
+            ws=True
         )
     )
 
