@@ -35,8 +35,8 @@ data:
     # access only via the sidecar proxy
     # listen-ng=MY_IP:22222
     # interface=MY_IP
-    listen-tcp=127.0.0.1:22223
-    listen-http=127.0.0.1:22221
+    # listen-tcp=127.0.0.1:22223
+    listen-ng=127.0.0.1:22222
     interface=127.0.0.1
 
     foreground=true
@@ -55,6 +55,7 @@ data:
     timeout=600
 
     redis = redis:6379/1
+    subscribe-keyspace=1
     # redis-write = password@12.23.34.45:6379/42
     # redis-num-threads = 8
     # no-redis-required = false
@@ -109,8 +110,8 @@ spec:
       app: l7mp-worker
   cluster:
     spec:
-      WebSocket:
-        port: 22221
+      UDP:
+        port: 22222
     endpoints:
       - { spec: { address: "127.0.0.1" } }
 ---

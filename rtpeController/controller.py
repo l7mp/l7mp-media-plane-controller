@@ -1,16 +1,16 @@
 import socket
 import os
 import json
-from utils import send, ws_send
-from commands import Commands
 import time
 import sdp_transform
-from kube_api import KubernetesAPIClient
-from pprint import pprint
 import bencodepy
-from websocket import create_connection
 import asyncio
 import websockets
+from utils import send, ws_send
+from commands import Commands
+from kube_api import KubernetesAPIClient
+from pprint import pprint
+from websocket import create_connection
 from multiprocessing import Process
 
 
@@ -20,10 +20,15 @@ bc = bencodepy.Bencode(
 
 kubernetes_apis = []
 commands = Commands()
-RTPE_ADDRESS = socket.gethostbyname_ex(os.getenv('RTPE_ADDRESS'))[2][0]
-RTPE_PORT = int(os.getenv('RTPE_PORT'))
+# RTPE_ADDRESS = socket.gethostbyname_ex(os.getenv('RTPE_ADDRESS'))[2][0]
+# RTPE_PORT = int(os.getenv('RTPE_PORT'))
+RTPE_ADDRESS = '127.0.0.1'
+RTPE_PORT = 22221
 RTPE_CONTROLLER = os.getenv('RTPE_CONTROLLER')
 RTPE_PROTOCOL = os.getenv('RTPE_PROTOCOL')
+WITHOUT_JSONSOCKET = os.getenv('WITHOUT_JSONSOCKET')
+
+ws_sock = None
 
 # https://stackoverflow.com/a/7207336/12243497
 def runInParallel(*fns):
@@ -39,7 +44,7 @@ def check_delete():
     # print(len(kubernetes_apis))
     for a in kubernetes_apis:
         if RTPE_PROTOCOL == 'ws':
-            query = ws_send(RTPE_PROTOCOL, RTPE_PORT, commands.query(a.call_id), '127.0.0.1', 2002)
+            query = ws_send(RTPE_PROTOCOL, RTPE_PORT, commands.query(a.call_id), sock=ws_sock)
         if RTPE_PROTOCOL == 'udp':
             query = send(RTPE_ADDRESS, RTPE_PORT, commands.query(a.call_id), '127.0.0.1', 2002)
         if query['result'] == 'error':
@@ -48,8 +53,27 @@ def check_delete():
 
 # TODO: Fix this! kubernetes_apis always empty
 def ws_check_delete():
+    # global ws_sock
     while True:
         time.sleep(10)
+        # try:
+        #     ping = ws_send(RTPE_ADDRESS, RTPE_PORT, commands.ping(), sock=ws_sock)
+        #     print(ping)
+        # except:
+        #     # websocket init
+        #     ws_base_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #     ws_base_sock.connect((RTPE_ADDRESS, RTPE_PORT))
+            
+        #     host, port = ws_base_sock.getpeername()
+
+        #     # enableTrace(True)
+        #     ws_sock = create_connection(
+        #         f'ws://{RTPE_ADDRESS}:{RTPE_PORT}', 
+        #         subprotocols=["ng.rtpengine.com"],
+        #         origin='127.0.0.1',
+        #         socket=ws_base_sock
+        #     )
+        #     continue
         check_delete()
 
 def parse_data(data):
@@ -70,9 +94,7 @@ def create_resource(call_id, from_tag, to_tag):
     if RTPE_PROTOCOL == 'udp':
         query = send(RTPE_ADDRESS, RTPE_PORT, commands.query(call_id), '127.0.0.1', 2998)
     if RTPE_PROTOCOL == 'ws':
-        query = ws_send(RTPE_ADDRESS, RTPE_PORT, commands.query(call_id), '127.0.0.1', 2998)
-
-    pprint(query)
+        query = ws_send(RTPE_ADDRESS, RTPE_PORT, commands.query(call_id), sock=ws_sock)
 
     from_port = query['tags'][from_tag]['medias'][0]['streams'][0]['local port']
     from_c_address = query['tags'][from_tag]['medias'][0]['streams'][0]['endpoint']['address']
@@ -91,7 +113,7 @@ def create_resource(call_id, from_tag, to_tag):
             local_rtcp_port=from_c_port + 1,
             remote_rtp_port=from_port,
             remote_rtcp_port=from_port + 1,
-            without_jsonsocket=os.getenv('WITHOUT_JSONSOCKET'),
+            without_jsonsocket=WITHOUT_JSONSOCKET,
             ws=True
         )
     )
@@ -105,7 +127,7 @@ def create_resource(call_id, from_tag, to_tag):
             local_rtcp_port=to_c_port + 1,
             remote_rtp_port=to_port,
             remote_rtcp_port=to_port + 1,
-            without_jsonsocket=os.getenv('WITHOUT_JSONSOCKET'),
+            without_jsonsocket=WITHOUT_JSONSOCKET,
             ws=True
         )
     )
@@ -170,10 +192,24 @@ def udp_processing():
 
 async def ws_processing(websocket, path):
     if RTPE_CONTROLLER == 'l7mp':
+        global ws_sock
+
+        # websocket init
+        ws_base_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        ws_base_sock.connect((RTPE_ADDRESS, RTPE_PORT))
+
+        # enableTrace(True)
         data = None
         try:
             data = parse_data(await websocket.recv())
-            response = ws_send(RTPE_ADDRESS, RTPE_PORT, data, '127.0.0.1', 2001)
+            ws_sock = create_connection(
+                f'ws://{RTPE_ADDRESS}:{RTPE_PORT}', 
+                subprotocols=["ng.rtpengine.com"],
+                origin='127.0.0.1',
+                socket=ws_base_sock,
+                header=[f'callid: {data["call-id"]}']
+            )
+            response = ws_send(RTPE_ADDRESS, RTPE_PORT, data, sock=ws_sock)
             time.sleep(1)
             await websocket.send(bc.encode(response))
         except websockets.exceptions.ConnectionClosedError:
@@ -183,6 +219,9 @@ async def ws_processing(websocket, path):
             delete_kube_resources(data['call-id'])
         if data['command'] == 'answer':
             create_resource(data['call-id'], data['from-tag'], data['to-tag'])
+
+        ws_sock.close()
+        ws_base_sock.close()        
     if RTPE_CONTROLLER == 'envoy':
         ENVOY_MGM_ADDRESS = socket.gethostbyname_ex(os.getenv('ENVOY_MGM_ADDRESS'))[2][0]
         ENVOY_MGM_PORT = int(os.getenv('ENVOY_MGM_PORT'))
@@ -195,11 +234,11 @@ async def ws_processing(websocket, path):
             data = parse_data(data)
             print(data)
 
-            response = ws_send(RTPE_ADDRESS, RTPE_PORT, data, '127.0.0.1', 2001)
+            response = ws_send(RTPE_ADDRESS, RTPE_PORT, data, sock=ws_sock)
             await websocket.send(bc.encode(response))
 
             if data['command'] == 'answer':
-                query = ws_send(RTPE_ADDRESS, RTPE_PORT, commands.query(data['call-id']), '127.0.0.1', 2998)
+                query = ws_send(RTPE_ADDRESS, RTPE_PORT, commands.query(data['call-id']), sock=ws_sock)
                 
                 caller_port = query['tags'][data['from-tag']]['medias'][0]['streams'][0]['local port']
                 callee_port = query['tags'][data['to-tag']]['medias'][0]['streams'][0]['local port']
@@ -222,10 +261,13 @@ def server():
     asyncio.get_event_loop().run_forever()
 
 def main():
-    if RTPE_PROTOCOL == 'udp':
-        udp_processing()
-    if RTPE_PROTOCOL == 'ws':
-        runInParallel(ws_check_delete, server)
-
+    while True:
+        try:
+            if RTPE_PROTOCOL == 'udp':
+                udp_processing()
+            if RTPE_PROTOCOL == 'ws':
+                runInParallel(ws_check_delete, server)
+        except:
+            continue
 if __name__ == '__main__':
     main()

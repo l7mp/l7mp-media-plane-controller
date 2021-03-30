@@ -1,0 +1,320 @@
+# Base: https://github.com/l7mp/rtpengine-k8s-l7mp-test/blob/master/kubernetes/rtpengine-worker.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: l7mp-worker-config
+data:
+  l7mp-worker.yaml: |
+    # Controller listening on 1234, plus some useful debug clusters
+    admin:
+      log_level: info
+      log_file: stdout
+      access_log_path: /tmp/admin_access.log
+    listeners:
+      - name: controller-listener-admin
+        spec: { protocol: HTTP, port: 1234 }
+        rules:
+          - action:
+              route:
+                destination:
+                  spec: { protocol: L7mpController }
+                retry:
+                  retry_on: always
+                  num_retries: 10
+                  timeout: 500
+      - name: worker-rtp-listener
+        spec:
+          protocol: JSONSocket
+          transport: { protocol: UDP, port: 19000 }
+        rules: worker-rtp-rulelist
+        options:
+          track: 3600 # 1 hour
+      - name: worker-rtcp-listener
+        spec:
+          protocol: JSONSocket
+          transport: { protocol: UDP, port: 19001 }
+        rules: worker-rtcp-rulelist
+        options:
+          track: 3600 # 1 hour
+    rulelists:
+      - name: worker-rtp-rulelist
+        rules: []
+      - name: worker-rtcp-rulelist
+        rules: []
+    clusters:
+      - name: ingress-metric-counter
+        spec: { protocol: Metric }
+      - name: egress-metric-counter
+        spec: { protocol: Metric }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: l7mp-sidecar-config
+data:
+  l7mp-sidecar.yaml: |
+    # Controller listening on 1234, plus some useful debug clusters
+    admin:
+      log_level: info
+      log_file: stdout
+      access_log_path: /tmp/admin_access.log
+    listeners:
+      - name: controller-listener-admin
+        spec: { protocol: HTTP, port: 1234 }
+        rules:
+          - action:
+              route:
+                destination:
+                  spec: { protocol: L7mpController }
+                retry:
+                  retry_on: always
+                  num_retries: 10
+                  timeout: 500
+    clusters:
+      - name: ingress-metric-counter
+        spec: { protocol: Metric }
+      - name: egress-metric-counter
+        spec: { protocol: Metric }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rtpengine-config
+  namespace: default
+data:
+  rtpengine.conf: |
+    [rtpengine]
+    # access only via the sidecar proxy
+    # listen-ng=MY_IP:22222
+    # interface=MY_IP
+    # listen-tcp=127.0.0.1:22223
+    listen-ng=127.0.0.1:22222
+    interface=127.0.0.1
+
+    foreground=true
+    log-stderr=true
+
+    port-min=10000
+    port-max=20000
+
+    # recording-dir=/tmp
+    # recording-method=pcap
+    # recording-format=eth
+
+    log-level=7
+    delete-delay=0
+
+    timeout=600
+
+    redis = redis:6379/1
+    subscribe-keyspace=1
+    # redis-write = password@12.23.34.45:6379/42
+    # redis-num-threads = 8
+    # no-redis-required = false
+    # redis-expires = 86400
+    # redis-allowed-errors = -1
+    # redis-disable-time = 10
+    # redis-cmd-timeout = 0
+    # redis-connect-timeout = 1000
+
+    # sip-source = false
+    # dtls-passive = false
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+data:
+  redis-config: |
+    notify-keyspace-events KEA
+---
+apiVersion: l7mp.io/v1
+kind: VirtualService
+metadata:
+  name: worker-ng-listener
+spec:
+  selector:
+    matchLabels:
+      app: l7mp-worker
+  listener:
+    spec:
+      WebSocket:
+        port: 22222
+    rules:
+      - action:
+          route:
+            destinationRef: /apis/l7mp.io/v1/namespaces/default/targets/worker-ng-target
+            retry:
+              retry_on: always
+              num_retries: 10
+              timeout: 500
+---
+apiVersion: l7mp.io/v1
+kind: Target
+metadata:
+  name: worker-ng-target
+spec:
+  selector:
+    matchLabels:
+      app: l7mp-worker
+  cluster:
+    spec:
+      UDP:
+        port: 22222
+    endpoints:
+      - { spec: { address: "127.0.0.1" } }
+---
+apiVersion: l7mp.io/v1
+kind: Target
+metadata:
+    name: ingress-rtp-target
+spec:
+  selector: 
+    matchLabels: 
+      app: l7mp-ingress
+  cluster:
+    spec:
+      JSONSocket:
+        transport:
+          UDP:
+            port: 19000
+        header:
+          - path:
+              from: '/labels'
+              to: '/labels'
+    endpoints:
+      - selector:
+          matchLabels:
+            app: l7mp-worker
+    loadbalancer:
+      policy: ConsistentHash
+      key: '/labels/callid'
+---
+apiVersion: l7mp.io/v1
+kind: Target
+metadata:
+    name: ingress-rtcp-target
+spec:
+  selector: 
+    matchLabels: 
+      app: l7mp-ingress
+  cluster:
+    spec:
+      JSONSocket:
+        transport:
+          UDP:
+            port: 19001
+        header:
+          - path:
+              from: '/labels'
+              to: '/labels'
+    endpoints:
+      - selector:
+          matchLabels:
+            app: l7mp-worker
+    loadbalancer:
+      policy: ConsistentHash
+      key: '/labels/callid'
+---
+apiVersion: l7mp.io/v1
+kind: VirtualService
+metadata:
+  name: ingress-controller-listener
+spec:
+  selector:
+    matchLabels:
+      app: l7mp-ingress
+  listener:
+    spec:
+      WebSocket:
+        port: 2000
+    rules:
+      - action:
+          route:
+            destinationRef: /apis/l7mp.io/v1/namespaces/default/targets/ingress-controller-target
+---
+apiVersion: l7mp.io/v1
+kind: Target
+metadata:
+  name: ingress-controller-target
+spec:
+  selector:
+    matchLabels:
+      app: l7mp-ingress
+  cluster:
+    spec:
+      WebSocket:
+        port: 2000
+    endpoints:
+      - selector:
+          matchLabels:
+            app: rtpe-controller
+---
+apiVersion: l7mp.io/v1
+kind: VirtualService
+metadata:
+  name: controller-listener
+spec:
+  selector:
+    matchLabels:
+      app: rtpe-controller
+  listener:
+    spec:
+      WebSocket:
+        port: 2000
+    rules:
+      - action:
+          route:
+            destinationRef: /apis/l7mp.io/v1/namespaces/default/targets/controller-target
+---
+apiVersion: l7mp.io/v1
+kind: Target
+metadata:
+  name: controller-target
+spec:
+  selector:
+    matchLabels:
+      app: rtpe-controller
+  cluster:
+    spec:
+      WebSocket:
+        port: 1999
+    endpoints:
+      - { spec: { address: "127.0.0.1" } }
+---
+apiVersion: l7mp.io/v1
+kind: VirtualService
+metadata:
+  name: controller-ng-listener
+spec:
+  selector:
+    matchLabels:
+      app: rtpe-controller
+  listener:
+    spec:
+      WebSocket:
+        port: 22221
+    rules:
+      - action:
+          route:
+            destinationRef: /apis/l7mp.io/v1/namespaces/default/targets/controller-ng-target
+---
+apiVersion: l7mp.io/v1
+kind: Target
+metadata:
+  name: controller-ng-target
+spec:
+  selector:
+    matchLabels:
+      app: rtpe-controller
+  cluster:
+    spec:
+      WebSocket:
+        port: 22222
+    endpoints:
+      - selector:
+          matchLabels:
+            app: l7mp-worker
+    loadbalancer:
+      policy: ConsistentHash
+      key: HTTP/headers/callid

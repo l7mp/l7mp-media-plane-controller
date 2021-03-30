@@ -42,7 +42,7 @@ class GenerateCall():
         if not self.ws:
             send(self.address, self.port, sdp_offer, self.sdp_address, start_port)
         else:
-            ws_send(self.address, self.port, sdp_offer, self.sdp_address, start_port)
+            ws_send(self.address, self.port, sdp_offer, bind_address=self.sdp_address, bind_port=start_port)
 
         self.calls.append({
             'call_id': str(start_port) + "-" + str(start_port + 2), 
@@ -66,7 +66,7 @@ class GenerateCall():
         if not self.ws:
             send(self.address, self.port, sdp_answer, self.sdp_address, start_port)
         else:
-            ws_send(self.address, self.port, sdp_answer, self.sdp_address, start_port)
+            ws_send(self.address, self.port, sdp_answer, bind_address=self.sdp_address, bind_port=start_port)
 
     def generate_calls(self, cnt):
         ''' Generate a given number of calls.
@@ -109,7 +109,7 @@ class GenerateCall():
                 query = ws_send(
                     self.address, self.port, 
                     self.commands.query(str(start_port - 2) + "-" + str(start_port)),
-                    self.sdp_address, 2998
+                    bind_address=self.sdp_address, bind_port=2998, delay=5
                 )
 
             offer_rtp_port = query['tags']["from-tag" + str(start_port - 2)]['medias'][0]['streams'][0]['local port']
@@ -196,5 +196,5 @@ class GenerateCall():
                 ws_send(
                     self.address, self.port, 
                     self.commands.delete(call['call_id'], call['from-tag']), 
-                    self.sdp_address, 3000
+                    bind_address=self.sdp_address, bind_port=3000
                 )

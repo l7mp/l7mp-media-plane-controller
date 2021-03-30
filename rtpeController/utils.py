@@ -76,53 +76,66 @@ def send(address, port, file, bind_address, bind_port):
 
     return result
 
-def ws_send(address, port, file, bind_address, bind_port, delay=0):
+def ws_send(address, port, file, **kwargs):
     """ Send a JSON file to RTPengine on the given port with via ws
 
     Args:
         address: RTPengine server websocket address.
         port: RTPengine server port. 
         file: A dictionary which describes the RTPengine commands.
-        bind_address: Source address. 
-        bind_port: Source port.
+        kwargs:
+            bind_address: Source address. 
+            bind_port: Source port.
+            delay: Delay before send back
+            sock: Predefined socket. 
 
     Returns:
         An object containing the RTPengine response.
     """
 
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    if bind_address != '127.0.0.1':
-        sock.bind((bind_address, bind_port))
-    sock.connect((address, port))
-    
+    bind_address = kwargs.get('bind_address', '127.0.0.1')
+    bind_port = kwargs.get('bind_port', 2001)
+    delay = kwargs.get('delay', 0)
+    ws_sock = kwargs.get('sock', None)
+    response = None
+
     cookie = gen_cookie(5)
     data = bencodepy.encode(file).decode()
     message = str(cookie) + " " + str(data)
-    
-    # enableTrace(True)
-    ws = create_connection(
-        f'ws://{address}:{port}', 
-        subprotocols=["ng.rtpengine.com"],
-        origin=bind_address,
-        socket=sock
-    )
 
-    time.sleep(delay)
-    ws.send(message)
-    response = ws.recv()
+    if not ws_sock:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        if bind_address != '127.0.0.1':
+            sock.bind((bind_address, bind_port))
+        sock.connect((address, port))
+        
+        # enableTrace(True)
+        ws = create_connection(
+            f'ws://{address}:{port}', 
+            subprotocols=["ng.rtpengine.com"],
+            origin=bind_address,
+            socket=sock
+        )
+
+        time.sleep(delay)
+        ws.send(message)
+        response = ws.recv()
+
+        ws.close()
+        sock.close()
+    else:
+        time.sleep(delay)
+        print(ws_sock.getstatus())
+        ws_sock.send(message)
+        response = ws_sock.recv()
 
     # print("response: " + str(response))
     data = response.decode()
     if os.getenv('RTPE_CONTROLLER'):
         data = data.split(" ", 1)
-        result = bc.decode(data[1])
+        return bc.decode(data[1])
     else:
-        result = bc.decode(data)
-
-    ws.close()
-    sock.close()
-
-    return result
+        return bc.decode(data)
 
 def ffmpeg(audio_file, cnt, offer_rtp_address, answer_rtp_address, codecs):
     """ Send RTP traffic to a given address with ffmpeg.
@@ -206,7 +219,7 @@ def handle_oa(address, port, file, bind, type, ws=False):
     with open(file) as f:
         command = json.load(f)
     if ws:
-        response = ws_send(address, port, command, bind[0], int(bind[1]))
+        response = ws_send(address, port, command, bind_address=bind[0], bind_port=int(bind[1]))
     else:
         response = send(address, port, command, bind[0], int(bind[1]))
     parsed_sdp_dict = sdp_transform.parse(response.get('sdp'))

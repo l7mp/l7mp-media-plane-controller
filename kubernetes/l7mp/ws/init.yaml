@@ -66,8 +66,8 @@ metadata:
   labels:
     app: l7mp-worker
 spec:
-  # replicas: 2
   replicas: 2
+  # replicas: 1
   selector:
     matchLabels:
       app: l7mp-worker
@@ -102,7 +102,7 @@ spec:
               "config/l7mp-worker.yaml",
               "-s",
               "-l",
-              "info",
+              "silly",
             ]
           ports:
             - containerPort: 1234
@@ -121,11 +121,7 @@ spec:
           args:
             [
               "--config-file=/etc/rtpengine/rtpengine.conf",
-              "-i",
-              "lo",
               "-f",
-              "-L",
-              "7",
               "-E",
             ]
           volumeMounts:
