@@ -51,8 +51,8 @@ spec:
               value: "l7mp"
             # - name: RTPE_ADDRESS
             #   value: "l7mp-worker"
-            - name: RTPE_PORT
-              value: "22222"
+            # - name: RTPE_PORT
+            #   value: "22222"
             # - name: WITHOUT_JSONSOCKET
             #   value: "yes"
             - name: RTPE_PROTOCOL

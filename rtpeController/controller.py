@@ -20,12 +20,24 @@ bc = bencodepy.Bencode(
 
 kubernetes_apis = []
 commands = Commands()
-RTPE_ADDRESS = socket.gethostbyname_ex(os.getenv('RTPE_ADDRESS'))[2][0]
-RTPE_PORT = int(os.getenv('RTPE_PORT'))
-if not RTPE_ADDRESS:
+if not os.getenv('RTPE_ADDRESS'):
     RTPE_ADDRESS = '127.0.0.1'
-if not RTPE_PORT:
+else:
+    RTPE_ADDRESS = socket.gethostbyname_ex(os.getenv('RTPE_ADDRESS'))[2][0]
+if not os.getenv('RTPE_PORT'):
     RTPE_PORT = 22221
+else:
+    RTPE_PORT = int(os.getenv('RTPE_PORT'))
+
+if not os.getenv('LOCAL_ADDRESS'):
+    LOCAL_ADDRESS = '127.0.0.1'
+else:
+    LOCAL_ADDRESS = os.getenv('RTPE_ADDRESS')
+if not os.getenv('RTPE_PORT'):
+    LOCAL_PORT = 2000
+else:
+    LOCAL_PORT = int(os.getenv('LOCAL_PORT'))
+
 RTPE_CONTROLLER = os.getenv('RTPE_CONTROLLER')
 RTPE_PROTOCOL = os.getenv('RTPE_PROTOCOL')
 WITHOUT_JSONSOCKET = os.getenv('WITHOUT_JSONSOCKET')
@@ -48,7 +60,7 @@ def check_delete():
         if RTPE_PROTOCOL == 'ws':
             query = ws_send(RTPE_PROTOCOL, RTPE_PORT, commands.query(a.call_id), sock=ws_sock)
         if RTPE_PROTOCOL == 'udp':
-            query = send(RTPE_ADDRESS, RTPE_PORT, commands.query(a.call_id), '127.0.0.1', 2002)
+            query = send(RTPE_ADDRESS, RTPE_PORT, commands.query(a.call_id), LOCAL_ADDRESS, 2002)
         if query['result'] == 'error':
             a.delete_resources()      
             kubernetes_apis.remove(a)
@@ -85,10 +97,12 @@ def parse_data(data):
     } 
 
 def delete_kube_resources(call_id):
+    global kubernetes_apis
     delete_objects = []
+    print(call_id)
     for a in kubernetes_apis:
-        if a.call_id == call_id.lower().replace("~", "-"):
-            print(a.call_id)
+        print(a.call_id)
+        if a.call_id == call_id:
             a.delete_resources()
             delete_objects.append(a)
 
@@ -97,8 +111,13 @@ def delete_kube_resources(call_id):
 
 def create_resource(call_id, from_tag, to_tag):
     global kubernetes_apis
+
+    for a in kubernetes_apis:
+        if a.call_id == call_id:
+            return
+
     if RTPE_PROTOCOL == 'udp':
-        query = send(RTPE_ADDRESS, RTPE_PORT, commands.query(call_id), '127.0.0.1', 2998)
+        query = send(RTPE_ADDRESS, RTPE_PORT, commands.query(call_id), LOCAL_ADDRESS, 2998)
     if RTPE_PROTOCOL == 'ws':
         query = ws_send(RTPE_ADDRESS, RTPE_PORT, commands.query(call_id), sock=ws_sock)
 
@@ -143,9 +162,9 @@ def create_resource(call_id, from_tag, to_tag):
 def udp_processing():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind(('127.0.0.1', 2000))
+    sock.bind((LOCAL_ADDRESS, LOCAL_PORT))
     sock.settimeout(10)
-    print("Listening on %s:%d" % ('127.0.0.1', 2000))
+    print("Listening on %s:%d" % (LOCAL_ADDRESS, LOCAL_PORT))
 
     if RTPE_CONTROLLER == 'l7mp':
         while True:
@@ -158,7 +177,7 @@ def udp_processing():
                 continue
             
             time.sleep(1)
-            response = send(RTPE_ADDRESS, RTPE_PORT, data, '127.0.0.1', 2001)
+            response = send(RTPE_ADDRESS, RTPE_PORT, data, LOCAL_ADDRESS, 2001)
             sock.sendto(bc.encode(response), client_address) # Send back response
 
             if data['command'] == 'delete':
@@ -178,7 +197,7 @@ def udp_processing():
         
             time.sleep(1)
 
-            response = send(RTPE_ADDRESS, RTPE_PORT, data, '127.0.0.1', 2001)
+            response = send(RTPE_ADDRESS, RTPE_PORT, data, LOCAL_ADDRESS, 2001)
             sock.sendto(bc.encode(response), client_address) # Send back response
             
             if data['command'] in ['answer', 'delete']:
@@ -200,9 +219,8 @@ def udp_processing():
                 sock.close()
 
 async def ws_processing(websocket, path):
+    global ws_sock
     if RTPE_CONTROLLER == 'l7mp':
-        global ws_sock
-
         # websocket init
         ws_base_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         ws_base_sock.connect((RTPE_ADDRESS, RTPE_PORT))
@@ -227,7 +245,7 @@ async def ws_processing(websocket, path):
                     socket=ws_base_sock
                 )
             response = ws_send(RTPE_ADDRESS, RTPE_PORT, data, sock=ws_sock)
-            pprint(response)
+            # pprint(response)
             if 'sdp' in response:
                 response['sdp'] = response['sdp'].replace('127.0.0.1', '192.168.99.103')
             time.sleep(1)
@@ -249,8 +267,6 @@ async def ws_processing(websocket, path):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.bind(('127.0.0.1', 2000))
-
-        global ws_sock
 
         # websocket init
         ws_base_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

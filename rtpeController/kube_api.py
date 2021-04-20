@@ -84,11 +84,14 @@ class KubernetesAPIClient():
             remote_rtcp_port_ RTCP port given by RTPengine.
         '''
 
+        call_id = ''.join(e for e in self.call_id if e.isalnum()).lower()
+        tag = ''.join(e for e in self.tag if e.isalnum()).lower()
+
         resource = {
             'apiVersion': 'l7mp.io/v1',
             'kind': 'VirtualService',
             'metadata': {
-                'name': f'ingress-rtp-vsvc-{str(self.call_id)}-{str(self.tag)}'.lower().replace("~", "-")
+                'name': f'ingress-rtp-vsvc-{call_id}-{tag}'
             },
             'spec': {
                 'updateOwners': True,
@@ -143,7 +146,7 @@ class KubernetesAPIClient():
         
         self.send_custom_obj(resource, 'VirtualService', 'RTP')
 
-        resource['metadata']['name'] = f'ingress-rtcp-vsvc-{str(self.call_id)}-{str(self.tag)}'.lower().replace("~", "-")
+        resource['metadata']['name'] = f'ingress-rtcp-vsvc-{call_id}-{tag}'
         resource['spec']['listener']['spec']['UDP']['port'] = self.remote_rtcp_port
         # resource['spec']['listener']['spec']['UDP']['connect']['port'] = self.local_rtcp_port
         resource['spec']['listener']['rules'][0]['action']['route']['destinationRef'] = f'/apis/l7mp.io/v1/namespaces/default/targets/ingress-rtcp-target'
@@ -229,11 +232,14 @@ class KubernetesAPIClient():
             remote_rtcp_port: RTCP port given by RTPengine.
         '''
 
+        call_id = ''.join(e for e in self.call_id if e.isalnum()).lower()
+        tag = ''.join(e for e in self.tag if e.isalnum()).lower()
+
         resource = {
             'apiVersion': 'l7mp.io/v1',
             'kind': 'Rule',
             'metadata': {
-                'name': f'worker-rtcp-rule-{str(self.call_id)}-{str(self.tag)}'.lower().replace("~", "-")
+                'name': f'worker-rtcp-rule-{call_id}-{tag}'
             },
             'spec': {
                 'updateOwners': True,
@@ -263,7 +269,7 @@ class KubernetesAPIClient():
                     'action': {
                         'route': {
                             'destination': {
-                                'name': f'worker-rtcp-cluster-{str(self.call_id)}-{str(self.tag)}'.lower().replace("~", "-"),
+                                'name': f'worker-rtcp-cluster-{call_id}-{tag}',
                                 'spec': {
                                     'UDP': {
                                         'port': self.remote_rtcp_port,
@@ -294,9 +300,9 @@ class KubernetesAPIClient():
 
         self.send_custom_obj(resource, 'Rule', 'RTCP')
 
-        resource['metadata']['name'] = f'worker-rtp-rule-{str(self.call_id)}-{str(self.tag)}'.lower().replace("~", "-")
+        resource['metadata']['name'] = f'worker-rtp-rule-{call_id}-{tag}'
         resource['spec']['rulelist'] = 'worker-rtp-rulelist'
-        resource['spec']['rule']['action']['route']['destination']['name'] = f'worker-rtp-cluster-{str(self.call_id)}-{str(self.tag)}'.lower().replace("~", "-")
+        resource['spec']['rule']['action']['route']['destination']['name'] = f'worker-rtp-cluster-{call_id}-{tag}'
         resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['port'] = self.remote_rtp_port
         resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['bind']['port'] = self.local_rtp_port
         resource['spec']['rule']['action']['route']['ingress'] =  [{'clusterRef': 'ingress-metric-counter'}]
@@ -309,7 +315,7 @@ class KubernetesAPIClient():
             'apiVersion': 'l7mp.io/v1',
             'kind': 'VirtualService',
             'metadata': {
-                'name': f'rtp-ingress-{self.call_id}-{self.tag}'.lower().replace("~", "-")
+                'name': f'rtp-ingress-{self.call_id}-{self.tag}'
             },
             'spec': {
                 'selector': {
@@ -327,7 +333,7 @@ class KubernetesAPIClient():
                         {
                             'action': {
                                 'route': {
-                                    'destinationRef': f'/apis/l7mp.io/v1/namespaces/default/targets/rtp-ingress-target-{self.call_id}-{self.tag}'.lower().replace("~", "-"),
+                                    'destinationRef': f'/apis/l7mp.io/v1/namespaces/default/targets/rtp-ingress-target-{self.call_id}-{self.tag}',
                                     'retry': {
                                         'retry_on': 'always',
                                         'num_retries': 5,
@@ -353,9 +359,9 @@ class KubernetesAPIClient():
 
         self.send_custom_obj(resource, 'VirtualService', 'RTP')
 
-        resource['metadata']['name'] = f'rtcp-ingress-{self.call_id}-{self.tag}'.lower().replace("~", "-")
+        resource['metadata']['name'] = f'rtcp-ingress-{self.call_id}-{self.tag}'
         resource['spec']['listener']['spec']['UDP']['port'] = self.remote_rtcp_port
-        resource['spec']['listener']['rules'][0]['action']['route']['destinationRef'] = f'/apis/l7mp.io/v1/namespaces/default/targets/rtcp-ingress-target-{self.call_id}-{self.tag}'.lower().replace("~", "-")
+        resource['spec']['listener']['rules'][0]['action']['route']['destinationRef'] = f'/apis/l7mp.io/v1/namespaces/default/targets/rtcp-ingress-target-{self.call_id}-{self.tag}'
 
         self.send_custom_obj(resource, 'VirtualService', 'RTCP')
 
@@ -472,13 +478,20 @@ class KubernetesAPIClient():
         ''' Delete all the kubernetes resources.
         '''
 
+        call_id = ''.join(e for e in self.call_id if e.isalnum()).lower()
+        tag = ''.join(e for e in self.tag if e.isalnum()).lower()
+
+        print("Call to delete")
+        print(call_id)
+        print(tag)
+
         if not self.without_jsonsocket:
-            self.delete_resource('VirtualService', f'ingress-rtp-vsvc-{str(self.call_id)}-{str(self.tag)}')
-            self.delete_resource('VirtualService', f'ingress-rtcp-vsvc-{str(self.call_id)}-{str(self.tag)}')
+            self.delete_resource('VirtualService', f'ingress-rtp-vsvc-{call_id}-{tag}')
+            self.delete_resource('VirtualService', f'ingress-rtcp-vsvc-{call_id}-{tag}')
             # self.delete_resource('Target', f'ingress-rtp-target-{str(self.call_id)}-{str(self.tag)}')
             # self.delete_resource('Target',f'ingress-rtcp-target-{str(self.call_id)}-{str(self.tag)}')
-            self.delete_resource('Rule', f'worker-rtcp-rule-{str(self.call_id)}-{str(self.tag)}')
-            self.delete_resource('Rule', f'worker-rtp-rule-{str(self.call_id)}-{str(self.tag)}')
+            self.delete_resource('Rule', f'worker-rtcp-rule-{call_id}-{tag}')
+            self.delete_resource('Rule', f'worker-rtp-rule-{call_id}-{tag}')
         else:
             self.delete_resource('VirtualService', f'rtp-ingress-{self.call_id}-{self.tag}')
             self.delete_resource('VirtualService', f'rtcp-ingress-{self.call_id}-{self.tag}')
