@@ -181,7 +181,7 @@ def udp_processing():
             response = send(RTPE_ADDRESS, RTPE_PORT, data, '127.0.0.1', 2001)
             sock.sendto(bc.encode(response), client_address) # Send back response
             
-            if data['command'] == 'answer':
+            if data['command'] in ['answer', 'delete']:
                 query = send(RTPE_ADDRESS, RTPE_PORT, commands.query(data['call-id']), '0.0.0.0', 2998)
                 
                 caller_port = query['tags'][data['from-tag']]['medias'][0]['streams'][0]['local port']
