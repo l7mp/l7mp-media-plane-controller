@@ -129,13 +129,17 @@ def ws_send(address, port, file, **kwargs):
         ws_sock.send(message)
         response = ws_sock.recv()
 
-    # print("response: " + str(response))
-    data = response.decode()
-    if os.getenv('RTPE_CONTROLLER'):
-        data = data.split(" ", 1)
-        return bc.decode(data[1])
-    else:
-        return bc.decode(data)
+    print("response: " + str(response))
+    if response != '':
+        data = response.decode()
+        if os.getenv('RTPE_CONTROLLER'):
+            data = data.split(" ", 1)
+            return bc.decode(data[1])
+        else:
+            return bc.decode(data)
+    else: 
+        print("No data received")
+        return ""
 
 def ffmpeg(audio_file, cnt, offer_rtp_address, answer_rtp_address, codecs):
     """ Send RTP traffic to a given address with ffmpeg.

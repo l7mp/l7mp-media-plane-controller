@@ -129,42 +129,6 @@ data:
     notify-keyspace-events KEA
 ---
 apiVersion: l7mp.io/v1
-kind: VirtualService
-metadata:
-  name: worker-ng-listener
-spec:
-  selector:
-    matchLabels:
-      app: l7mp-worker
-  listener:
-    spec:
-      WebSocket:
-        port: 22222
-    rules:
-      - action:
-          route:
-            destinationRef: /apis/l7mp.io/v1/namespaces/default/targets/worker-ng-target
-            retry:
-              retry_on: always
-              num_retries: 10
-              timeout: 500
----
-apiVersion: l7mp.io/v1
-kind: Target
-metadata:
-  name: worker-ng-target
-spec:
-  selector:
-    matchLabels:
-      app: l7mp-worker
-  cluster:
-    spec:
-      UDP:
-        port: 22222
-    endpoints:
-      - { spec: { address: "127.0.0.1" } }
----
-apiVersion: l7mp.io/v1
 kind: Target
 metadata:
     name: ingress-rtp-target
@@ -249,6 +213,42 @@ spec:
       - selector:
           matchLabels:
             app: rtpe-controller
+---
+apiVersion: l7mp.io/v1
+kind: VirtualService
+metadata:
+  name: worker-ng-listener
+spec:
+  selector:
+    matchLabels:
+      app: l7mp-worker
+  listener:
+    spec:
+      WebSocket:
+        port: 22222
+    rules:
+      - action:
+          route:
+            destinationRef: /apis/l7mp.io/v1/namespaces/default/targets/worker-ng-target
+            retry:
+              retry_on: always
+              num_retries: 10
+              timeout: 500
+---
+apiVersion: l7mp.io/v1
+kind: Target
+metadata:
+  name: worker-ng-target
+spec:
+  selector:
+    matchLabels:
+      app: l7mp-worker
+  cluster:
+    spec:
+      UDP:
+        port: 22222
+    endpoints:
+      - { spec: { address: "127.0.0.1" } }
 ---
 apiVersion: l7mp.io/v1
 kind: VirtualService
