@@ -32,7 +32,7 @@ else:
 if not os.getenv('LOCAL_ADDRESS'):
     LOCAL_ADDRESS = '127.0.0.1'
 else:
-    LOCAL_ADDRESS = os.getenv('RTPE_ADDRESS')
+    LOCAL_ADDRESS = os.getenv('LOCAL_ADDRESS')
 if not os.getenv('RTPE_PORT'):
     LOCAL_PORT = 2000
 else:
@@ -161,9 +161,18 @@ def create_resource(call_id, from_tag, to_tag):
 
 def udp_processing():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    print('After socket creation...')
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    sock.bind((LOCAL_ADDRESS, LOCAL_PORT))
+    print('After socket settings...')
+    print("LOCAL_ADDRESS: " + str(LOCAL_ADDRESS))
+    print("LOCAL_PORT: " + str(LOCAL_PORT))
+    try:
+        sock.bind((LOCAL_ADDRESS, LOCAL_PORT))
+    except Exception:
+        print(Exception)
+    print('After socket binding...')
     sock.settimeout(10)
+    print('After socket timeout...')
     print("Listening on %s:%d" % (LOCAL_ADDRESS, LOCAL_PORT))
 
     if RTPE_CONTROLLER == 'l7mp':
@@ -187,6 +196,8 @@ def udp_processing():
     if RTPE_CONTROLLER == 'envoy':
         ENVOY_MGM_ADDRESS = socket.gethostbyname_ex(os.getenv('ENVOY_MGM_ADDRESS'))[2][0]
         ENVOY_MGM_PORT = int(os.getenv('ENVOY_MGM_PORT'))
+        print('ENVOY_MGM_ADDRESS: ' + str(ENVOY_MGM_ADDRESS))
+        print('ENVOY_MGM_PORT: ' + str(ENVOY_MGM_PORT))
         while True:
             try:
                 data, client_address = sock.recvfrom(4096)
@@ -330,6 +341,7 @@ def main():
     while True:
         try:
             if RTPE_PROTOCOL == 'udp':
+                print('Use udp for processing...')
                 udp_processing()
             if RTPE_PROTOCOL == 'ws':
                 runInParallel(ws_check_delete, server)
