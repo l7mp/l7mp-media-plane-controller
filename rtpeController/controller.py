@@ -202,7 +202,7 @@ def udp_processing():
             try:
                 data, client_address = sock.recvfrom(4096)
                 data = parse_data(data)
-                pprint(data)
+                pprint("Received command: " + data['command'])
             except Exception:
                 continue
         
@@ -210,10 +210,14 @@ def udp_processing():
 
             response = send(RTPE_ADDRESS, RTPE_PORT, data, LOCAL_ADDRESS, 2001)
             sock.sendto(bc.encode(response), client_address) # Send back response
+            print("Response")
+            print(response)
             
-            if data['command'] in ['answer', 'delete']:
-                query = send(RTPE_ADDRESS, RTPE_PORT, commands.query(data['call-id']), '0.0.0.0', 2998)
-                
+            if data['command'] == 'answer':
+                query = send(RTPE_ADDRESS, RTPE_PORT, commands.query(data['call-id']), LOCAL_ADDRESS, 2002)
+                if not query:
+                    sock.close()
+                    break
                 caller_port = query['tags'][data['from-tag']]['medias'][0]['streams'][0]['local port']
                 callee_port = query['tags'][data['to-tag']]['medias'][0]['streams'][0]['local port']
                 
@@ -225,9 +229,7 @@ def udp_processing():
                         "call_id": data['call-id']
                     }).encode('utf-8')
 
-                sock_tmp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                sock_tmp.sendto(json_data, (ENVOY_MGM_ADDRESS, ENVOY_MGM_PORT))
-                sock.close()
+                sock.sendto(json_data, (ENVOY_MGM_ADDRESS, ENVOY_MGM_PORT))
 
 async def ws_processing(websocket, path):
     global ws_sock

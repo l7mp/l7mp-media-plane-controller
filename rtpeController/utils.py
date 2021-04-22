@@ -56,15 +56,21 @@ def send(address, port, file, bind_address, bind_port):
 
     # Generate and send ng message
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     if bind_address != '127.0.0.1':
         sock.bind((bind_address, bind_port))
     
+    sock.settimeout(10)
+
     cookie = gen_cookie(5)
     data = bencodepy.encode(file).decode()
     message = str(cookie) + " " + str(data)
     sock.sendto(message.encode('utf-8'), (address, port))
-    
-    response = sock.recv(4096)
+    try:
+        response = sock.recv(4096)
+    except Exception:
+        print("Did not received a response!")
+        return {}
     data = response.decode()
     if os.getenv('RTPE_CONTROLLER'):
         data = data.split(" ", 1)
