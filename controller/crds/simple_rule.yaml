@@ -1,0 +1,38 @@
+apiVersion: l7mp.io/v1
+kind: Rule
+metadata:
+  name: worker-rtcp-rule-callid-tag
+spec:
+  updateOwners: True
+  selector:
+    matchLabels:
+      app: l7mp-worker
+  position: 0
+  rulelist: worker-rtcp-rulelist
+  rule:
+    match:
+      op: and
+      apply:
+        - op: test
+          path: /JSONSocket/labels/callid
+          value: callid
+        - op: test
+          path: /JSONSocket/labels/tag
+          value: tag
+    action:
+      route:
+        destination:
+          name: worker-rtcp-cluster-callid-tag
+          spec:
+            UDP:
+              port: 10000
+              bind:
+                address: 127.0.0.1
+                port: 3000
+          endpoints:
+            - spec:
+                address: 127.0.0.1
+        retry:
+          retry_on: always
+          num_retries: 10
+          timeout: 500

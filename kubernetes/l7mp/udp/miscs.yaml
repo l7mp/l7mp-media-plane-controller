@@ -127,6 +127,24 @@ data:
   redis-config: |
     notify-keyspace-events KEA
 ---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: controller-config
+data:
+  config.conf: |
+    [controller]
+    protocol=ws
+    rtpe_address=127.0.0.1
+    rtpe_port=22221
+    # envoy_address=1.0.0.0
+    # envoy_port=22222
+    local_address=127.0.0.1
+    local_port=2001
+    without_jsonsocket=no
+    ingress_address=192.168.99.113
+    sidecar_type=l7mp
+---
 apiVersion: l7mp.io/v1
 kind: Target
 metadata:
@@ -194,7 +212,7 @@ spec:
     rules:
       - action:
           route:
-            destinationRef: /apis/l7mp.io/v1/namespaces/default/targets/ingress-controller-target
+            destinationRef: /l7mp.io/v1/Target/default/ingress-controller-target
           rewrite:
             - path: HTTP/headers/
               value:
@@ -233,9 +251,9 @@ spec:
     rules:
       - action:
           route:
-            destinationRef: /apis/l7mp.io/v1/namespaces/default/targets/worker-ng-target
+            destinationRef: /l7mp.io/v1/Target/default/worker-ng-target
             retry:
-              retry_on: always
+              retry_on: never
               num_retries: 10
               timeout: 500
 ---
@@ -269,7 +287,7 @@ spec:
     rules:
       - action:
           route:
-            destinationRef: /apis/l7mp.io/v1/namespaces/default/targets/controller-target
+            destinationRef: /l7mp.io/v1/Target/default/controller-target
 ---
 apiVersion: l7mp.io/v1
 kind: Target
@@ -301,7 +319,7 @@ spec:
     rules:
       - action:
           route:
-            destinationRef: /apis/l7mp.io/v1/namespaces/default/targets/controller-ng-target
+            destinationRef: /l7mp.io/v1/Target/default/controller-ng-target
 ---
 apiVersion: l7mp.io/v1
 kind: Target

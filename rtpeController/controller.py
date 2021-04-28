@@ -161,18 +161,12 @@ def create_resource(call_id, from_tag, to_tag):
 
 def udp_processing():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    print('After socket creation...')
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    print('After socket settings...')
-    print("LOCAL_ADDRESS: " + str(LOCAL_ADDRESS))
-    print("LOCAL_PORT: " + str(LOCAL_PORT))
     try:
         sock.bind((LOCAL_ADDRESS, LOCAL_PORT))
     except Exception:
         print(Exception)
-    print('After socket binding...')
     sock.settimeout(10)
-    print('After socket timeout...')
     print("Listening on %s:%d" % (LOCAL_ADDRESS, LOCAL_PORT))
 
     if RTPE_CONTROLLER == 'l7mp':

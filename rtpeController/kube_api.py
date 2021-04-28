@@ -127,7 +127,8 @@ class KubernetesAPIClient():
                                     }
                                 ],
                                 'route': {
-                                    'destinationRef':  f'/apis/l7mp.io/v1/namespaces/default/targets/ingress-rtp-target',
+                                    # 'destinationRef':  f'/apis/l7mp.io/v1/namespaces/default/targets/ingress-rtp-target',
+                                    'destinationRef': f'/l7mp.io/v1/Target/default/ingress-rtp-target',
                                     'retry': {
                                         'retry_on': 'always',
                                         'num_retries': 10,
@@ -149,7 +150,8 @@ class KubernetesAPIClient():
         resource['metadata']['name'] = f'ingress-rtcp-vsvc-{call_id}-{tag}'
         resource['spec']['listener']['spec']['UDP']['port'] = self.remote_rtcp_port
         # resource['spec']['listener']['spec']['UDP']['connect']['port'] = self.local_rtcp_port
-        resource['spec']['listener']['rules'][0]['action']['route']['destinationRef'] = f'/apis/l7mp.io/v1/namespaces/default/targets/ingress-rtcp-target'
+        # resource['spec']['listener']['rules'][0]['action']['route']['destinationRef'] = f'/apis/l7mp.io/v1/namespaces/default/targets/ingress-rtcp-target'
+        resource['spec']['listener']['rules'][0]['action']['route']['destinationRef'] = f'/l7mp.io/v1/Target/default/ingress-rtcp-target'
 
         self.send_custom_obj(resource, 'VirtualService', 'RTCP')
 

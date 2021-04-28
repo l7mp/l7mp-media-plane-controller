@@ -1,0 +1,20 @@
+apiVersion: l7mp.io/v1
+kind: VirtualService
+metadata:
+  name: rtp-ingress-callid-tag
+spec:
+  selector:
+    matchLabels:
+      app: l7mp-ingress
+  listener:
+    spec:
+      UDP:
+        port: 10000
+    rules:
+      - action:
+          route:
+            destinationRef: destination
+            retry:
+              retry_on: always
+              num_retries: 5
+              timeout: 200

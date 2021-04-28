@@ -19,13 +19,13 @@ spec:
         - name: l7mp-config-volume
           configMap:
             name: l7mp-sidecar-config
+        - name: controller-volume
+          configMap:
+            name: controller-config
       containers:
-        # sidecar
         - name: l7mp
           image: l7mp/l7mp:latest
           imagePullPolicy: IfNotPresent
-          # command: ["/bin/sh"]
-          # args: ["-c", "while true; do echo hello; sleep 10;done"]
           command: ["node"]
           args:
             [
@@ -46,17 +46,11 @@ spec:
         - name: rtpe-controller
           image: rtpe-controller
           imagePullPolicy: Never
-          env:
-            - name: RTPE_CONTROLLER
-              value: "l7mp"
-            # - name: RTPE_ADDRESS
-            #   value: "l7mp-worker"
-            # - name: RTPE_PORT
-            #   value: "22222"
-            # - name: WITHOUT_JSONSOCKET
-            #   value: "yes"
-            - name: RTPE_PROTOCOL
-              value: 'ws'
+          volumeMounts:
+            - name: controller-volume
+              mountPath: /app/config
+          command: ["python"]
+          args: ["controller.py", "-c", "config/config.conf", "-l", "debug"]
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -104,7 +98,7 @@ spec:
               "config/l7mp-worker.yaml",
               "-s",
               "-l",
-              "info",
+              "silly",
             ]
           ports:
             - containerPort: 1234
@@ -177,7 +171,7 @@ spec:
               "config/l7mp-worker.yaml",
               "-s",
               "-l",
-              "info",
+              "silly",
             ]
           ports:
             - containerPort: 1234

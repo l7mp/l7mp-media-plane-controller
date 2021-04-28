@@ -72,11 +72,8 @@ def send(address, port, file, bind_address, bind_port):
         print("Did not received a response!")
         return {}
     data = response.decode()
-    if os.getenv('RTPE_CONTROLLER'):
-        data = data.split(" ", 1)
-        result = bc.decode(data[1])
-    else:
-        result = bc.decode(data)
+    data = data.split(" ", 1)
+    result = bc.decode(data[1])
 
     sock.close()
 
@@ -131,7 +128,6 @@ def ws_send(address, port, file, **kwargs):
         sock.close()
     else:
         time.sleep(delay)
-        print(ws_sock.getstatus())
         ws_sock.send(message)
         response = ws_sock.recv()
 
