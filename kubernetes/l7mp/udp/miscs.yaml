@@ -213,11 +213,14 @@ spec:
       - action:
           route:
             destinationRef: /l7mp.io/v1/Target/default/ingress-controller-target
+            retry:
+                retry_on: always
+                num_retries: 10
+                timeout: 500
           rewrite:
             - path: HTTP/headers/
               value:
                 place-holder: place-holder
-          
 ---
 apiVersion: l7mp.io/v1
 kind: Target

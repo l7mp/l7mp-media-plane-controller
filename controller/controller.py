@@ -86,7 +86,7 @@ def create_tcp_socket(local_address, local_port, ws = True):
             logging.error('Cannot make a new connection with this address: '
             f'{config["rtpe_address"]}:{config["rtpe_port"]}')
             return None
-    sock.settimeout(10)
+    # sock.settimeout(10)
     return sock
     
 def create_ws_socket(sock, header):
@@ -208,7 +208,7 @@ def load_config(conf):
         return None
     return config
 
-def processing(sock, rtpe_sock,):
+def processing(sock, rtpe_sock):
     logging.info(f'Used sidecars: {config["sidecar_type"]}')
     while True:
         try:
@@ -217,13 +217,16 @@ def processing(sock, rtpe_sock,):
             logging.info(f'Received {data["command"]} with call-id: {data["call-id"]}')
             logging.debug(f'Received message: {raw_data}')
         except Exception:
-            logging.debug('Not received anything within 10 seconds.')
+            if config['protocol'] == 'udp':
+                logging.debug('Not received anything within 10 seconds.')
             continue
         time.sleep(1)
         if config['sidecar_type'] == 'l7mp':
             while True:
                 response = send(raw_data, rtpe_sock, (config['rtpe_address'], int(config['rtpe_port'])))
                 if response:
+                    if 'sdp' in response:
+                        response['sdp'] = response['sdp'].replace('127.0.0.1', config['ingress_address'])
                     sock.sendto(bc.encode(response), client_address)
                     logging.debug("Response from rtpengine sent back to client.")
                     if data['command'] == 'delete':
@@ -235,6 +238,8 @@ def processing(sock, rtpe_sock,):
             while True:
                 response = send(raw_data, rtpe_sock, (config['rtpe_address'], int(config['rtpe_port'])))
                 if response:
+                    if 'sdp' in response:
+                        response['sdp'] = response['sdp'].replace('127.0.0.1', config['ingress_address'])
                     sock.sendto(bc.encode(response), client_address)
                     logging.debug("Response from rtpengine sent back to client.")
                     if data['command'] == 'answer':

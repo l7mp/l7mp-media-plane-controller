@@ -1,0 +1,12 @@
+[client]
+local_address=192.168.99.1
+protocol=tcp
+rtpe_address=192.168.99.114
+rtpe_port=2000
+ping=yes
+number_of_calls=1
+sender_method=ffmpeg
+wav_location=/home/richard/ericsson/piano.wav
+rtp_dump_location=/dump.rtp
+ssh_linphone1=user@10.0.1.5
+ssh_linphone2=user@10.0.1.6

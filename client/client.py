@@ -8,8 +8,10 @@ import string
 import subprocess
 import sdp_transform
 import time
+import os
 from websocket import create_connection
 from commands import Commands
+from paramiko import SSHClient
 
 log_levels = {
     'debug': logging.DEBUG, 
@@ -239,6 +241,43 @@ def query(start, end):
         'answer_rtcp_port': query['tags']["to-tag" + str(start)]['medias'][0]['streams'][1]['local port']
     }
 
+def ssh_user(linphone):
+    data = config[linphone].split("@")
+    user = SSHClient()
+    user.load_system_host_keys()
+    user.connect(data[1], username=data[0], password=data[2])
+    stdin, stdout, stderr = user.exec_command('linphonec')
+    print(type(stdin))  # <class 'paramiko.channel.ChannelStdinFile'>
+    print(type(stdout))  # <class 'paramiko.channel.ChannelFile'>
+    print(type(stderr))  # <class 'paramiko.channel.ChannelStderrFile'>
+    logging.info(f'STDOUT: {stderr.read().decode("utf8")}')
+
+    stdin.write('soundcard use files')
+    # stdin.write(f'play {config["linphone_wav_location"]}')
+    # stdin.channel.shutdown_write()
+
+    return stdin, stdout, stderr, user
+
+def linphone():
+    stdin1, stdout1, stderr1, user1 = ssh_user('ssh_linphone1')
+    logging.debug('Setup linphone1')
+    stdin2, stdout2, stderr2, user2 = ssh_user('ssh_linphone2')
+    logging.debug('Setup linphone2')
+    stdin1.write('call 456')
+    logging.debug('after write')
+    stdin1.channel.shutdown_write()
+    time.sleep(2)
+    stdin2.write('answer 1')
+    stdin2.channel.shutdown_write()
+    time.sleep(180)
+    stdin1.write('terminate 1')
+    stdin2.channel.shutdown_write()
+
+    stdin1.close(), stdout1.close(); stderr1.close(), user1.close()
+    stdin2.close(), stdout2.close(); stderr2.close(), user2.close()
+
+
+
 def generate_calls():
     ffmpeg_addresses = []
     rtpsend_addresses = {}
@@ -274,15 +313,11 @@ def generate_calls():
             dest = f'{config["rtpe_address"]}/{str(q["answer_rtp_port"])}'
             rtpsend_addresses[dest] = str(end)
             logging.debug('rtpsend address added bot offer and answer side.')
-        if config['sender_method'] == 'linphone':
-            logging.error('Not implemented yet.')
     
     if config['sender_method'] == 'ffmpeg':
         ffmpeg(ffmpeg_addresses)
     if config['sender_method'] == 'rtpsend':
         rtpsend(rtpsend_addresses)
-    if config['sender_method'] == 'linphone':
-        logging.error('Not implemented yet.')
     if config['sender_method'] == 'wait':
         logging.info('Waiting for 10 minutes, before delete calls.')
         time.sleep(600)
@@ -293,12 +328,13 @@ def delete():
             ws_send(commands.delete(call['call_id'], call['from-tag']))
         else:
             send(commands.delete(call['call-id'], call['from-tag']), 3001)
+            time.sleep(5)
 
 def ping():
     if config['protocol'] == 'ws':
         res = ws_send(commands.ping())
     else:
-        res = send(commands.ping())
+        res = send(commands.ping(), 3000)
     logging.info(f'Result of ping: {res}')
 
 def main(conf):
@@ -307,18 +343,22 @@ def main(conf):
     base_sock = None
     config = load_config(conf)
     if not config:
-        return
+        os._exit(1)
     logging.debug(config)
+    if config['sender_method'] == 'linphone':
+        linphone()
+        os._exit(1)
     if config['protocol'] == "ws":
         base_sock = create_tcp_socket(config['local_address'], 3000)
         sock = create_ws_socket(base_sock)
     if config['protocol'] == "udp":
         sock = create_udp_socket(config['local_address'], 3000)
     if config['protocol'] == "tcp":
+        logging.info(config['protocol'])
         sock = create_tcp_socket(config['local_address'], 3000)
     if config['ping'] == 'yes':
         ping()
-        return
+        os._exit(1)
     generate_calls()
     if base_sock:
         base_sock.close()

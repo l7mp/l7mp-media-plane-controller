@@ -11,8 +11,6 @@ class Client():
         self.api = client.CustomObjectsApi()
         logging.debug('CustomObjectsAPI is initialized.')
 
-        self.api = client.CustomObjectsApi()
-
         self.plurals = {
             'VirtualService': 'virtualservices',
             'Target': 'targets',
