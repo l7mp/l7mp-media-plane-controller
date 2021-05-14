@@ -57,20 +57,21 @@ def create_udp_socket(local_address, local_port):
 
 def create_tcp_socket(local_address, local_port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     if config['protocol'] != 'ws':
         try:
             sock.bind((local_address, local_port))
-        except Exception:
+        except Exception as e:
+            logging.exception(e)
             logging.error(f'Cannot bind TCP socket to {local_address}:{local_port}.')
             return None
         logging.info(f'Listening on tcp:{local_address}:{local_port}.')
-    if config['protocol'] == 'ws':
-        try:
-            sock.connect((config["rtpe_address"], int(config["rtpe_port"])))
-        except Exception:
-            logging.error('Cannot make a new connection with this address: '
-            f'{config["rtpe_address"]}:{config["rtpe_port"]}')
-            return None
+    try:
+        sock.connect((config["rtpe_address"], int(config["rtpe_port"])))
+    except Exception:
+        logging.error('Cannot make a new connection with this address: '
+        f'{config["rtpe_address"]}:{config["rtpe_port"]}')
+        return None
     sock.settimeout(10)
     return sock
 
@@ -83,7 +84,10 @@ def create_ws_socket(sock):
     )
 
 def send(data, port):
-    local_sock = create_udp_socket(config['local_address'], port)
+    if config['protocol'] == 'udp':
+        local_sock = create_udp_socket(config['local_address'], port)
+    else:
+        local_sock = create_tcp_socket(config["local_address"], port)
     cookie = ''.join(random.choice(string.ascii_lowercase) for i in range(5))
     data = bencodepy.encode(data).decode()
     message = str(cookie) + " " + str(data)
@@ -91,7 +95,7 @@ def send(data, port):
     local_sock.sendto(message.encode('utf-8'), (config['rtpe_address'], int(config['rtpe_port'])))
     logging.debug('Command sent to rtpengine.')
     try:
-        response = local_sock.recv(4096)
+        response = local_sock.recv(2048)
         logging.debug(f'Received from rtpengine: {str(response)}')
     except Exception:
         logging.error('After 10 seconds not received any response.')
@@ -103,7 +107,8 @@ def send(data, port):
         logging.debug(f"Return with: {data[1]}")
         local_sock.close()
         return bc.decode(data[1])
-    except Exception:
+    except Exception as e:
+        logging.info(e)
         logging.error(f'Received response is not a string. {str(response)}.')
         local_sock.close()
         return None
@@ -276,8 +281,6 @@ def linphone():
     stdin1.close(), stdout1.close(); stderr1.close(), user1.close()
     stdin2.close(), stdout2.close(); stderr2.close(), user2.close()
 
-
-
 def generate_calls():
     ffmpeg_addresses = []
     rtpsend_addresses = {}
@@ -355,7 +358,7 @@ def main(conf):
         sock = create_udp_socket(config['local_address'], 3000)
     if config['protocol'] == "tcp":
         logging.info(config['protocol'])
-        sock = create_tcp_socket(config['local_address'], 3000)
+        # sock = create_tcp_socket(config['local_address'], 3000)
     if config['ping'] == 'yes':
         ping()
         os._exit(1)
@@ -377,11 +380,14 @@ if __name__ == '__main__':
     try:
         main(args.config)
         delete()
-        sock.close()
+        if config['protocol'] != 'tcp':
+            sock.close()
     except KeyboardInterrupt:
         delete()
-        sock.close()
+        if config['protocol'] != 'tcp':
+            sock.close()
     except:
         logging.exception("Got exception on main handler.")
         delete()
-        sock.close()
+        if config['protocol'] != 'tcp':
+            sock.close()
