@@ -15,10 +15,19 @@ bc = bencodepy.Bencode(
 
 def client(ip, port, message):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        sock.connect((ip, port))
+        counter = 0
+        while counter < 3:
+            try:            
+                sock.connect((ip, port))
+                break
+            except socket.error as error:
+                logging.debug(f"IP {ip}, PORT {port}")
+                logging.info(f"Connection Failed **BECAUSE:** {error}")
+                logging.info(f"Attempt {counter} of 3")
+                counter += 1
         sock.sendall(bytes(message, 'utf-8'))
         response = str(sock.recv(4096), 'utf-8')
-        return response
+        return response.strip()
 
 
 def parse_data(data):
@@ -27,7 +36,7 @@ def parse_data(data):
     logging.info(data_list)
     return {
         'cookie': data_list[0],
-        **bc.decode(data_list[1].strip())
+        **bc.decode(data_list[1])
     }
 
 def parse_bc(bc_string):
