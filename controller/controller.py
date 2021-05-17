@@ -196,9 +196,11 @@ def load_config(conf):
     config = parser._sections['controller']
     try:
         if "rtpe_address" in config:
+            config['domain_rtpe_address'] = config['rtpe_address']
             config['rtpe_address'] = socket.gethostbyname_ex(config['rtpe_address'])[2][0]
             config['rtpe_port'] = int(config['rtpe_port'])
         if "envoy_address" in config:
+            config['domain_envoy_address'] = config['envoy_address']
             config['envoy_address'] = socket.gethostbyname_ex(config['envoy_address'])[2][0]
             config['envoy_port'] = int(config['envoy_port'])
         if "local_address" in config:

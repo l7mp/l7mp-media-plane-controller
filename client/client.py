@@ -57,7 +57,7 @@ def create_udp_socket(local_address, local_port):
 
 def create_tcp_socket(local_address, local_port):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     if config['protocol'] != 'ws':
         try:
             sock.bind((local_address, local_port))
@@ -72,7 +72,7 @@ def create_tcp_socket(local_address, local_port):
         logging.error('Cannot make a new connection with this address: '
         f'{config["rtpe_address"]}:{config["rtpe_port"]}')
         return None
-    sock.settimeout(10)
+    # sock.settimeout(10)
     return sock
 
 def create_ws_socket(sock):

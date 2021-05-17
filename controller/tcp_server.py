@@ -7,16 +7,22 @@ import time
 import random
 import string
 from utils import *
+from sockets import TCPSocket
 
 bc = bencodepy.Bencode(
     encoding='utf-8'
 )
+
+rtpe_socket = None
+envoy_socket = None
 
 config = {}
 
 class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
 
     def handle(self):
+        global rtpe_socket
+        global envoy_socket
         raw_data = str(self.request.recv(4096), 'utf-8')
         data = parse_data(raw_data)
         logging.info(f'Received {data["command"]}')
@@ -35,7 +41,8 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 if data['command'] == 'answer':
                     create_resource(data['call-id'], data['from-tag'], data['to-tag'], config)
         if config['sidecar_type'] == 'envoy':
-            raw_response = client(config['rtpe_address'], int(config['rtpe_port']), raw_data)
+            # raw_response = client(config['rtpe_address'], int(config['rtpe_port']), raw_data)
+            raw_response = rtpe_socket.send(raw_data)
             if raw_response:
                 response = parse_bc(raw_response)
                 if 'sdp' in response:
@@ -45,7 +52,9 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 if data['command'] == 'answer':
                     cookie = ''.join(random.choice(string.ascii_lowercase) for i in range(5))
                     q_message = cookie + " " + bc.encode(commands.query(data['call-id'])).decode()
-                    raw_query = client(config['rtpe_address'], int(config['rtpe_port']), q_message)
+                    # raw_query = client(config['rtpe_address'], int(config['rtpe_port']), q_message)
+                    raw_query = rtpe_socket.send(q_message)
+                    
                     logging.debug(f"Query for {data['call-id']} sent out")
                     if not raw_query:
                         logging.exception('Cannot make a query to rtpengine.')
@@ -58,14 +67,20 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                             data['call-id']
                         )
                         logging.debug(f"Data to envoy: {json_data}")
-                        client(config['envoy_address'], int(config['envoy_port']), json_data)
+                        # client(config['envoy_address'], int(config['envoy_port']), json_data)
+                        envoy_socket.send(json_data)
 
 class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     pass
 
 def serve(conf):
     global config
+    global rtpe_socket
+    global envoy_socket
     config = conf
+
+    rtpe_socket = TCPSocket(conf['rtpe_address'], conf['rtpe_port'], delay=45)
+    envoy_socket = TCPSocket(conf['envoy_address'], conf['envoy_port'])
 
     HOST, PORT = config['local_address'], int(config['local_port'])
     server = ThreadedTCPServer((HOST, PORT), ThreadedTCPRequestHandler)
