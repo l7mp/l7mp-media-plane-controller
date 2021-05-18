@@ -14,6 +14,8 @@ from commands import Commands
 from kube_api import Client
 from pprint import pprint
 from websocket import create_connection
+from tcp_server import serve as tcp_serve
+from udp_server import serve as udp_serve
 
 log_levels = {
     'debug': logging.DEBUG, 
@@ -195,9 +197,11 @@ def load_config(conf):
     config = parser._sections['controller']
     try:
         if "rtpe_address" in config:
+            config['domain_rtpe_address'] = config['rtpe_address']
             config['rtpe_address'] = socket.gethostbyname_ex(config['rtpe_address'])[2][0]
             config['rtpe_port'] = int(config['rtpe_port'])
         if "envoy_address" in config:
+            config['domain_envoy_address'] = config['envoy_address']
             config['envoy_address'] = socket.gethostbyname_ex(config['envoy_address'])[2][0]
             config['envoy_port'] = int(config['envoy_port'])
         if "local_address" in config:
@@ -338,9 +342,9 @@ def main(conf):
         while True:
             ws_server()
     if config['protocol'] == 'udp':
-        udp_server()
+        udp_serve(config)
     if config['protocol'] == 'tcp':
-        tcp_server()
+        tcp_serve(config)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='RTPengine controller.')
