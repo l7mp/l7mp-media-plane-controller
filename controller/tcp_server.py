@@ -25,6 +25,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         global envoy_socket
         raw_data = str(self.request.recv(4096), 'utf-8')
         data = parse_data(raw_data)
+        call_id = ''.join(e for e in data['call-id'] if e.isalnum()).lower()
         logging.info(f'Received {data["command"]}')
         logging.debug(f'Received message: {raw_data}')
 
@@ -37,10 +38,10 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 self.request.sendall(bytes(data['cookie'] + " " + bc.encode(response).decode(), 'utf-8'))
                 logging.debug("Response from rtpengine sent back to client")
                 if data['command'] == 'delete':
-                    delete_kube_resources(data['call-id'])
+                    delete_kube_resources(call_id)
                 if data['command'] == 'answer':
-                    query = parse_bc(rtpe_socket.send(query_message(data['call-id'])))
-                    create_resource(data['call-id'], data['from-tag'], data['to-tag'], config, query)
+                    query = parse_bc(rtpe_socket.send(query_message(call_id)))
+                    create_resource(call_id, data['from-tag'], data['to-tag'], config, query)
         if config['sidecar_type'] == 'envoy':
             raw_response = rtpe_socket.send(raw_data)
             if raw_response:
@@ -51,7 +52,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 logging.debug("Response from rtpengine sent back to client")
                 if data['command'] == 'answer':
                     raw_query = rtpe_socket.send(query_message(data['call-id']))
-                    logging.debug(f"Query for {data['call-id']} sent out")
+                    logging.debug(f"Query for {call_id} sent out")
                     if not raw_query:
                         logging.exception('Cannot make a query to rtpengine.')
                     else:
@@ -60,7 +61,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                         json_data = create_json(
                             query['tags'][data['from-tag']]['medias'][0]['streams'][0]['local port'],
                             query['tags'][data['to-tag']]['medias'][0]['streams'][0]['local port'],
-                            data['call-id']
+                            call_id
                         )
                         logging.debug(f"Data to envoy: {json_data}")
                         envoy_socket.send(json_data)

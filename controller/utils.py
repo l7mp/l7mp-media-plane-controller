@@ -41,8 +41,9 @@ def parse_data(data):
     }
 
 def parse_bc(bc_string):
-    logging.debug(fr'Splitted string: {bc_string.split(" ", 1)[1]}')
-    return bc.decode(bc_string.split(" ", 1)[1])
+    splitted = bc_string.split(" ", 1)[1]
+    logging.debug(fr'Splitted string: {splitted}')
+    return bc.decode(splitted)
 
 def query_message(call_id):
     cookie = ''.join(random.choice(string.ascii_lowercase) for i in range(5))
