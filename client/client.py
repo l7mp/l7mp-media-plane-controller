@@ -95,7 +95,7 @@ def send(data, port):
     local_sock.sendto(message.encode('utf-8'), (config['rtpe_address'], int(config['rtpe_port'])))
     logging.debug('Command sent to rtpengine.')
     try:
-        response = local_sock.recv(2048)
+        response = local_sock.recv(10240)
         logging.debug(f'Received from rtpengine: {str(response)}')
     except Exception:
         logging.error('After 10 seconds not received any response.')

@@ -5,6 +5,7 @@ import socket
 import json
 import random
 import string
+from kube_api import Client
 
 commands = Commands()
 kubernetes_apis = []
@@ -40,7 +41,12 @@ def parse_data(data):
     }
 
 def parse_bc(bc_string):
+    logging.debug(fr'Splitted string: {bc_string.split(" ", 1)[1]}')
     return bc.decode(bc_string.split(" ", 1)[1])
+
+def query_message(call_id):
+    cookie = ''.join(random.choice(string.ascii_lowercase) for i in range(5))
+    return str(cookie) + " " + str(bencodepy.encode(commands.query(call_id)).decode())
 
 def delete_kube_resources(call_id):
     global kubernetes_apis
@@ -53,25 +59,14 @@ def delete_kube_resources(call_id):
     for a in delete_objects:
         kubernetes_apis.remove(a)
 
-def create_resource(call_id, from_tag, to_tag, config):
+def create_resource(call_id, from_tag, to_tag, config, query):
     global kubernetes_apis
     for a in kubernetes_apis:
         if a.call_id == call_id:
             logging.debug(f'A kubernetes resource are exist with this call-id: {call_id}')
             return
-    
-    cookie = ''.join(random.choice(string.ascii_lowercase) for i in range(5))
-    message = str(cookie) + " " + str(bencodepy.encode(commands.query(call_id)).decode())
-    ws = False
-    # if config["protocol"] == "ws":
-    #     query = ws_send(message, sock)
-    #     ws = True
-    # else: 
-    raw_response = client(config['rtpe_address'], int(config['rtpe_port']), message)
-    # send(message, sock, (config['rtpe_address'], int(config['rtpe_port'])))
-    logging.debug(f'Received query: {str(raw_response)}')
 
-    query = raw_response.split(" ", 1)[1]
+    ws = True if config['protocol'] == 'ws' else False
 
     to_port = query['tags'][to_tag]['medias'][0]['streams'][0]['local port']
     to_c_address = query['tags'][to_tag]['medias'][0]['streams'][0]['endpoint']['address']

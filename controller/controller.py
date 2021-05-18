@@ -14,7 +14,8 @@ from commands import Commands
 from kube_api import Client
 from pprint import pprint
 from websocket import create_connection
-from tcp_server import serve
+from tcp_server import serve as tcp_serve
+from udp_server import serve as udp_serve
 
 log_levels = {
     'debug': logging.DEBUG, 
@@ -341,9 +342,9 @@ def main(conf):
         while True:
             ws_server()
     if config['protocol'] == 'udp':
-        udp_server()
+        udp_serve(config)
     if config['protocol'] == 'tcp':
-        serve(config)
+        tcp_serve(config)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='RTPengine controller.')

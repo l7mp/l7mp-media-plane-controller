@@ -1,4 +1,3 @@
-import socket
 import threading
 import socketserver
 import logging
@@ -7,7 +6,7 @@ import time
 import random
 import string
 from utils import *
-from sockets import TCPSocket
+from sockets import UDPSocket
 
 bc = bencodepy.Bencode(
     encoding='utf-8'
@@ -18,36 +17,41 @@ envoy_socket = None
 
 config = {}
 
-class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
+class ThreadedUDPRequestHandler(socketserver.BaseRequestHandler):
 
     def handle(self):
         global rtpe_socket
         global envoy_socket
-        raw_data = str(self.request.recv(4096), 'utf-8')
+
+        rtpe_address = (config['rtpe_address'], int(config["rtpe_port"]))
+        envoy_address = (config['envoy_address'], int(config['envoy_port']))
+
+        raw_data = self.request[0].strip()
+        socket = self.request[1]
         data = parse_data(raw_data)
         logging.info(f'Received {data["command"]}')
         logging.debug(f'Received message: {raw_data}')
 
         if config['sidecar_type'] == 'l7mp':
-            raw_response = rtpe_socket.send(raw_data)
+            raw_response = rtpe_socket.send(raw_data, rtpe_address)
             if raw_response:
                 response = parse_bc(raw_response)
                 if 'sdp' in response:
                     response['sdp'] = response['sdp'].replace('127.0.0.1', config['ingress_address'])
-                self.request.sendall(bytes(data['cookie'] + " " + bc.encode(response).decode(), 'utf-8'))
+                socket.sendto(bytes(data['cookie'] + " " + bc.encode(response).decode(), 'utf-8'), self.client_address)
                 logging.debug("Response from rtpengine sent back to client")
                 if data['command'] == 'delete':
                     delete_kube_resources(data['call-id'])
                 if data['command'] == 'answer':
-                    query = parse_bc(rtpe_socket.send(query_message(data['call-id'])))
+                    query = parse_bc(rtpe_socket.send(query_message(data['call-id']), rtpe_address))
                     create_resource(data['call-id'], data['from-tag'], data['to-tag'], config, query)
         if config['sidecar_type'] == 'envoy':
-            raw_response = rtpe_socket.send(raw_data)
+            raw_response = rtpe_socket.send(raw_data, rtpe_address)
             if raw_response:
                 response = parse_bc(raw_response)
                 if 'sdp' in response:
                     response['sdp'] = response['sdp'].replace('127.0.0.1', config['ingress_address'])
-                self.request.sendall(bytes(data['cookie'] + " " + bc.encode(response).decode(), 'utf-8'))
+                socket.sendto(bytes(data['cookie'] + " " + bc.encode(response).decode(), 'utf-8'), self.client_address)
                 logging.debug("Response from rtpengine sent back to client")
                 if data['command'] == 'answer':
                     raw_query = rtpe_socket.send(query_message(data['call-id']))
@@ -63,9 +67,9 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                             data['call-id']
                         )
                         logging.debug(f"Data to envoy: {json_data}")
-                        envoy_socket.send(json_data)
+                        envoy_socket.send(json_data, envoy_address)
 
-class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+class ThreadedUDPServer(socketserver.ThreadingMixIn, socketserver.UDPServer):
     pass
 
 def serve(conf):
@@ -74,11 +78,11 @@ def serve(conf):
     global envoy_socket
     config = conf
 
-    rtpe_socket = TCPSocket(conf['rtpe_address'], conf['rtpe_port'], delay=45)
-    envoy_socket = TCPSocket(conf['envoy_address'], conf['envoy_port'])
+    rtpe_socket = UDPSocket(delay=10)
+    envoy_socket = UDPSocket()
 
     HOST, PORT = config['local_address'], int(config['local_port'])
-    server = ThreadedTCPServer((HOST, PORT), ThreadedTCPRequestHandler)
+    server = ThreadedUDPServer((HOST, PORT), ThreadedUDPRequestHandler)
     with server:
         server_thread = threading.Thread(target=server.serve_forever)
         try:

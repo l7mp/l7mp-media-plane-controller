@@ -18,7 +18,7 @@ class TCPSocket():
         while counter < 3:
             try:
                 self.sock.sendall(bytes(message, 'utf-8'))
-                response = str(self.sock.recv(4096), 'utf-8')
+                response = str(self.sock.recv(10240), 'utf-8')
                 return response.strip()
             except ConnectionResetError as e:
                 self.sock.close()
@@ -49,3 +49,23 @@ class TCPSocket():
                 logging.info(f"Attempt {counter} of 3")
                 time.sleep(5)
                 counter += 1
+
+class UDPSocket():
+
+    def __init__(self, delay=0):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        time.sleep(delay)
+
+    def send(self, message, address):
+        counter = 0
+        while counter < 3:
+            try:
+                self.sock.sendtp(bytes(message, 'utf-8'), address)
+                response = str(self.sock.recv(4096), 'utf-8')
+                return response.strip()
+            except OSError as e:
+                logging.error(f"Error: {e}")
+                logging.info(f"Send attempt {counter} of 3 to {address}")
+                counter += 1
+        return
