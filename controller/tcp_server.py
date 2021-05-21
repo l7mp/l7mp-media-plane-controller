@@ -18,7 +18,7 @@ envoy_socket = None
 
 config = {}
 
-class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
+class TCPRequestHandler(socketserver.BaseRequestHandler):
 
     def handle(self):
         global rtpe_socket
@@ -64,10 +64,11 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                             call_id
                         )
                         logging.debug(f"Data to envoy: {json_data}")
-                        envoy_socket.send(json_data)
+                        envoy_socket.send(json_data, no_wait_response=True)
+                        logging.debug("After envoy send")
 
-class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
-    pass
+# class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+#     pass
 
 def serve(conf):
     global config
@@ -79,13 +80,15 @@ def serve(conf):
     envoy_socket = TCPSocket(conf['envoy_address'], conf['envoy_port'])
 
     HOST, PORT = config['local_address'], int(config['local_port'])
-    server = ThreadedTCPServer((HOST, PORT), ThreadedTCPRequestHandler)
-    with server:
-        server_thread = threading.Thread(target=server.serve_forever)
-        try:
-            server_thread.daemon = True
-            server_thread.start()
-            logging.info(f"Server loop running in thread: {server_thread.name}")
-            server_thread.run()
-        except KeyboardInterrupt:
-            server.shutdown()
+    with socketserver.TCPServer((HOST, PORT), TCPRequestHandler) as server:
+        server.serve_forever()
+    # server = ThreadedTCPServer((HOST, PORT), ThreadedTCPRequestHandler)
+    # with server:
+    #     server_thread = threading.Thread(target=server.serve_forever)
+    #     try:
+    #         server_thread.daemon = True
+    #         server_thread.start()
+    #         logging.info(f"Server loop running in thread: {server_thread.name}")
+    #         server_thread.run()
+    #     except KeyboardInterrupt:
+    #         server.shutdown()

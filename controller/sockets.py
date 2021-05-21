@@ -13,11 +13,13 @@ class TCPSocket():
         self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 3)
         self.connect(delay)
 
-    def send(self, message):
+    def send(self, message, no_wait_response=False):
         counter = 0
         while counter < 3:
             try:
                 self.sock.sendall(bytes(message, 'utf-8'))
+                if no_wait_response:
+                    return
                 response = str(self.sock.recv(10240), 'utf-8')
                 return response.strip()
             except ConnectionResetError as e:

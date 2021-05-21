@@ -329,9 +329,12 @@ def delete():
     for call in calls:
         if config['protocol'] == 'ws':
             ws_send(commands.delete(call['call_id'], call['from-tag']))
-        else:
+        elif config['protocol'] == 'udp':
             send(commands.delete(call['call-id'], call['from-tag']), 3001)
             time.sleep(5)
+        elif config['protocol'] == 'tcp':
+            send(commands.delete(call['call-id'], call['from-tag']), 3001)
+            time.sleep(1)
 
 def ping():
     if config['protocol'] == 'ws':
