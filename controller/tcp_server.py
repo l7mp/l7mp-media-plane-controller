@@ -25,7 +25,9 @@ class TCPRequestHandler(socketserver.BaseRequestHandler):
         global envoy_socket
         raw_data = str(self.request.recv(4096), 'utf-8')
         data = parse_data(raw_data)
-        call_id = ''.join(e for e in data['call-id'] if e.isalnum()).lower()
+        call_id = " "
+        if "call-id" in data:
+            call_id = ''.join(e for e in data['call-id'] if e.isalnum()).lower()
         logging.info(f'Received {data["command"]}')
         logging.debug(f'Received message: {raw_data}')
 
