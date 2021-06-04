@@ -16,6 +16,13 @@
   machine which has a cli linphone (user@10.0.0.1)
 - **ssh_linphone2**: same as above
 - **ssh_pass**: ssh password for linphone
+- **transcoding**: turn on the transcoding (yes, no)
+- **codec1**: supported codec by caller
+- **codec2**: supported codec by callee
+- **rtpe_dump_codec1_location**: location of rtp file which has codec1 payload
+type 
+- **rtpe_dump_codec2_location**: location of rtp file which has codec1 payload
+type 
 
 ## How to run
 

@@ -65,7 +65,7 @@ def create_tcp_socket(local_address, local_port):
             logging.exception(e)
             logging.error(f'Cannot bind TCP socket to {local_address}:{local_port}.')
             return None
-        logging.info(f'Listening on tcp:{local_address}:{local_port}.')
+        # logging.info(f'Listening on tcp:{local_address}:{local_port}.')
     try:
         sock.connect((config["rtpe_address"], int(config["rtpe_port"])))
     except Exception:
@@ -104,7 +104,6 @@ def send(data, port):
     try:
         data = response.decode()
         data = data.split(" ", 1)
-        logging.debug(f"Return with: {data[1]}")
         local_sock.close()
         return bc.decode(data[1])
     except Exception as e:
@@ -144,19 +143,34 @@ def ffmpeg(calls):
 def rtpsend(calls):
     logging.info('Start every rtpsend process')
     processes = []
+    locations = []
+    if config['transcoding'] == 'yes':
+        locations.append(config['rtpe_dump_codec1_location'])
+        locations.append(config['rtpe_dump_codec2_location'])
+    switch = 0
     for key, value in calls.items():
-        processes.append(
-            subprocess.Popen(
-                ["rtpsend", "-l", "-s", value, "-f", 
-                config['rtp_dump_location'], key]
+        if config['transcoding'] == 'yes':
+            processes.append(
+                subprocess.Popen(
+                    ["rtpsend", "-s", value, "-f", 
+                    locations[switch], key]
+                )
             )
-        )
+            logging.debug(f'{locations[switch]}')
+            switch = 1 if switch == 0 else 0
+        else:
+            processes.append(
+                subprocess.Popen(
+                    ["rtpsend", "-s", value, "-f", 
+                    config['rtp_dump_location'], key]
+                )
+            )
     logging.info(f'{str(len(processes))} rtpsend process are running.')
     for process in processes:
         process.communicate()
 
 def generate_sdp(address, port, **kwargs):
-    return sdp_transform.write({
+    sdp_dict = {
         'version': 0,
         'origin': {
             'address': address,
@@ -167,10 +181,10 @@ def generate_sdp(address, port, **kwargs):
             'username': '-'
         },
         'name': 'tester',
+        'connection': {'ip': address, 'version': 4},
         'timing': {'start': 0, 'stop': 0},
         'media': [
             {
-                'connection': {'ip': address, 'version': 4},
                 'direction': 'sendrecv',
                 'fmtp': [],
                 'payloads': 0,
@@ -180,17 +194,37 @@ def generate_sdp(address, port, **kwargs):
                 'type': 'audio'
             }
         ]
-    })
+    }
+    if config['transcoding'] == 'yes':
+        if kwargs['codec'] == 'pcmu':
+            sdp_dict['media'][0]['rtp'].append({
+                'payload': 101,
+                'codec': 'telephone-event',
+                'rate': 8000
+            })
+            sdp_dict['media'][0]['payloads'] = "0 101"
+        if kwargs['codec'] == 'pcma':
+            # sdp_dict['media'][0]['rtp'].append({
+            #     'payload': 8,
+            #     'codec': 'pcma',
+            #     'rate': 8000
+            # })
+            sdp_dict['media'][0]['payloads'] = "8"
+    return sdp_transform.write(sdp_dict)
 
 def offer(start, end):
     global calls
     options = {
         "ICE": "remove",
-        "label": "caller",
-        "generate RTCP": "on"
+        "label": "caller"
     }
+    if config['transcoding'] == 'yes':
+        options['codec'] = {
+            "mask": ["all"],
+            "transcode": ["PCMU","PCMA"]
+        }
     command = commands.offer(
-        generate_sdp('127.0.0.1', start),
+        generate_sdp('127.0.0.1', start, codec="pcmu"),
         f'{str(start)}-{str(end)}',
         f'from-tag{str(start)}',
         **options
@@ -214,10 +248,14 @@ def answer(start, end):
     options = {
         "ICE": "remove",
         "label": "callee",
-        "generate RTCP": "on"
     }
+    if config['transcoding'] == 'yes':
+        options['codec'] = {
+            "mask": ["all"],
+            "transcode": ["PCMU","PCMA"]
+        }
     command = commands.answer(
-        generate_sdp('127.0.0.1', end),
+        generate_sdp('127.0.0.1', end, codec="pcma"),
         f'{str(start)}-{str(end)}',
         f'from-tag{str(start)}',
         f'to-tag{str(start)}',
@@ -315,7 +353,9 @@ def generate_calls():
             rtpsend_addresses[dest] = str(start)
             dest = f'{config["rtpe_address"]}/{str(q["answer_rtp_port"])}'
             rtpsend_addresses[dest] = str(end)
-            logging.debug('rtpsend address added bot offer and answer side.')
+            logging.debug('rtpsend address added both offer and answer side.')
+        time.sleep(0.3)
+    time.sleep(10)
     
     if config['sender_method'] == 'ffmpeg':
         ffmpeg(ffmpeg_addresses)
@@ -326,15 +366,19 @@ def generate_calls():
         time.sleep(600)
 
 def delete():
+    cnt = 0
     for call in calls:
         if config['protocol'] == 'ws':
             ws_send(commands.delete(call['call_id'], call['from-tag']))
         elif config['protocol'] == 'udp':
             send(commands.delete(call['call-id'], call['from-tag']), 3001)
-            time.sleep(5)
-        elif config['protocol'] == 'tcp':
-            send(commands.delete(call['call-id'], call['from-tag']), 3001)
             time.sleep(1)
+        elif config['protocol'] == 'tcp':
+            logging.info(f"{call['call-id']} with {call['from-tag']} is deleted")
+            send(commands.delete(call['call-id'], call['from-tag']), 3001)
+            time.sleep(0.1)
+        cnt += 1
+    logging.info(f'{str(cnt)} call deleted!')
 
 def ping():
     if config['protocol'] == 'ws':
@@ -392,5 +436,5 @@ if __name__ == '__main__':
     except:
         logging.exception("Got exception on main handler.")
         delete()
-        if config['protocol'] != 'tcp':
-            sock.close()
+        # if config['protocol'] != 'tcp':
+            # sock.close()
