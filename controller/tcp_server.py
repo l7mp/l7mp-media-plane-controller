@@ -52,7 +52,7 @@ class TCPRequestHandler(socketserver.BaseRequestHandler):
                     response['sdp'] = response['sdp'].replace('127.0.0.1', config['ingress_address'])
                 self.request.sendall(bytes(data['cookie'] + " " + bc.encode(response).decode(), 'utf-8'))
                 logging.debug("Response from rtpengine sent back to client")
-                if data['command'] == 'answer':
+                if data['command'] == 'answer' and config['envoy_operator'] == 'no':
                     raw_query = rtpe_socket.send(query_message(data['call-id']))
                     logging.debug(f"Query for {call_id} sent out")
                     if not raw_query:
@@ -68,6 +68,9 @@ class TCPRequestHandler(socketserver.BaseRequestHandler):
                         logging.debug(f"Data to envoy: {json_data}")
                         envoy_socket.send(json_data, no_wait_response=True)
                         logging.debug("After envoy send")
+                elif data['command'] == 'answer':
+                    query = parse_bc(rtpe_socket.send(query_message(call_id)))
+                    create_resource(call_id, data['from-tag'], data['to-tag'], config, query)
 
 # class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 #     pass
@@ -78,8 +81,9 @@ def serve(conf):
     global envoy_socket
     config = conf
 
-    rtpe_socket = TCPSocket(conf['rtpe_address'], conf['rtpe_port'], delay=45)
-    envoy_socket = TCPSocket(conf['envoy_address'], conf['envoy_port'])
+    rtpe_socket = TCPSocket(config['rtpe_address'], config['rtpe_port'], delay=45)
+    if config['envoy_operator'] == 'no':
+        envoy_socket = TCPSocket(config['envoy_address'], config['envoy_port'])
 
     HOST, PORT = config['local_address'], int(config['local_port'])
     with socketserver.TCPServer((HOST, PORT), TCPRequestHandler) as server:
