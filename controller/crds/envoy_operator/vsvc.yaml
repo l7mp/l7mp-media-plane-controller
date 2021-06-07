@@ -1,0 +1,23 @@
+apiVersion: l7mp.io/v1
+kind: VirtualService
+metadata:
+  name: vsvc-name
+spec:
+  selector:
+    matchLabels:
+      app: l7mp-ingress
+  listener:
+    spec:
+      UDP:
+        port: 10000
+    rules:
+      - action:
+          route:
+            destination:
+              spec:
+                UDP:
+                  port: 30000
+              endpoints:
+                - selector:
+                    matchLabels:
+                      app: worker

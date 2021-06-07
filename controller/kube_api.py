@@ -32,6 +32,7 @@ class Client():
         self.remote_rtcp_port = kwargs.get('remote_rtcp_port', None)
         self.without_jsonsocket = kwargs.get('without_jsonsocket', None)
         self.ws = kwargs.get('ws', None)
+        self.envoy = kwargs.get('envoy', 'no')
 
         self.create_resources()
 
@@ -46,7 +47,9 @@ class Client():
         logging.info(f"{resource['metadata']['name']} created!")
 
     def create_resources(self):
-        if self.without_jsonsocket == 'no':
+        if self.envoy == 'yes':
+            self.create_envoy_vsvc()
+        elif self.without_jsonsocket == 'no':
             self.create_vsvc()
             self.create_rule()
         else:
@@ -65,17 +68,12 @@ class Client():
         logging.info(f'{resource[1]} deleted.')
 
     def delete_resources(self):
-        if self.without_jsonsocket == 'no':
-            for r in self.resource_names:
-                self.delete_resource(r)
-        else:
-            for r in self.resource_names:
-                self.delete_resource(r)
+        for r in self.resource_names:
+            self.delete_resource(r)
 
     def create_vsvc(self):
         with open('crds/simple_vsvc.yaml', 'r') as f:
             resource = yaml.load(f)
-            logging.info(resource)
             resource['metadata']['name'] = f'ingress-rtp-vsvc-{self.simple_call_id}-{self.simple_tag}'
             resource['spec']['listener']['spec']['UDP']['port'] = self.remote_rtp_port
             resource['spec']['listener']['rules'][0]['action']['rewrite'][0]['valueStr'] = self.call_id
@@ -183,7 +181,38 @@ class Client():
             self.create_object(resource, 'Target')
             self.resource_names.append(('Target', resource['metadata']['name']))
 
+    def create_envoy_vsvc(self):
+        with open('crds/envoy_operator/vsvc.yaml', 'r') as f:
+            resource = yaml.load(f)
+            resource['metadata']['name'] = f'ingress-rtp-{self.simple_call_id}-{self.simple_tag}'
+            resource['spec']['selector']['matchLabels']['app'] = 'envoy-ingress'
+            resource['spec']['listener']['spec']['udp']['port'] = self.remote_rtp_port
+            resource['spec']['listener']['rules'][0]['action']['route']['destination']['spec']['UDP']['port'] = self.remote_rtp_port + 20000
+            resource['spec']['listener']['rules'][0]['action']['route']['destination']['endpoints'] = [{'selector': {'matchLabels': {'app': 'worker'}}}]
+            self.create_object(resource, 'VirtualService')
+            self.resource_names.append(('VirtualService'), resource['metadata']['name'])
 
+            resource['metadata']['name'] = f'ingress-rtcp-{self.simple_call_id}-{self.simple_tag}'
+            resource['spec']['selector']['matchLabels']['app'] = 'envoy-ingress'
+            resource['spec']['listener']['spec']['udp']['port'] = self.remote_rtcp_port
+            resource['spec']['listener']['rules'][0]['action']['route']['destination']['spec']['UDP']['port'] = self.remote_rtcp_port + 20000
+            self.create_object(resource, 'VirtualService')
+            self.resource_names.append(('VirtualService'), resource['metadata']['name'])
+
+            resource['metadata']['name'] = f'worker-rtp-{self.simple_call_id}-{self.simple_tag}'
+            resource['spec']['selector']['matchLabels']['app'] = 'worker'
+            resource['spec']['listener']['spec']['udp']['port'] = self.remote_rtp_port + 20000
+            resource['spec']['listener']['rules'][0]['action']['route']['destination']['spec']['UDP']['port'] = self.remote_rtp_port
+            resource['spec']['listener']['rules'][0]['action']['route']['destination']['endpoints'] = [{'spec': {'address': '127.0.0.1'}}]
+            self.create_object(resource, 'VirtualService')
+            self.resource_names.append(('VirtualService'), resource['metadata']['name'])
+
+            resource['metadata']['name'] = f'worker-rtcp-{self.simple_call_id}-{self.simple_tag}'
+            resource['spec']['selector']['matchLabels']['app'] = 'worker'
+            resource['spec']['listener']['spec']['udp']['port'] = self.remote_rtcp_port + 20000
+            resource['spec']['listener']['rules'][0]['action']['route']['destination']['spec']['UDP']['port'] = self.remote_rtcp_port
+            self.create_object(resource, 'VirtualService')
+            self.resource_names.append(('VirtualService'), resource['metadata']['name'])
 
     def __str__(self):
         return (

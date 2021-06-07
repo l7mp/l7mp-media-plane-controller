@@ -1,0 +1,16 @@
+apiVersion: l7mp.io/v1
+kind: Target
+metadata:
+  name: rtp-ingress-target-30023004-fromtag3002
+spec:
+  selector:
+    matchLabels:
+      app: l7mp-ingress
+  cluster:
+    spec:
+      UDP:
+        port: 10000
+    endpoints:
+      - selector:
+          matchLabels:
+            app: l7mp-worker

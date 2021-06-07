@@ -12,6 +12,7 @@
 - **sidecar_type**: type of used sidecars (l7mp, envoy)
 - **without_jsonsocket**: define which type of crds have to apply (yes, no)
 - **ingress_address**: Kubernetes node IP address
+- **envoy_operator**: If you want to use with envoy proxies (yes, no)
 
 ## Kubernetes resources
 

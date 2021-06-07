@@ -167,7 +167,8 @@ def create_resource(call_id, from_tag, to_tag, sock):
             remote_rtp_port=from_port,
             remote_rtcp_port=from_port + 1,
             without_jsonsocket=config['without_jsonsocket'],
-            ws=ws
+            ws=ws,
+            envoy=config['envoy_operator'] if config['envoy_operator'] else 'no'
         )
     )
     kubernetes_apis.append(
@@ -180,7 +181,8 @@ def create_resource(call_id, from_tag, to_tag, sock):
             remote_rtp_port=to_port,
             remote_rtcp_port=to_port + 1,
             without_jsonsocket=config['without_jsonsocket'],
-            ws=ws
+            ws=ws,
+            envoy=config['envoy_operator'] if config['envoy_operator'] else 'no'
         )
     )
 
