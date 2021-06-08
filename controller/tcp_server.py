@@ -69,7 +69,7 @@ class TCPRequestHandler(socketserver.BaseRequestHandler):
                         envoy_socket.send(json_data, no_wait_response=True)
                         logging.debug("After envoy send")
                 elif data['command'] == 'answer':
-                    query = parse_bc(rtpe_socket.send(query_message(call_id)))
+                    query = parse_bc(rtpe_socket.send(query_message(data['call-id'])))
                     create_resource(call_id, data['from-tag'], data['to-tag'], config, query)
 
 # class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
