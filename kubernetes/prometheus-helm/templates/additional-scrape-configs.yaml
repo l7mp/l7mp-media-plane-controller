@@ -7,4 +7,4 @@ metadata:
   namespace: {{ .Values.namespace }}
 data:
   prometheus-additional.yaml: |-
-    {{ .Files.Get "scrapeconfigs/prometheus-additional.yaml" | b64enc }}
+    {{ .Files.Get "extras/prometheus-additional.yaml" | b64enc }}

@@ -1,5 +1,5 @@
 - job_name: "linphone1"
-  scrape_interval: 1ms
+  scrape_interval: 500ms
   metrics_path: /
   static_configs:
   - targets: ["10.0.1.6:8000"]
