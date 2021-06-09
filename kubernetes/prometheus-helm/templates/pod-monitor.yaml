@@ -1,0 +1,23 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: prometheus-operator
+  labels:
+    metrics: l7mp
+  namespace: {{ .Values.namespace }}
+spec:
+  podMetricsEndpoints:
+  - honorLabels: True
+    interval: 1s
+    port: {{ .Values.endpointPorts.prometheus.name }}
+    targetPort: {{ .Values.endpointPorts.prometheus.name }}
+    path: {{ .Values.endpointPorts.prometheus.path }}
+  selector:
+    matchExpressions:
+    # -  {key: app, operator: In, values: ['l7mp-operator']}
+    -  {key: app, operator: Exists}
+  namespaceSelector:
+    matchNames: 
+      - default
+      - {{ .Values.namespace }}

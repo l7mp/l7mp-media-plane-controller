@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  creationTimestamp: null
+  name: additional-scrape-configs
+  namespace: {{ .Values.namespace }}
+data:
+  prometheus-additional.yaml: |-
+    {{ .Files.Get "scrapeconfigs/prometheus-additional.yaml" | b64enc }}

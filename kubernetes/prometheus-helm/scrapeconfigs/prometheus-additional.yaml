@@ -1,0 +1,11 @@
+- job_name: "linphone1"
+  scrape_interval: 1ms
+  metrics_path: /
+  static_configs:
+  - targets: ["10.0.1.6:8000"]
+- job_name: "linphone2"
+  metrics_path: /
+  scrape_interval: 1ms 
+  static_configs:
+  - targets: ["10.0.1.7:8000"]
+    
