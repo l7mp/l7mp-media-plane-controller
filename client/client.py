@@ -294,6 +294,9 @@ def linphone():
     
     cmd1 = f'python app.py -p /home/user/shanty.wav -r /home/user/{config["record_filename"]} -c "call 456" -pr 10.0.1.6:8000'
     cmd2 = f'python app.py -p /home/user/shanty.wav -r /home/user/{config["record_filename"]} -c "answer 1" -pr 10.0.1.7:8000'
+    
+    logging.info(cmd1)
+    logging.info(cmd2)
 
     client1.execute(cmd1)
     time.sleep(1)
@@ -301,10 +304,13 @@ def linphone():
 
     time.sleep(int(config['linphone_time']) * 60)
 
-    # client1.execute(chr(3))
-    # client2.execute(chr(3))
+    client1.execute(chr(3))
+    client2.execute(chr(3))
+
+linphone_thread = None
 
 def generate_calls():
+    global linphone_thread
     ffmpeg_addresses = []
     rtpsend_addresses = {}
     ids = {}
