@@ -293,16 +293,16 @@ def linphone():
     client2 = ShellHandler(client2_config[1], client2_config[0], client2_config[0])
     
     cmd1 = f'python app.py -p /home/user/shanty.wav -r /home/user/{config["record_filename"]} -c "call 456" -pr 10.0.1.6:8000'
-    cmd2 = f'python app.py -p /home/user/shanty.wav -r /home/user/{config["record_filename"]} -c "answer 1" -pr 10.0.1.6:8000'
+    cmd2 = f'python app.py -p /home/user/shanty.wav -r /home/user/{config["record_filename"]} -c "answer 1" -pr 10.0.1.7:8000'
 
     client1.execute(cmd1)
     time.sleep(1)
     client2.execute(cmd2)
 
-    time.sleep(config['linphone_time'] * 60)
+    time.sleep(int(config['linphone_time']) * 60)
 
-    client1.execute(chr(3))
-    client2.execute(chr(3))
+    # client1.execute(chr(3))
+    # client2.execute(chr(3))
 
 def generate_calls():
     ffmpeg_addresses = []

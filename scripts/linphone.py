@@ -74,7 +74,7 @@ if __name__ == '__main__':
         write(process, args.command)
 
         capture = pyshark.LiveCapture(interface='any', display_filter='rtcp')
-        for p in capture.sniff_continuously(packet_count=50):
+        for p in capture.sniff_continuously():
             current_time = time.strftime("%H:%M:%S", time.localtime())
             moslq = p[7]._all_fields["rtcp.xr.voipmetrics.moslq"]
             moscq = p[7]._all_fields["rtcp.xr.voipmetrics.moscq"]
