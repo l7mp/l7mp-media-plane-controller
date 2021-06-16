@@ -9,9 +9,10 @@ import subprocess
 import sdp_transform
 import time
 import os
+import threading
 from websocket import create_connection
 from commands import Commands
-from paramiko import SSHClient
+from ssh_handler import ShellHandler
 
 log_levels = {
     'debug': logging.DEBUG, 
@@ -284,42 +285,32 @@ def query(start, end):
         'answer_rtcp_port': query['tags']["to-tag" + str(start)]['medias'][0]['streams'][1]['local port']
     }
 
-def ssh_user(linphone):
-    data = config[linphone].split("@")
-    user = SSHClient()
-    user.load_system_host_keys()
-    user.connect(data[1], username=data[0], password=data[2])
-    stdin, stdout, stderr = user.exec_command('linphonec')
-    print(type(stdin))  # <class 'paramiko.channel.ChannelStdinFile'>
-    print(type(stdout))  # <class 'paramiko.channel.ChannelFile'>
-    print(type(stderr))  # <class 'paramiko.channel.ChannelStderrFile'>
-    logging.info(f'STDOUT: {stderr.read().decode("utf8")}')
-
-    stdin.write('soundcard use files')
-    # stdin.write(f'play {config["linphone_wav_location"]}')
-    # stdin.channel.shutdown_write()
-
-    return stdin, stdout, stderr, user
-
 def linphone():
-    stdin1, stdout1, stderr1, user1 = ssh_user('ssh_linphone1')
-    logging.debug('Setup linphone1')
-    stdin2, stdout2, stderr2, user2 = ssh_user('ssh_linphone2')
-    logging.debug('Setup linphone2')
-    stdin1.write('call 456')
-    logging.debug('after write')
-    stdin1.channel.shutdown_write()
-    time.sleep(2)
-    stdin2.write('answer 1')
-    stdin2.channel.shutdown_write()
-    time.sleep(180)
-    stdin1.write('terminate 1')
-    stdin2.channel.shutdown_write()
+    client1_config = config['ssh_linphone1'].split('@')
+    client2_config = config['ssh_linphone2'].split('@')
+    
+    client1 = ShellHandler(client1_config[1], client1_config[0], client1_config[0])
+    client2 = ShellHandler(client2_config[1], client2_config[0], client2_config[0])
+    
+    cmd1 = f'python app.py -p /home/user/shanty.wav -r /home/user/{config["record_filename"]} -c "call 456" -pr 10.0.1.6:8000'
+    cmd2 = f'python app.py -p /home/user/shanty.wav -r /home/user/{config["record_filename"]} -c "answer 1" -pr 10.0.1.7:8000'
+    
+    logging.info(cmd1)
+    logging.info(cmd2)
 
-    stdin1.close(), stdout1.close(); stderr1.close(), user1.close()
-    stdin2.close(), stdout2.close(); stderr2.close(), user2.close()
+    client1.execute(cmd1)
+    time.sleep(1)
+    client2.execute(cmd2)
+
+    time.sleep(int(config['linphone_time']) * 60)
+
+    client1.execute(chr(3))
+    client2.execute(chr(3))
+
+linphone_thread = None
 
 def generate_calls():
+    global linphone_thread
     ffmpeg_addresses = []
     rtpsend_addresses = {}
     ids = {}
@@ -355,8 +346,13 @@ def generate_calls():
             rtpsend_addresses[dest] = str(end)
             logging.debug('rtpsend address added both offer and answer side.')
         time.sleep(0.3)
-    time.sleep(10)
     
+    if config['linphone'] == 'yes':
+        linphone_thread = threading.Thread(target=linphone, daemon=True)
+        linphone_thread.start()
+    
+    time.sleep(10)
+
     if config['sender_method'] == 'ffmpeg':
         ffmpeg(ffmpeg_addresses)
     if config['sender_method'] == 'rtpsend':
@@ -395,9 +391,6 @@ def main(conf):
     if not config:
         os._exit(1)
     logging.debug(config)
-    if config['sender_method'] == 'linphone':
-        linphone()
-        os._exit(1)
     if config['protocol'] == "ws":
         base_sock = create_tcp_socket(config['local_address'], 3000)
         sock = create_ws_socket(base_sock)
