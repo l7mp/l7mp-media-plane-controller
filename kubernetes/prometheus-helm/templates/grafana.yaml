@@ -15,7 +15,11 @@ data:
                 "orgId": 1,
                 "type": "prometheus",
                 "url": "http://prometheus.monitoring.svc:9090",
-                "version": 1
+                "version": 1,
+                "jsonData":
+                  {
+                    "timeInterval": "2s"
+                  },
             }
         ]
     }
