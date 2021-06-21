@@ -42,7 +42,7 @@ class TCPRequestHandler(socketserver.BaseRequestHandler):
                 if data['command'] == 'delete':
                     delete_kube_resources(call_id)
                 if data['command'] == 'answer':
-                    query = parse_bc(rtpe_socket.send(query_message(call_id)))
+                    query = parse_bc(rtpe_socket.send(query_message(data['call-id'])))
                     create_resource(call_id, data['from-tag'], data['to-tag'], config, query)
         if config['sidecar_type'] == 'envoy':
             raw_response = rtpe_socket.send(raw_data)

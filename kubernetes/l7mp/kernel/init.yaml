@@ -38,7 +38,7 @@ spec:
               "-o",
               "init",
               "-i",
-              "lo,eth0"
+              "all"
             ]
           ports:
             - containerPort: 1234
@@ -110,7 +110,7 @@ spec:
               "-o",
               "init",
               "-i",
-              "lo,eth0"
+              "all"
             ]
           ports:
             - containerPort: 1234
@@ -191,7 +191,7 @@ spec:
               "-o",
               "init",
               "-i",
-              "lo,eth0"
+              "all"
             ]
           ports:
             - containerPort: 1234
