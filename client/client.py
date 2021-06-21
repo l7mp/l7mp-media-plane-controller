@@ -277,6 +277,9 @@ def query(start, end):
         query = ws_send(commands.query(f'{str(start)}-{str(end)}'))
     else:
         query = send(commands.query(f'{str(start)}-{str(end)}'), 3000)
+    
+    if 'tags' not in query:
+        logging.debug(query)
 
     return {
         'offer_rtp_port': query['tags']["from-tag" + str(start)]['medias'][0]['streams'][0]['local port'],
