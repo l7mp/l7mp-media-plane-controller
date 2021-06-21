@@ -190,14 +190,14 @@ class Client():
             resource['spec']['listener']['rules'][0]['action']['route']['destination']['spec']['UDP']['port'] = self.remote_rtp_port + 20000
             resource['spec']['listener']['rules'][0]['action']['route']['destination']['endpoints'] = [{'selector': {'matchLabels': {'app': 'worker'}}}]
             self.create_object(resource, 'VirtualService')
-            self.resource_names.append(('VirtualService'), resource['metadata']['name'])
+            self.resource_names.append(('VirtualService', resource['metadata']['name']))
 
             resource['metadata']['name'] = f'ingress-rtcp-{self.simple_call_id}-{self.simple_tag}'
             resource['spec']['selector']['matchLabels']['app'] = 'envoy-ingress'
             resource['spec']['listener']['spec']['UDP']['port'] = self.remote_rtcp_port
             resource['spec']['listener']['rules'][0]['action']['route']['destination']['spec']['UDP']['port'] = self.remote_rtcp_port + 20000
             self.create_object(resource, 'VirtualService')
-            self.resource_names.append(('VirtualService'), resource['metadata']['name'])
+            self.resource_names.append(('VirtualService', resource['metadata']['name']))
 
             resource['metadata']['name'] = f'worker-rtp-{self.simple_call_id}-{self.simple_tag}'
             resource['spec']['selector']['matchLabels']['app'] = 'worker'
@@ -205,14 +205,14 @@ class Client():
             resource['spec']['listener']['rules'][0]['action']['route']['destination']['spec']['UDP']['port'] = self.remote_rtp_port
             resource['spec']['listener']['rules'][0]['action']['route']['destination']['endpoints'] = [{'spec': {'address': '127.0.0.1'}}]
             self.create_object(resource, 'VirtualService')
-            self.resource_names.append(('VirtualService'), resource['metadata']['name'])
+            self.resource_names.append(('VirtualService', resource['metadata']['name']))
 
             resource['metadata']['name'] = f'worker-rtcp-{self.simple_call_id}-{self.simple_tag}'
             resource['spec']['selector']['matchLabels']['app'] = 'worker'
             resource['spec']['listener']['spec']['UDP']['port'] = self.remote_rtcp_port + 20000
             resource['spec']['listener']['rules'][0]['action']['route']['destination']['spec']['UDP']['port'] = self.remote_rtcp_port
             self.create_object(resource, 'VirtualService')
-            self.resource_names.append(('VirtualService'), resource['metadata']['name'])
+            self.resource_names.append(('VirtualService', resource['metadata']['name']))
 
     def __str__(self):
         return (
