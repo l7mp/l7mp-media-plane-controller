@@ -15,7 +15,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "id": 2,
+  "id": 3,
   "links": [],
   "panels": [
     {
@@ -23,37 +23,9 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "displayName": "Average packet rate on per RTP stream basis",
+          "displayName": "Packet rate",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -73,33 +45,39 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
+        "h": 6,
+        "w": 6,
         "x": 0,
         "y": 0
       },
       "id": 18,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "mode": "single"
-        }
+        "text": {},
+        "textMode": "auto"
       },
+      "pluginVersion": "8.0.1",
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(envoy_cluster_udp_sess_rx_datagrams{envoy_cluster_name=~\".*ingress-.*-rtp.*\"}[1m]))/count(envoy_cluster_udp_sess_rx_datagrams{envoy_cluster_name=~\".*ingress-.*-rtp.*\"})",
+          "expr": "sum(rate(envoy_cluster_udp_sess_rx_datagrams{envoy_cluster_name=~\".*ingress-.*-rtp.*\"}[1m]))",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
         }
       ],
       "title": "Packet rate on ingress pods",
-      "type": "timeseries"
+      "type": "stat"
     },
     {
       "datasource": "prometheus",
@@ -108,7 +86,7 @@
           "color": {
             "mode": "thresholds"
           },
-          "displayName": "Average packet rate on per RTP stream basis",
+          "displayName": "Packet rate",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -128,9 +106,9 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
+        "h": 6,
+        "w": 6,
+        "x": 6,
         "y": 0
       },
       "id": 19,
@@ -149,11 +127,11 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "8.0.0",
+      "pluginVersion": "8.0.1",
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(rate(envoy_cluster_udp_sess_rx_datagrams{envoy_cluster_name=~\".*worker-.*-rtp.*\"}[1m]))/count(envoy_cluster_udp_sess_rx_datagrams{envoy_cluster_name=~\".*worker-.*-rtp.*\"})",
+          "expr": "sum(rate(envoy_cluster_udp_sess_rx_datagrams{envoy_cluster_name=~\".*worker-.*-rtp.*\"}[1m]))",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -169,36 +147,69 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
-          "custom": {
-            "axisLabel": "#",
-            "axisPlacement": "auto",
-            "axisSoftMin": 0,
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+          "decimals": 0,
+          "displayName": "Number of calls",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 12,
+        "y": 0
+      },
+      "id": 20,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "8.0.1",
+      "targets": [
+        {
+          "exemplar": true,
+          "expr": "floor(sum(envoy_udp_downstream_sess_active{envoy_udp_prefix=~\"ingress.*\"})/4)",
+          "interval": "",
+          "legendFormat": "",
+          "queryType": "randomWalk",
+          "refId": "A"
+        }
+      ],
+      "title": "Number of calls",
+      "type": "stat"
+    },
+    {
+      "datasource": "prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
           },
           "decimals": 0,
           "displayName": "Number of sessions on ingress pods",
@@ -220,26 +231,32 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 0,
-        "y": 8
+        "h": 6,
+        "w": 4,
+        "x": 16,
+        "y": 0
       },
-      "id": 20,
+      "id": 21,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "mode": "single"
-        }
+        "text": {},
+        "textMode": "auto"
       },
+      "pluginVersion": "8.0.1",
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(envoy_udp_downstream_sess_active{envoy_udp_prefix=~\"ingress.*\"})/4",
+          "expr": "floor(sum(envoy_udp_downstream_sess_active{envoy_udp_prefix=~\"ingress.*\"}))",
           "interval": "",
           "legendFormat": "",
           "queryType": "randomWalk",
@@ -247,43 +264,14 @@
         }
       ],
       "title": "Number of sessions on ingress pods",
-      "type": "timeseries"
+      "type": "stat"
     },
     {
       "datasource": "prometheus",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisLabel": "#",
-            "axisPlacement": "auto",
-            "axisSoftMin": 0,
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
+            "mode": "thresholds"
           },
           "decimals": 0,
           "displayName": "Number of sessions on worker pods",
@@ -305,26 +293,32 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 8
+        "h": 6,
+        "w": 4,
+        "x": 20,
+        "y": 0
       },
       "id": 16,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "mode": "single"
-        }
+        "text": {},
+        "textMode": "auto"
       },
+      "pluginVersion": "8.0.1",
       "targets": [
         {
           "exemplar": true,
-          "expr": "sum(envoy_udp_downstream_sess_active{envoy_udp_prefix=~\"worker.*\"})/4",
+          "expr": "floor(sum(envoy_udp_downstream_sess_active{envoy_udp_prefix=~\"worker.*\"}))",
           "interval": "",
           "legendFormat": "",
           "queryType": "randomWalk",
@@ -332,7 +326,7 @@
         }
       ],
       "title": "Number of sessions on worker pods",
-      "type": "timeseries"
+      "type": "stat"
     },
     {
       "datasource": "prometheus",
@@ -390,7 +384,7 @@
         "h": 7,
         "w": 12,
         "x": 0,
-        "y": 15
+        "y": 6
       },
       "id": 12,
       "options": {
@@ -472,7 +466,7 @@
         "h": 7,
         "w": 12,
         "x": 12,
-        "y": 15
+        "y": 6
       },
       "id": 10,
       "options": {
@@ -529,7 +523,7 @@
         "h": 8,
         "w": 4,
         "x": 0,
-        "y": 22
+        "y": 13
       },
       "id": 6,
       "options": {
@@ -544,7 +538,7 @@
         "showThresholdMarkers": true,
         "text": {}
       },
-      "pluginVersion": "8.0.0",
+      "pluginVersion": "8.0.1",
       "targets": [
         {
           "exemplar": true,
@@ -589,7 +583,7 @@
         "h": 8,
         "w": 4,
         "x": 4,
-        "y": 22
+        "y": 13
       },
       "id": 8,
       "options": {
@@ -604,7 +598,7 @@
         "showThresholdMarkers": true,
         "text": {}
       },
-      "pluginVersion": "8.0.0",
+      "pluginVersion": "8.0.1",
       "targets": [
         {
           "exemplar": true,
@@ -645,7 +639,7 @@
         "h": 8,
         "w": 4,
         "x": 8,
-        "y": 22
+        "y": 13
       },
       "id": 4,
       "options": {
@@ -663,7 +657,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "8.0.0",
+      "pluginVersion": "8.0.1",
       "targets": [
         {
           "exemplar": true,
@@ -682,38 +676,9 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
-          "custom": {
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "axisSoftMax": 5,
-            "axisSoftMin": 0,
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
+          "displayName": "Healthy upstreams",
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -735,42 +700,40 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 22
+        "y": 13
       },
       "id": 2,
       "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom"
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
         },
-        "tooltip": {
-          "mode": "single"
-        }
+        "text": {},
+        "textMode": "auto"
       },
+      "pluginVersion": "8.0.1",
       "targets": [
         {
           "exemplar": true,
-          "expr": "mos_lq",
-          "interval": "",
-          "legendFormat": "",
-          "queryType": "randomWalk",
-          "refId": "A"
-        },
-        {
-          "exemplar": true,
-          "expr": "mos_cq",
+          "expr": "envoy_cluster_health_check_healthy{envoy_cluster_name=~\"ingress-c-rtp-a-1-.*\"}",
           "hide": false,
           "interval": "",
           "legendFormat": "",
-          "refId": "B"
+          "refId": "A"
         }
       ],
-      "title": "mos",
-      "type": "timeseries"
+      "title": "Health Check",
+      "type": "stat"
     }
   ],
-  "refresh": false,
+  "refresh": "2s",
   "schemaVersion": 30,
   "style": "dark",
   "tags": [],
@@ -778,12 +741,12 @@
     "list": []
   },
   "time": {
-    "from": "2021-06-09T10:07:48.276Z",
-    "to": "2021-06-09T10:45:39.426Z"
+    "from": "now-5m",
+    "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "dashboard",
-  "uid": "test",
+  "uid": "8sJcctRnz",
   "version": 2
 }

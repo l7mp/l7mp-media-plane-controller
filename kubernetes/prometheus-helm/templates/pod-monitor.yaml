@@ -9,7 +9,7 @@ metadata:
 spec:
   podMetricsEndpoints:
   - honorLabels: True
-    interval: 1s
+    interval: 2s
     port: {{ .Values.endpointPorts.prometheus.name }}
     targetPort: {{ .Values.endpointPorts.prometheus.name }}
     path: {{ .Values.endpointPorts.prometheus.path }}
