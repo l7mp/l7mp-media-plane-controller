@@ -13,6 +13,7 @@
 - **without_jsonsocket**: define which type of crds have to apply (yes, no)
 - **ingress_address**: Kubernetes node IP address
 - **envoy_operator**: If you want to use with envoy proxies (yes, no)
+- **update_owners**: If you want to use ownerReferences (yes, no)
 
 ## Kubernetes resources
 
@@ -36,6 +37,8 @@ data:
     without_jsonsocket=no
     ingress_address=192.168.99.113
     sidecar_type=l7mp
+    envoy_operator=no
+    update_owners=no
 ```
 
 ### container

@@ -1,3 +1,4 @@
+from kubernetes.client.models import v1_label_selector
 from commands import Commands
 import logging
 import bencodepy
@@ -88,7 +89,8 @@ def create_resource(call_id, from_tag, to_tag, config, query):
             remote_rtcp_port=from_port + 1,
             without_jsonsocket=config['without_jsonsocket'],
             ws=ws,
-            envoy=config['envoy_operator']
+            envoy=config['envoy_operator'],
+            update_owners=config['update_owners']
         )
     )
     kubernetes_apis.append(
@@ -102,7 +104,8 @@ def create_resource(call_id, from_tag, to_tag, config, query):
             remote_rtcp_port=to_port + 1,
             without_jsonsocket=config['without_jsonsocket'],
             ws=ws,
-            envoy=config['envoy_operator']
+            envoy=config['envoy_operator'],
+            update_owners=config['update_owners']
         )
     )
 

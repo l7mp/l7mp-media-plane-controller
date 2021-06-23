@@ -1,3 +1,4 @@
+import re
 from kubernetes import client, config
 import logging
 import yaml
@@ -33,6 +34,7 @@ class Client():
         self.without_jsonsocket = kwargs.get('without_jsonsocket', None)
         self.ws = kwargs.get('ws', None)
         self.envoy = kwargs.get('envoy', 'no')
+        self.update_owners = kwargs.get('update_owners', 'no')
 
         self.create_resources()
 
@@ -74,7 +76,10 @@ class Client():
     def create_vsvc(self):
         with open('crds/simple_vsvc.yaml', 'r') as f:
             resource = yaml.load(f)
+            if self.update_owners == 'no':
+                del resource['metadata']['ownerReferences']
             resource['metadata']['name'] = f'ingress-rtp-vsvc-{self.simple_call_id}-{self.simple_tag}'
+            # resource['metadata']['ownerReferences'][0]['uid'] = f'ingress-rtp-vsvc-{self.simple_call_id}-{self.simple_tag}'
             resource['spec']['listener']['spec']['UDP']['port'] = self.remote_rtp_port
             resource['spec']['listener']['rules'][0]['action']['rewrite'][0]['valueStr'] = self.call_id
             resource['spec']['listener']['rules'][0]['action']['rewrite'][1]['valueStr'] = self.tag
@@ -83,6 +88,7 @@ class Client():
             self.resource_names.append(('VirtualService', resource['metadata']['name']))
             
             resource['metadata']['name'] = f'ingress-rtcp-vsvc-{self.simple_call_id}-{self.simple_tag}'
+            # resource['metadata']['ownerReferences'][0]['name'] = f'ingress-rtcp-vsvc-{self.simple_call_id}-{self.simple_tag}'
             resource['spec']['listener']['spec']['UDP']['port'] = self.remote_rtcp_port
             resource['spec']['listener']['rules'][0]['action']['route']['destinationRef'] = f'/l7mp.io/v1/Target/default/ingress-rtcp-target'
             self.create_object(resource, 'VirtualService')
@@ -91,7 +97,10 @@ class Client():
     def create_rule(self):
         with open('crds/simple_rule.yaml', 'r') as f:
             resource = yaml.load(f)
+            if self.update_owners == 'no':
+                del resource['metadata']['ownerReferences']
             resource['metadata']['name'] = f'worker-rtp-rule-{self.simple_call_id}-{self.simple_tag}'
+            # resource['metadata']['ownerReferences'][0]['name'] = f'worker-rtp-rule-{self.simple_call_id}-{self.simple_tag}'
             resource['spec']['rulelist'] = 'worker-rtp-rulelist'
             resource['spec']['rule']['match']['apply'][0]['value'] = self.call_id
             resource['spec']['rule']['match']['apply'][1]['value'] = self.tag
@@ -102,6 +111,7 @@ class Client():
             self.resource_names.append(('Rule', resource['metadata']['name']))
 
             resource['metadata']['name'] = f'worker-rtcp-rule-{self.simple_call_id}-{self.simple_tag}'
+            # resource['metadata']['ownerReferences'][0]['name'] = f'worker-rtcp-rule-{self.simple_call_id}-{self.simple_tag}'
             resource['spec']['rulelist'] = 'worker-rtcp-rulelist'
             resource['spec']['rule']['action']['route']['destination']['name'] = f'worker-rtcp-cluster-{self.simple_call_id}-{self.simple_tag}'
             resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['port'] = self.remote_rtcp_port

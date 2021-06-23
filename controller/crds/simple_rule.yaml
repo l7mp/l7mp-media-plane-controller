@@ -2,6 +2,11 @@ apiVersion: l7mp.io/v1
 kind: Rule
 metadata:
   name: worker-rtcp-rule-callid-tag
+  ownerReferences:
+    - apiVersion: l7mp.io/v1
+      kind: VirtualService
+      name: ingress-controller-listener
+      uid: fadfadss
 spec:
   updateOwners: True
   selector:
@@ -32,7 +37,3 @@ spec:
           endpoints:
             - spec:
                 address: 127.0.0.1
-        retry:
-          retry_on: always
-          num_retries: 10
-          timeout: 500

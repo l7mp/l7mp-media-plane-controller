@@ -2,6 +2,11 @@ apiVersion: l7mp.io/v1
 kind: VirtualService
 metadata:
   name: ingress-rtp-vsvc-call-id-tag
+  ownerReferences:
+    - apiVersion: l7mp.io/v1
+      kind: VirtualService
+      name: ingress-controller-listener
+      uid: adfadf
 spec:
   updateOwners: True
   selector:
@@ -22,9 +27,3 @@ spec:
               valueStr: tag
           route:
             destinationRef: /apis/l7mp.io/v1/namespaces/default/targets/ingress-rtp-target
-            retry:
-              retry_on: always
-              num_retries: 10
-              timeout: 500
-    options:
-      track: 600

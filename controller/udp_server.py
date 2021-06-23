@@ -26,7 +26,7 @@ class ThreadedUDPRequestHandler(socketserver.BaseRequestHandler):
         rtpe_address = (config['rtpe_address'], int(config["rtpe_port"]))
         envoy_address = (config['envoy_address'], int(config['envoy_port']))
 
-        raw_data = self.request[0].strip()
+        raw_data = self.request[0].decode().strip()
         socket = self.request[1]
         data = parse_data(raw_data)
         logging.info(f'Received {data["command"]}')
@@ -38,6 +38,7 @@ class ThreadedUDPRequestHandler(socketserver.BaseRequestHandler):
                 response = parse_bc(raw_response)
                 if 'sdp' in response:
                     response['sdp'] = response['sdp'].replace('127.0.0.1', config['ingress_address'])
+                logging.debug(self.client_address)
                 socket.sendto(bytes(data['cookie'] + " " + bc.encode(response).decode(), 'utf-8'), self.client_address)
                 logging.debug("Response from rtpengine sent back to client")
                 if data['command'] == 'delete':

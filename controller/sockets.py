@@ -63,7 +63,7 @@ class UDPSocket():
         counter = 0
         while counter < 3:
             try:
-                self.sock.sendtp(bytes(message, 'utf-8'), address)
+                self.sock.sendto(bytes(message, 'utf-8'), address)
                 response = str(self.sock.recv(4096), 'utf-8')
                 return response.strip()
             except OSError as e:
