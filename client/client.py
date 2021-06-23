@@ -348,13 +348,13 @@ def generate_calls():
             dest = f'{config["rtpe_address"]}/{str(q["answer_rtp_port"])}'
             rtpsend_addresses[dest] = str(end)
             logging.debug('rtpsend address added both offer and answer side.')
-        time.sleep(0.3)
+        time.sleep(0.5)
     
     if config['linphone'] == 'yes':
         linphone_thread = threading.Thread(target=linphone, daemon=True)
         linphone_thread.start()
     
-    time.sleep(10)
+    time.sleep(30)
 
     if config['sender_method'] == 'ffmpeg':
         ffmpeg(ffmpeg_addresses)
@@ -375,7 +375,7 @@ def delete():
         elif config['protocol'] == 'tcp':
             logging.info(f"{call['call-id']} with {call['from-tag']} is deleted")
             send(commands.delete(call['call-id'], call['from-tag']), 3001)
-            time.sleep(0.1)
+            time.sleep(0.5)
         cnt += 1
     logging.info(f'{str(cnt)} call deleted!')
 
@@ -397,8 +397,8 @@ def main(conf):
     if config['protocol'] == "ws":
         base_sock = create_tcp_socket(config['local_address'], 3000)
         sock = create_ws_socket(base_sock)
-    if config['protocol'] == "udp":
-        sock = create_udp_socket(config['local_address'], 3000)
+    # if config['protocol'] == "udp":
+    #     sock = create_udp_socket(config['local_address'], 3000)
     if config['protocol'] == "tcp":
         logging.info(config['protocol'])
         # sock = create_tcp_socket(config['local_address'], 3000)
@@ -423,11 +423,11 @@ if __name__ == '__main__':
     try:
         main(args.config)
         delete()
-        if config['protocol'] != 'tcp':
+        if config['protocol'] not in ['tcp', 'udp']:
             sock.close()
     except KeyboardInterrupt:
         delete()
-        if config['protocol'] != 'tcp':
+        if config['protocol'] not in ['tcp', 'udp']:
             sock.close()
     except:
         logging.exception("Got exception on main handler.")

@@ -87,7 +87,7 @@ data:
     # access only via the sidecar proxy
     # listen-ng=MY_IP:22222
     # interface=MY_IP
-    listen-ng=127.0.0.1:22222
+    listen-tcp-ng=127.0.0.1:22222
     interface=127.0.0.1
 
     foreground=true
@@ -100,13 +100,13 @@ data:
     # recording-method=pcap
     # recording-format=eth
 
-    log-level=7
+    log-level=6
     delete-delay=0
 
-    timeout=600
+    timeout=6000
 
-    redis = redis:6379/1
-    subscribe-keyspace=1
+    # redis = redis:6379/1
+    # subscribe-keyspace=1
     # redis-write = password@12.23.34.45:6379/42
     # redis-num-threads = 8
     # no-redis-required = false
@@ -116,7 +116,7 @@ data:
     # redis-cmd-timeout = 0
     # redis-connect-timeout = 1000
 
-    # sip-source = false
+    # sip-source = falsecontrol-worker
     # dtls-passive = false
 ---
 apiVersion: v1
@@ -134,15 +134,15 @@ metadata:
 data:
   config.conf: |
     [controller]
-    protocol=ws
-    rtpe_address=127.0.0.1
-    rtpe_port=22221
-    # envoy_address=1.0.0.0
-    # envoy_port=22222
-    local_address=127.0.0.1
-    local_port=2001
+    protocol=tcp
+    rtpe_address=l7mp-worker
+    rtpe_port=22220
+    envoy_address=127.0.0.1
+    envoy_port=1234
+    local_address=0.0.0.0
+    local_port=2000
     without_jsonsocket=no
-    ingress_address=192.168.99.113
+    ingress_address=10.0.1.2
     sidecar_type=l7mp
     envoy_operator=no
     update_owners=no
@@ -209,20 +209,12 @@ spec:
       app: l7mp-ingress
   listener:
     spec:
-      UDP:
+      TCP:
         port: 22222
     rules:
       - action:
           route:
             destinationRef: /l7mp.io/v1/Target/default/ingress-controller-target
-            retry:
-                retry_on: always
-                num_retries: 10
-                timeout: 500
-          rewrite:
-            - path: HTTP/headers/
-              value:
-                place-holder: place-holder
 ---
 apiVersion: l7mp.io/v1
 kind: Target
@@ -233,11 +225,11 @@ spec:
     matchLabels:
       app: l7mp-ingress
   cluster:
-    spec: 
-      WebSocket:
+    spec:
+      TCP:
         port: 2000
     endpoints:
-      - selector:
+      - selector: 
           matchLabels:
             app: rtpe-controller
 ---
@@ -251,16 +243,12 @@ spec:
       app: l7mp-worker
   listener:
     spec:
-      WebSocket:
-        port: 22222
+      TCP:
+        port: 22220
     rules:
       - action:
           route:
             destinationRef: /l7mp.io/v1/Target/default/worker-ng-target
-            retry:
-              retry_on: never
-              num_retries: 10
-              timeout: 500
 ---
 apiVersion: l7mp.io/v1
 kind: Target
@@ -272,76 +260,7 @@ spec:
       app: l7mp-worker
   cluster:
     spec:
-      UDP:
+      TCP:
         port: 22222
     endpoints:
-      - { spec: { address: "127.0.0.1" } }
----
-apiVersion: l7mp.io/v1
-kind: VirtualService
-metadata:
-  name: controller-listener
-spec:
-  selector:
-    matchLabels:
-      app: rtpe-controller
-  listener:
-    spec:
-      WebSocket:
-        port: 2000
-    rules:
-      - action:
-          route:
-            destinationRef: /l7mp.io/v1/Target/default/controller-target
----
-apiVersion: l7mp.io/v1
-kind: Target
-metadata:
-  name: controller-target
-spec:
-  selector:
-    matchLabels:
-      app: rtpe-controller
-  cluster:
-    spec:
-      WebSocket:
-        port: 1999
-    endpoints:
-      - { spec: { address: "127.0.0.1" } }
----
-apiVersion: l7mp.io/v1
-kind: VirtualService
-metadata:
-  name: controller-ng-listener
-spec:
-  selector:
-    matchLabels:
-      app: rtpe-controller
-  listener:
-    spec:
-      WebSocket:
-        port: 22221
-    rules:
-      - action:
-          route:
-            destinationRef: /l7mp.io/v1/Target/default/controller-ng-target
----
-apiVersion: l7mp.io/v1
-kind: Target
-metadata:
-  name: controller-ng-target
-spec:
-  selector:
-    matchLabels:
-      app: rtpe-controller
-  cluster:
-    spec:
-      WebSocket:
-        port: 22222
-    endpoints:
-      - selector:
-          matchLabels:
-            app: l7mp-worker
-    loadbalancer:
-      policy: ConsistentHash
-      key: HTTP/headers/callid
+      - {spec: {address: "127.0.0.1" }}

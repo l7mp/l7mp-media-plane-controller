@@ -144,6 +144,8 @@ data:
     without_jsonsocket=no
     ingress_address=192.168.99.113
     sidecar_type=l7mp
+    envoy_operator=no
+    update_owners=no
 ---
 apiVersion: l7mp.io/v1
 kind: Target
