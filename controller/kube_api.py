@@ -36,6 +36,7 @@ class Client():
         self.ws = kwargs.get('ws', None)
         self.envoy = kwargs.get('envoy', 'no')
         self.update_owners = kwargs.get('update_owners', 'no')
+        self.udp_mode = kwargs.get('udp_mode', 'server')
 
         self.create_resources()
 
@@ -97,6 +98,7 @@ class Client():
             resource['metadata']['name'] = f'ingress-rtp-vsvc-{self.simple_call_id}-{self.simple_tag}'
             # resource['metadata']['ownerReferences'][0]['uid'] = f'ingress-rtp-vsvc-{self.simple_call_id}-{self.simple_tag}'
             resource['spec']['listener']['spec']['UDP']['port'] = self.remote_rtp_port
+            resource['spec']['listener']['spec']['UDP']['options']['mode'] = self.udp_mode
             resource['spec']['listener']['rules'][0]['action']['rewrite'][0]['valueStr'] = self.call_id
             resource['spec']['listener']['rules'][0]['action']['rewrite'][1]['valueStr'] = self.tag
             resource['spec']['listener']['rules'][0]['action']['route']['destinationRef'] = f'/l7mp.io/v1/Target/default/ingress-rtp-target'

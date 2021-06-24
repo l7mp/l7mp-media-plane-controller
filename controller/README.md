@@ -14,6 +14,7 @@
 - **ingress_address**: Kubernetes node IP address
 - **envoy_operator**: If you want to use with envoy proxies (yes, no)
 - **update_owners**: If you want to use ownerReferences (yes, no)
+- **udp_mode**: You can set it to singleton or server mode.
 
 ## Kubernetes resources
 

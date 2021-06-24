@@ -90,7 +90,8 @@ def create_resource(call_id, from_tag, to_tag, config, query):
             without_jsonsocket=config['without_jsonsocket'],
             ws=ws,
             envoy=config['envoy_operator'],
-            update_owners=config['update_owners']
+            update_owners=config['update_owners'],
+            udp_mode=config['udp_mode']
         )
     )
     kubernetes_apis.append(
@@ -105,7 +106,8 @@ def create_resource(call_id, from_tag, to_tag, config, query):
             without_jsonsocket=config['without_jsonsocket'],
             ws=ws,
             envoy=config['envoy_operator'],
-            update_owners=config['update_owners']
+            update_owners=config['update_owners'],
+            udp_mode=config['udp_mode']
         )
     )
 

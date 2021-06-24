@@ -207,6 +207,8 @@ def load_config(conf):
         if "local_address" in config:
             config['local_address'] = socket.gethostbyname_ex(config['local_address'])[2][0]
             config['local_port'] = int(config['local_port'])
+        if "udp_mode" not in config:
+            config['udp_mode'] = 'server'
     except Exception:
         logging.error('Some key in configuration file is given wrong.')
         return None
