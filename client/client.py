@@ -348,14 +348,11 @@ def generate_calls():
             dest = f'{config["rtpe_address"]}/{str(q["answer_rtp_port"])}'
             rtpsend_addresses[dest] = str(end)
             logging.debug('rtpsend address added both offer and answer side.')
-        time.sleep(0.5)
     
     if config['linphone'] == 'yes':
         linphone_thread = threading.Thread(target=linphone, daemon=True)
         linphone_thread.start()
     
-    time.sleep(30)
-
     if config['sender_method'] == 'ffmpeg':
         ffmpeg(ffmpeg_addresses)
     if config['sender_method'] == 'rtpsend':

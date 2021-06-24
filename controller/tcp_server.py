@@ -37,21 +37,19 @@ class TCPRequestHandler(socketserver.BaseRequestHandler):
                 response = parse_bc(raw_response)
                 if 'sdp' in response:
                     response['sdp'] = response['sdp'].replace('127.0.0.1', config['ingress_address'])
-                self.request.sendall(bytes(data['cookie'] + " " + bc.encode(response).decode(), 'utf-8'))
-                logging.debug("Response from rtpengine sent back to client")
                 if data['command'] == 'delete':
                     delete_kube_resources(call_id)
                 if data['command'] == 'answer':
                     query = parse_bc(rtpe_socket.send(query_message(data['call-id'])))
                     create_resource(call_id, data['from-tag'], data['to-tag'], config, query)
+                self.request.sendall(bytes(data['cookie'] + " " + bc.encode(response).decode(), 'utf-8'))
+                logging.debug("Response from rtpengine sent back to client")
         if config['sidecar_type'] == 'envoy':
             raw_response = rtpe_socket.send(raw_data)
             if raw_response:
                 response = parse_bc(raw_response)
                 if 'sdp' in response:
                     response['sdp'] = response['sdp'].replace('127.0.0.1', config['ingress_address'])
-                self.request.sendall(bytes(data['cookie'] + " " + bc.encode(response).decode(), 'utf-8'))
-                logging.debug("Response from rtpengine sent back to client")
                 if data['command'] == 'answer' and config['envoy_operator'] == 'no':
                     raw_query = rtpe_socket.send(query_message(data['call-id']))
                     logging.debug(f"Query for {call_id} sent out")
@@ -71,6 +69,8 @@ class TCPRequestHandler(socketserver.BaseRequestHandler):
                 elif data['command'] == 'answer':
                     query = parse_bc(rtpe_socket.send(query_message(data['call-id'])))
                     create_resource(call_id, data['from-tag'], data['to-tag'], config, query)
+                self.request.sendall(bytes(data['cookie'] + " " + bc.encode(response).decode(), 'utf-8'))
+                logging.debug("Response from rtpengine sent back to client")
 
 # class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
 #     pass

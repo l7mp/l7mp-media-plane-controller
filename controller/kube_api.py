@@ -1,7 +1,8 @@
-import re
 from kubernetes import client, config
 import logging
+from kubernetes.client.exceptions import ApiException
 import yaml
+import time
 
 class Client():
 
@@ -47,6 +48,21 @@ class Client():
             body=resource
         )
         logging.info(f"{resource['metadata']['name']} created!")
+
+        while(True):
+            time.sleep(0.1)
+            try:
+                obj = self.api.get_namespaced_custom_object(
+                    group='l7mp.io',
+                    version='v1',
+                    namespace='default',
+                    plural=self.plurals[kind],
+                    name=resource['metadata']['name']
+                )
+            except ApiException as e: 
+                logging.error("Exception when calling CustomObjectsApi->get_cluster_custom_object: %s" % e)
+            if 'annotations' in obj['metadata']:
+                break
 
     def create_resources(self):
         if self.envoy == 'yes':
