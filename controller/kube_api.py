@@ -69,8 +69,8 @@ class Client():
         if self.envoy == 'yes':
             self.create_envoy_vsvc()
         elif self.without_jsonsocket == 'no':
-            self.create_vsvc()
             self.create_rule()
+            self.create_vsvc()
         else:
             self.create_without_jsonsocket_target()
             self.create_without_jsonsocket_vsvc()
