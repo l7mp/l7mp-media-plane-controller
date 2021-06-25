@@ -29,7 +29,7 @@ class TCPRequestHandler(socketserver.BaseRequestHandler):
         call_id = " "
         if "call-id" in data:
             call_id = ''.join(e for e in data['call-id'] if e.isalnum()).lower()
-        logging.info(f'Received {data["command"]}')
+        logging.warning(f'Received {data["command"]}')
         logging.debug(f'Received message: {raw_data}')
 
         if config['sidecar_type'] == 'l7mp':
