@@ -71,6 +71,8 @@ class TCPRequestHandler(socketserver.BaseRequestHandler):
                 elif data['command'] == 'answer':
                     query = parse_bc(rtpe_socket.send(query_message(data['call-id'])))
                     create_resource(call_id, data['from-tag'], data['to-tag'], config, query)
+                elif data['command'] == 'delete' and config['envoy_operator'] == 'yes':
+                    delete_kube_resources(call_id)
                 self.request.sendall(bytes(data['cookie'] + " " + bc.encode(response).decode(), 'utf-8'))
                 logging.debug("Response from rtpengine sent back to client")
 
