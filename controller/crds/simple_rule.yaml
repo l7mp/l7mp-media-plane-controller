@@ -37,3 +37,7 @@ spec:
           endpoints:
             - spec:
                 address: 127.0.0.1
+          retry:
+              retry_on: always
+              num_retries: 5
+              timeout: 250
