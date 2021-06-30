@@ -26,13 +26,13 @@ class TCPSocket():
                 self.sock.close()
                 logging.error(f"Server connection closed with {e}")
                 logging.info("Trying to reconnect")
-                self.connect()
+                self.connect(0)
                 counter += 1
             except IOError as e:
                 self.sock.close()
                 logging.error(f'IOError: {e}')
                 logging.info("Trying to reconnect")
-                self.connect()
+                self.connect(0)
                 counter += 1
         return
 
