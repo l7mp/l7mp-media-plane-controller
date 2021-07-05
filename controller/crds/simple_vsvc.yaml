@@ -27,7 +27,7 @@ spec:
               valueStr: tag
           route:
             destinationRef: /apis/l7mp.io/v1/namespaces/default/targets/ingress-rtp-target
-          retry:
-              retry_on: always
-              num_retries: 5
-              timeout: 250
+            retry:
+                retry_on: always
+                num_retries: 5
+                timeout: 250

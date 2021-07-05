@@ -34,7 +34,7 @@ spec:
               "config/l7mp-sidecar.yaml",
               "-s",
               "-l",
-              "silly",
+              "info",
             ]
           ports:
             - containerPort: 1234
@@ -98,7 +98,7 @@ spec:
               "config/l7mp-worker.yaml",
               "-s",
               "-l",
-              "silly",
+              "info",
             ]
           ports:
             - containerPort: 1234
@@ -108,9 +108,9 @@ spec:
         - name: net-debug
           image: l7mp/net-debug:0.5.3
         - name: rtpengine
-          # image: drachtio/rtpengine
-          image: vidarhun/redis-rtpengine
-          imagePullPolicy: IfNotPresent
+          image: drachtio/rtpengine
+          # image: redis-rtpengine
+          imagePullPolicy: Always
           # command: ["/bin/sh"]
           # args: ["-c", "while true; do echo hello; sleep 10;done"]
           command: ["/usr/local/bin/rtpengine"]
@@ -171,7 +171,7 @@ spec:
               "config/l7mp-worker.yaml",
               "-s",
               "-l",
-              "silly",
+              "info",
             ]
           ports:
             - containerPort: 1234
@@ -181,9 +181,9 @@ spec:
         - name: net-debug
           image: l7mp/net-debug:0.5.3
         - name: rtpengine
-          # image: drachtio/rtpengine
-          image: vidarhun/redis-rtpengine
-          imagePullPolicy: IfNotPresent
+          image: drachtio/rtpengine
+          # image: redis-rtpengine
+          imagePullPolicy: Always
           # command: ["/bin/sh"]
           # args: ["-c", "while true; do echo hello; sleep 10;done"]
           command: ["/usr/local/bin/rtpengine"]

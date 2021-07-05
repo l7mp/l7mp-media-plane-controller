@@ -146,6 +146,7 @@ data:
     sidecar_type=l7mp
     envoy_operator=no
     update_owners=no
+    udp_mode=server
 ---
 apiVersion: l7mp.io/v1
 kind: Target

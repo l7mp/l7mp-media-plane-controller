@@ -43,7 +43,7 @@ class TCPRequestHandler(socketserver.BaseRequestHandler):
                 if data['command'] == 'answer':
                     query = parse_bc(rtpe_socket.send(query_message(data['call-id'])))
                     create_resource(call_id, data['from-tag'], data['to-tag'], config, query)
-                time.sleep(0.1)
+                time.sleep(0.5)
                 self.request.sendall(bytes(data['cookie'] + " " + bc.encode(response).decode(), 'utf-8'))
                 logging.debug("Response from rtpengine sent back to client")
         if config['sidecar_type'] == 'envoy':

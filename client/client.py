@@ -273,6 +273,8 @@ def answer(start, end):
     return res
 
 def query(start, end):
+    logging.info("Wait 10 sec")
+    time.sleep(10)
     if config['protocol'] == 'ws':
         query = ws_send(commands.query(f'{str(start)}-{str(end)}'))
     else:
