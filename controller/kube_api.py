@@ -1,8 +1,10 @@
+from urllib.parse import non_hierarchical
 from kubernetes import client, config
 import logging
 from kubernetes.client.exceptions import ApiException
 import yaml
 import time
+import requests
 
 class Client():
 
@@ -11,6 +13,7 @@ class Client():
         logging.debug('Connected to Kubernetes.')
         
         self.api = client.CustomObjectsApi()
+        self.l7mp_api = client.CoreV1Api()
         logging.debug('CustomObjectsAPI is initialized.')
 
         self.plurals = {
@@ -40,7 +43,16 @@ class Client():
 
         self.create_resources()
 
+    def get_l7mp_config(self, url):
+        # The url should contain the port number url:port
+        response = requests.get(url)
+        if response.status_code != 200:
+            logging.warning(f"During {url} fetch got this code {response.status_code}. Retry")
+            return response.status_code
+        return 200
+
     def create_object(self, resource, kind):
+        # logging.info("Before")
         self.api.create_namespaced_custom_object(
             group='l7mp.io',
             version='v1',
@@ -48,8 +60,31 @@ class Client():
             plural=self.plurals[kind],
             body=resource
         )
-        logging.info(f"{resource['metadata']['name']} created!")
+        # logging.info("After")
+        # if self.envoy == 'no':
+        #     logging.info(f"{resource['metadata']['name']} created!")
+        #     label = resource['spec']['selector']['matchLabels']['app']
 
+        #     items = self.l7mp_api.list_namespaced_pod(namespace='default', label_selector=f'app={label}')
+        #     logging.info("get pods")
+        #     items_dict = items.to_dict()
+
+        #     route = None 
+        #     if self.plurals[kind] == 'virtualservices':
+        #         name = f'/l7mp.io/v1/VirtualService/default/{resource["metadata"]["name"]}'.replace("/", "%2F")
+        #         route = f'listeners/{name}'
+        #     elif self.plurals[kind] == 'rules':
+        #         name = f'/l7mp.io/v1/Rule/default/{resource["metadata"]["name"]}'.replace("/", "%2F")
+        #         route = f'rules/{name}'
+    
+        #     for i in items_dict['items']:
+        #         url = f"http://{i['status']['pod_ip']}:1234/api/v1/{route}"
+        #         while True:
+        #             time.sleep(0.25)
+        #             response = self.get_l7mp_config(url)
+        #             if response == 200:
+        #                 break;
+        # else:
         while(True):
             time.sleep(0.1)
             try:

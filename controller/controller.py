@@ -356,7 +356,7 @@ if __name__ == '__main__':
                         help='Log level, default is info', default='info')
     args = parser.parse_args()
     logging.basicConfig(
-        format='%(asctime)s [%(levelname)s] %(message)s', 
+        format='%(asctime)s.%(msecs)03d [%(levelname)s] %(message)s', 
         datefmt='%H:%M:%S', 
         level=log_levels[args.log_level.lower()])
     main(args.config)
