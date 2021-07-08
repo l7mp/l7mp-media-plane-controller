@@ -78,31 +78,29 @@ def create_resource(call_id, from_tag, to_tag, config, query):
     from_c_port = query['tags'][from_tag]['medias'][0]['streams'][0]['endpoint']['port']
     logging.debug('Every port and address is mapped.')
 
+    from_data = {
+        'tag': from_tag,
+        'local_ip': from_c_address,
+        'local_rtp_port': from_c_port,
+        'local_rtcp_port': from_c_port + 1,
+        'remote_rtp_port': from_port,
+        'remote_rtcp_port': from_port + 1,
+    }
+
+    to_data = {
+        'tag': to_tag,
+        'local_ip': to_c_address,
+        'local_rtp_port': to_c_port,
+        'local_rtcp_port': to_c_port + 1,
+        'remote_rtp_port': to_port,
+        'remote_rtcp_port': to_port + 1,
+    }
+
     kubernetes_apis.append(
         Client(
             call_id=call_id,
-            tag=from_tag,
-            local_ip=from_c_address,
-            local_rtp_port=from_c_port,
-            local_rtcp_port=from_c_port + 1,
-            remote_rtp_port=from_port,
-            remote_rtcp_port=from_port + 1,
-            without_jsonsocket=config['without_jsonsocket'],
-            ws=ws,
-            envoy=config['envoy_operator'],
-            update_owners=config['update_owners'],
-            udp_mode=config['udp_mode']
-        )
-    )
-    kubernetes_apis.append(
-        Client(
-            call_id=call_id,
-            tag=to_tag,
-            local_ip=to_c_address,
-            local_rtp_port=to_c_port,
-            local_rtcp_port=to_c_port + 1,
-            remote_rtp_port=to_port,
-            remote_rtcp_port=to_port + 1,
+            from_data=from_data,
+            to_data=to_data,
             without_jsonsocket=config['without_jsonsocket'],
             ws=ws,
             envoy=config['envoy_operator'],
