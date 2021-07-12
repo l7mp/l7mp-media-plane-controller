@@ -378,6 +378,7 @@ class Client():
                 resource['spec']['listener']['rules'][0]['action']['route']['destination']['spec']['UDP']['port'] = self.to_data["remote_rtcp_port"]
                 ret.append((copy.deepcopy(resource), 'VirtualService'))
                 self.resource_names.append(('VirtualService', resource['metadata']['name']))
+            return ret
 
     def __str__(self):
         return (
