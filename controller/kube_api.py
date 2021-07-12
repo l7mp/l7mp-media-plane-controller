@@ -113,7 +113,7 @@ class Client():
 
     def create_resources(self):
         if self.envoy == 'yes':
-            self.create_envoy_vsvc()
+            self.threaded_create_objects(self.create_envoy_vsvc())
         elif self.without_jsonsocket == 'no':
             self.threaded_create_objects(self.create_rule() + self.create_vsvc())
         else:
