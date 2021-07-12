@@ -28,11 +28,16 @@ class Client():
         self.resource_names = [] # List of tuples (kind, name)
 
         self.from_data = kwargs.get('from_data', None)
-        self.from_data['simple_tag'] = ''.join(e for e in self.from_data["tag"] if e.isalnum()).lower()
+        if self.from_data:
+            self.from_data['simple_tag'] = ''.join(e for e in self.from_data["tag"] if e.isalnum()).lower()
+        
         self.to_data = kwargs.get('to_data', None)
-        self.to_data['simple_tag'] = ''.join(e for e in self.to_data["tag"] if e.isalnum()).lower()
-        self.call_id = kwargs.get('call_id', None)
+        if self.to_data:
+            self.to_data['simple_tag'] = ''.join(e for e in self.to_data["tag"] if e.isalnum()).lower()
+       
+        logging.info(self.to_data)
 
+        self.call_id = kwargs.get('call_id', None)
         self.simple_call_id = ''.join(e for e in self.call_id if e.isalnum()).lower()
 
         self.without_jsonsocket = kwargs.get('without_jsonsocket', None)
@@ -137,50 +142,52 @@ class Client():
             if self.update_owners == 'no':
                 del resource['metadata']['ownerReferences']
             
-            resource['metadata']['name'] = f'ingress-rtp-vsvc-{self.simple_call_id}-{self.from_data["simple_tag"]}'
-            resource['spec']['listener']['spec']['UDP']['port'] = self.from_data["remote_rtp_port"]
-            if self.udp_mode == 'singleton':
-                resource['spec']['listener']['spec']['UDP']['connect'] = {'address': self.from_data["local_ip"], 'port': self.from_data["local_rtp_port"]}
-                resource['spec']['listener']['spec']['UDP']['options']['mode'] = self.udp_mode
-            resource['spec']['listener']['rules'][0]['action']['rewrite'][0]['valueStr'] = self.call_id
-            resource['spec']['listener']['rules'][0]['action']['rewrite'][1]['valueStr'] = self.from_data["tag"]
-            resource['spec']['listener']['rules'][0]['action']['route']['destinationRef'] = f'/l7mp.io/v1/Target/default/ingress-rtp-target'
-            ret.append((copy.deepcopy(resource), 'VirtualService'))
-            # self.create_object(resource, 'VirtualService')
-            self.resource_names.append(('VirtualService', resource['metadata']['name']))
-            
-            resource['metadata']['name'] = f'ingress-rtcp-vsvc-{self.simple_call_id}-{self.from_data["simple_tag"]}'
-            if self.udp_mode == 'singleton':
-                resource['spec']['listener']['spec']['UDP']['connect'] = {'address': self.from_data["local_ip"], 'port': self.from_data["local_rtcp_port"]}
-                resource['spec']['listener']['spec']['UDP']['options']['mode'] = self.udp_mode
-            resource['spec']['listener']['spec']['UDP']['port'] = self.from_data["remote_rtcp_port"]
-            resource['spec']['listener']['rules'][0]['action']['route']['destinationRef'] = f'/l7mp.io/v1/Target/default/ingress-rtcp-target'
-            ret.append((copy.deepcopy(resource), 'VirtualService'))
-            # self.create_object(resource, 'VirtualService')
-            self.resource_names.append(('VirtualService', resource['metadata']['name']))
+            if self.from_data:
+                resource['metadata']['name'] = f'ingress-rtp-vsvc-{self.simple_call_id}-{self.from_data["simple_tag"]}'
+                resource['spec']['listener']['spec']['UDP']['port'] = self.from_data["remote_rtp_port"]
+                if self.udp_mode == 'singleton':
+                    resource['spec']['listener']['spec']['UDP']['connect'] = {'address': self.from_data["local_ip"], 'port': self.from_data["local_rtp_port"]}
+                    resource['spec']['listener']['spec']['UDP']['options']['mode'] = self.udp_mode
+                resource['spec']['listener']['rules'][0]['action']['rewrite'][0]['valueStr'] = self.call_id
+                resource['spec']['listener']['rules'][0]['action']['rewrite'][1]['valueStr'] = self.from_data["tag"]
+                resource['spec']['listener']['rules'][0]['action']['route']['destinationRef'] = f'/l7mp.io/v1/Target/default/ingress-rtp-target'
+                ret.append((copy.deepcopy(resource), 'VirtualService'))
+                # self.create_object(resource, 'VirtualService')
+                self.resource_names.append(('VirtualService', resource['metadata']['name']))
+                
+                resource['metadata']['name'] = f'ingress-rtcp-vsvc-{self.simple_call_id}-{self.from_data["simple_tag"]}'
+                if self.udp_mode == 'singleton':
+                    resource['spec']['listener']['spec']['UDP']['connect'] = {'address': self.from_data["local_ip"], 'port': self.from_data["local_rtcp_port"]}
+                    resource['spec']['listener']['spec']['UDP']['options']['mode'] = self.udp_mode
+                resource['spec']['listener']['spec']['UDP']['port'] = self.from_data["remote_rtcp_port"]
+                resource['spec']['listener']['rules'][0]['action']['route']['destinationRef'] = f'/l7mp.io/v1/Target/default/ingress-rtcp-target'
+                ret.append((copy.deepcopy(resource), 'VirtualService'))
+                # self.create_object(resource, 'VirtualService')
+                self.resource_names.append(('VirtualService', resource['metadata']['name']))
 
-
-            resource['metadata']['name'] = f'ingress-rtp-vsvc-{self.simple_call_id}-{self.to_data["simple_tag"]}'
-            resource['spec']['listener']['spec']['UDP']['port'] = self.to_data["remote_rtp_port"]
-            if self.udp_mode == 'singleton':
-                resource['spec']['listener']['spec']['UDP']['connect'] = {'address': self.to_data["local_ip"], 'port': self.to_data["local_rtp_port"]}
-                resource['spec']['listener']['spec']['UDP']['options']['mode'] = self.udp_mode
-            resource['spec']['listener']['rules'][0]['action']['rewrite'][0]['valueStr'] = self.call_id
-            resource['spec']['listener']['rules'][0]['action']['rewrite'][1]['valueStr'] = self.to_data["tag"]
-            resource['spec']['listener']['rules'][0]['action']['route']['destinationRef'] = f'/l7mp.io/v1/Target/default/ingress-rtp-target'
-            ret.append((copy.deepcopy(resource), 'VirtualService'))
-            # self.create_object(resource, 'VirtualService')
-            self.resource_names.append(('VirtualService', resource['metadata']['name']))
             
-            resource['metadata']['name'] = f'ingress-rtcp-vsvc-{self.simple_call_id}-{self.to_data["simple_tag"]}'
-            if self.udp_mode == 'singleton':
-                resource['spec']['listener']['spec']['UDP']['connect'] = {'address': self.to_data["local_ip"], 'port': self.to_data["local_rtcp_port"]}
-                resource['spec']['listener']['spec']['UDP']['options']['mode'] = self.udp_mode
-            resource['spec']['listener']['spec']['UDP']['port'] = self.to_data["remote_rtcp_port"]
-            resource['spec']['listener']['rules'][0]['action']['route']['destinationRef'] = f'/l7mp.io/v1/Target/default/ingress-rtcp-target'
-            ret.append((copy.deepcopy(resource), 'VirtualService'))
-            # self.create_object(resource, 'VirtualService')
-            self.resource_names.append(('VirtualService', resource['metadata']['name']))
+            if self.to_data:
+                resource['metadata']['name'] = f'ingress-rtp-vsvc-{self.simple_call_id}-{self.to_data["simple_tag"]}'
+                resource['spec']['listener']['spec']['UDP']['port'] = self.to_data["remote_rtp_port"]
+                if self.udp_mode == 'singleton':
+                    resource['spec']['listener']['spec']['UDP']['connect'] = {'address': self.to_data["local_ip"], 'port': self.to_data["local_rtp_port"]}
+                    resource['spec']['listener']['spec']['UDP']['options']['mode'] = self.udp_mode
+                resource['spec']['listener']['rules'][0]['action']['rewrite'][0]['valueStr'] = self.call_id
+                resource['spec']['listener']['rules'][0]['action']['rewrite'][1]['valueStr'] = self.to_data["tag"]
+                resource['spec']['listener']['rules'][0]['action']['route']['destinationRef'] = f'/l7mp.io/v1/Target/default/ingress-rtp-target'
+                ret.append((copy.deepcopy(resource), 'VirtualService'))
+                # self.create_object(resource, 'VirtualService')
+                self.resource_names.append(('VirtualService', resource['metadata']['name']))
+                
+                resource['metadata']['name'] = f'ingress-rtcp-vsvc-{self.simple_call_id}-{self.to_data["simple_tag"]}'
+                if self.udp_mode == 'singleton':
+                    resource['spec']['listener']['spec']['UDP']['connect'] = {'address': self.to_data["local_ip"], 'port': self.to_data["local_rtcp_port"]}
+                    resource['spec']['listener']['spec']['UDP']['options']['mode'] = self.udp_mode
+                resource['spec']['listener']['spec']['UDP']['port'] = self.to_data["remote_rtcp_port"]
+                resource['spec']['listener']['rules'][0]['action']['route']['destinationRef'] = f'/l7mp.io/v1/Target/default/ingress-rtcp-target'
+                ret.append((copy.deepcopy(resource), 'VirtualService'))
+                # self.create_object(resource, 'VirtualService')
+                self.resource_names.append(('VirtualService', resource['metadata']['name']))
             return ret
 
     def create_rule(self):
@@ -190,46 +197,48 @@ class Client():
             if self.update_owners == 'no':
                 del resource['metadata']['ownerReferences']
 
-            resource['metadata']['name'] = f'worker-rtp-rule-{self.simple_call_id}-{self.from_data["simple_tag"]}'
-            resource['spec']['rulelist'] = 'worker-rtp-rulelist'
-            resource['spec']['rule']['match']['apply'][0]['value'] = self.call_id
-            resource['spec']['rule']['match']['apply'][1]['value'] = self.from_data["tag"]
-            resource['spec']['rule']['action']['route']['destination']['name'] = f'worker-rtp-cluster-{self.simple_call_id}-{self.from_data["simple_tag"]}'
-            resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['port'] = self.from_data["remote_rtp_port"]
-            resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['bind']['port'] = self.from_data["local_rtp_port"]
-            ret.append((copy.deepcopy(resource), 'Rule'))
-            # self.create_object(resource, 'Rule')
-            self.resource_names.append(('Rule', resource['metadata']['name']))
+            if self.from_data:
+                resource['metadata']['name'] = f'worker-rtp-rule-{self.simple_call_id}-{self.from_data["simple_tag"]}'
+                resource['spec']['rulelist'] = 'worker-rtp-rulelist'
+                resource['spec']['rule']['match']['apply'][0]['value'] = self.call_id
+                resource['spec']['rule']['match']['apply'][1]['value'] = self.from_data["tag"]
+                resource['spec']['rule']['action']['route']['destination']['name'] = f'worker-rtp-cluster-{self.simple_call_id}-{self.from_data["simple_tag"]}'
+                resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['port'] = self.from_data["remote_rtp_port"]
+                resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['bind']['port'] = self.from_data["local_rtp_port"]
+                ret.append((copy.deepcopy(resource), 'Rule'))
+                # self.create_object(resource, 'Rule')
+                self.resource_names.append(('Rule', resource['metadata']['name']))
 
-            resource['metadata']['name'] = f'worker-rtcp-rule-{self.simple_call_id}-{self.from_data["simple_tag"]}'
-            resource['spec']['rulelist'] = 'worker-rtcp-rulelist'
-            resource['spec']['rule']['action']['route']['destination']['name'] = f'worker-rtcp-cluster-{self.simple_call_id}-{self.from_data["simple_tag"]}'
-            resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['port'] = self.from_data["remote_rtcp_port"]
-            resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['bind']['port'] = self.from_data["local_rtcp_port"]
-            ret.append((copy.deepcopy(resource), 'Rule'))
-            # self.create_object(resource, 'Rule')
-            self.resource_names.append(('Rule', resource['metadata']['name']))
+                resource['metadata']['name'] = f'worker-rtcp-rule-{self.simple_call_id}-{self.from_data["simple_tag"]}'
+                resource['spec']['rulelist'] = 'worker-rtcp-rulelist'
+                resource['spec']['rule']['action']['route']['destination']['name'] = f'worker-rtcp-cluster-{self.simple_call_id}-{self.from_data["simple_tag"]}'
+                resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['port'] = self.from_data["remote_rtcp_port"]
+                resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['bind']['port'] = self.from_data["local_rtcp_port"]
+                ret.append((copy.deepcopy(resource), 'Rule'))
+                # self.create_object(resource, 'Rule')
+                self.resource_names.append(('Rule', resource['metadata']['name']))
 
 
-            resource['metadata']['name'] = f'worker-rtp-rule-{self.simple_call_id}-{self.to_data["simple_tag"]}'
-            resource['spec']['rulelist'] = 'worker-rtp-rulelist'
-            resource['spec']['rule']['match']['apply'][0]['value'] = self.call_id
-            resource['spec']['rule']['match']['apply'][1]['value'] = self.to_data["tag"]
-            resource['spec']['rule']['action']['route']['destination']['name'] = f'worker-rtp-cluster-{self.simple_call_id}-{self.to_data["simple_tag"]}'
-            resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['port'] = self.to_data["remote_rtp_port"]
-            resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['bind']['port'] = self.to_data["local_rtp_port"]
-            ret.append((copy.deepcopy(resource), 'Rule'))
-            # self.create_object(resource, 'Rule')
-            self.resource_names.append(('Rule', resource['metadata']['name']))
+            if self.to_data:
+                resource['metadata']['name'] = f'worker-rtp-rule-{self.simple_call_id}-{self.to_data["simple_tag"]}'
+                resource['spec']['rulelist'] = 'worker-rtp-rulelist'
+                resource['spec']['rule']['match']['apply'][0]['value'] = self.call_id
+                resource['spec']['rule']['match']['apply'][1]['value'] = self.to_data["tag"]
+                resource['spec']['rule']['action']['route']['destination']['name'] = f'worker-rtp-cluster-{self.simple_call_id}-{self.to_data["simple_tag"]}'
+                resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['port'] = self.to_data["remote_rtp_port"]
+                resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['bind']['port'] = self.to_data["local_rtp_port"]
+                ret.append((copy.deepcopy(resource), 'Rule'))
+                # self.create_object(resource, 'Rule')
+                self.resource_names.append(('Rule', resource['metadata']['name']))
 
-            resource['metadata']['name'] = f'worker-rtcp-rule-{self.simple_call_id}-{self.to_data["simple_tag"]}'
-            resource['spec']['rulelist'] = 'worker-rtcp-rulelist'
-            resource['spec']['rule']['action']['route']['destination']['name'] = f'worker-rtcp-cluster-{self.simple_call_id}-{self.to_data["simple_tag"]}'
-            resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['port'] = self.to_data["remote_rtcp_port"]
-            resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['bind']['port'] = self.to_data["local_rtcp_port"]
-            ret.append((copy.deepcopy(resource), 'Rule'))
-            # self.create_object(resource, 'Rule')
-            self.resource_names.append(('Rule', resource['metadata']['name']))
+                resource['metadata']['name'] = f'worker-rtcp-rule-{self.simple_call_id}-{self.to_data["simple_tag"]}'
+                resource['spec']['rulelist'] = 'worker-rtcp-rulelist'
+                resource['spec']['rule']['action']['route']['destination']['name'] = f'worker-rtcp-cluster-{self.simple_call_id}-{self.to_data["simple_tag"]}'
+                resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['port'] = self.to_data["remote_rtcp_port"]
+                resource['spec']['rule']['action']['route']['destination']['spec']['UDP']['bind']['port'] = self.to_data["local_rtcp_port"]
+                ret.append((copy.deepcopy(resource), 'Rule'))
+                # self.create_object(resource, 'Rule')
+                self.resource_names.append(('Rule', resource['metadata']['name']))
             return ret
 
     def create_without_jsonsocket_vsvc(self):
@@ -308,35 +317,67 @@ class Client():
         with open('crds/envoy_operator/vsvc.yaml', 'r') as f:
             ret = []
             resource = yaml.load(f, Loader=yaml.FullLoader)
-            resource['metadata']['name'] = f'ingress-rtp-{self.simple_call_id}-{self.simple_tag}'
-            resource['spec']['selector']['matchLabels']['app'] = 'envoy-ingress'
-            resource['spec']['listener']['spec']['UDP']['port'] = self.remote_rtp_port
-            resource['spec']['listener']['rules'][0]['action']['route']['destination']['spec']['UDP']['port'] = self.remote_rtp_port + 20000
-            resource['spec']['listener']['rules'][0]['action']['route']['destination']['endpoints'] = [{'selector': {'matchLabels': {'app': 'worker'}}}]
-            ret.append((copy.deepcopy(resource), 'VirtualService'))
-            self.resource_names.append(('VirtualService', resource['metadata']['name']))
+            if self.from_data:
+                resource['metadata']['name'] = f'ingress-rtp-{self.simple_call_id}-{self.from_data["simple_tag"]}'
+                resource['spec']['selector']['matchLabels']['app'] = 'envoy-ingress'
+                resource['spec']['listener']['spec']['UDP']['port'] = self.from_data["remote_rtp_port"]
+                resource['spec']['listener']['rules'][0]['action']['route']['destination']['spec']['UDP']['port'] = self.from_data["remote_rtp_port"] + 20000
+                resource['spec']['listener']['rules'][0]['action']['route']['destination']['endpoints'] = [{'selector': {'matchLabels': {'app': 'worker'}}}]
+                ret.append((copy.deepcopy(resource), 'VirtualService'))
+                self.resource_names.append(('VirtualService', resource['metadata']['name']))
 
-            resource['metadata']['name'] = f'ingress-rtcp-{self.simple_call_id}-{self.simple_tag}'
-            resource['spec']['selector']['matchLabels']['app'] = 'envoy-ingress'
-            resource['spec']['listener']['spec']['UDP']['port'] = self.remote_rtcp_port
-            resource['spec']['listener']['rules'][0]['action']['route']['destination']['spec']['UDP']['port'] = self.remote_rtcp_port + 20000
-            ret.append((copy.deepcopy(resource), 'VirtualService'))
-            self.resource_names.append(('VirtualService', resource['metadata']['name']))
+                resource['metadata']['name'] = f'ingress-rtcp-{self.simple_call_id}-{self.from_data["simple_tag"]}'
+                resource['spec']['selector']['matchLabels']['app'] = 'envoy-ingress'
+                resource['spec']['listener']['spec']['UDP']['port'] = self.from_data["remote_rtcp_port"]
+                resource['spec']['listener']['rules'][0]['action']['route']['destination']['spec']['UDP']['port'] = self.from_data["remote_rtcp_port"] + 20000
+                ret.append((copy.deepcopy(resource), 'VirtualService'))
+                self.resource_names.append(('VirtualService', resource['metadata']['name']))
 
-            resource['metadata']['name'] = f'worker-rtp-{self.simple_call_id}-{self.simple_tag}'
-            resource['spec']['selector']['matchLabels']['app'] = 'worker'
-            resource['spec']['listener']['spec']['UDP']['port'] = self.remote_rtp_port + 20000
-            resource['spec']['listener']['rules'][0]['action']['route']['destination']['spec']['UDP']['port'] = self.remote_rtp_port
-            resource['spec']['listener']['rules'][0]['action']['route']['destination']['endpoints'] = [{'spec': {'address': '127.0.0.1'}}]
-            ret.append((copy.deepcopy(resource), 'VirtualService'))
-            self.resource_names.append(('VirtualService', resource['metadata']['name']))
+                resource['metadata']['name'] = f'worker-rtp-{self.simple_call_id}-{self.from_data["simple_tag"]}'
+                resource['spec']['selector']['matchLabels']['app'] = 'worker'
+                resource['spec']['listener']['spec']['UDP']['port'] = self.from_data["remote_rtp_port"] + 20000
+                resource['spec']['listener']['rules'][0]['action']['route']['destination']['spec']['UDP']['port'] = self.from_data["remote_rtp_port"]
+                resource['spec']['listener']['rules'][0]['action']['route']['destination']['endpoints'] = [{'spec': {'address': '127.0.0.1'}}]
+                ret.append((copy.deepcopy(resource), 'VirtualService'))
+                self.resource_names.append(('VirtualService', resource['metadata']['name']))
 
-            resource['metadata']['name'] = f'worker-rtcp-{self.simple_call_id}-{self.simple_tag}'
-            resource['spec']['selector']['matchLabels']['app'] = 'worker'
-            resource['spec']['listener']['spec']['UDP']['port'] = self.remote_rtcp_port + 20000
-            resource['spec']['listener']['rules'][0]['action']['route']['destination']['spec']['UDP']['port'] = self.remote_rtcp_port
-            ret.append((copy.deepcopy(resource), 'VirtualService'))
-            self.resource_names.append(('VirtualService', resource['metadata']['name']))
+                resource['metadata']['name'] = f'worker-rtcp-{self.simple_call_id}-{self.from_data["simple_tag"]}'
+                resource['spec']['selector']['matchLabels']['app'] = 'worker'
+                resource['spec']['listener']['spec']['UDP']['port'] = self.from_data["remote_rtcp_port"] + 20000
+                resource['spec']['listener']['rules'][0]['action']['route']['destination']['spec']['UDP']['port'] = self.from_data["remote_rtcp_port"]
+                ret.append((copy.deepcopy(resource), 'VirtualService'))
+                self.resource_names.append(('VirtualService', resource['metadata']['name']))
+            
+            if self.to_data:
+                resource['metadata']['name'] = f'ingress-rtp-{self.simple_call_id}-{self.to_data["simple_tag"]}'
+                resource['spec']['selector']['matchLabels']['app'] = 'envoy-ingress'
+                resource['spec']['listener']['spec']['UDP']['port'] = self.to_data["remote_rtp_port"]
+                resource['spec']['listener']['rules'][0]['action']['route']['destination']['spec']['UDP']['port'] = self.to_data["remote_rtp_port"] + 20000
+                resource['spec']['listener']['rules'][0]['action']['route']['destination']['endpoints'] = [{'selector': {'matchLabels': {'app': 'worker'}}}]
+                ret.append((copy.deepcopy(resource), 'VirtualService'))
+                self.resource_names.append(('VirtualService', resource['metadata']['name']))
+
+                resource['metadata']['name'] = f'ingress-rtcp-{self.simple_call_id}-{self.to_data["simple_tag"]}'
+                resource['spec']['selector']['matchLabels']['app'] = 'envoy-ingress'
+                resource['spec']['listener']['spec']['UDP']['port'] = self.to_data["remote_rtcp_port"]
+                resource['spec']['listener']['rules'][0]['action']['route']['destination']['spec']['UDP']['port'] = self.to_data["remote_rtcp_port"] + 20000
+                ret.append((copy.deepcopy(resource), 'VirtualService'))
+                self.resource_names.append(('VirtualService', resource['metadata']['name']))
+
+                resource['metadata']['name'] = f'worker-rtp-{self.simple_call_id}-{self.to_data["simple_tag"]}'
+                resource['spec']['selector']['matchLabels']['app'] = 'worker'
+                resource['spec']['listener']['spec']['UDP']['port'] = self.to_data["remote_rtp_port"] + 20000
+                resource['spec']['listener']['rules'][0]['action']['route']['destination']['spec']['UDP']['port'] = self.to_data["remote_rtp_port"]
+                resource['spec']['listener']['rules'][0]['action']['route']['destination']['endpoints'] = [{'spec': {'address': '127.0.0.1'}}]
+                ret.append((copy.deepcopy(resource), 'VirtualService'))
+                self.resource_names.append(('VirtualService', resource['metadata']['name']))
+
+                resource['metadata']['name'] = f'worker-rtcp-{self.simple_call_id}-{self.to_data["simple_tag"]}'
+                resource['spec']['selector']['matchLabels']['app'] = 'worker'
+                resource['spec']['listener']['spec']['UDP']['port'] = self.to_data["remote_rtcp_port"] + 20000
+                resource['spec']['listener']['rules'][0]['action']['route']['destination']['spec']['UDP']['port'] = self.to_data["remote_rtcp_port"]
+                ret.append((copy.deepcopy(resource), 'VirtualService'))
+                self.resource_names.append(('VirtualService', resource['metadata']['name']))
 
     def __str__(self):
         return (

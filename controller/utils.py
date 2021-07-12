@@ -109,6 +109,67 @@ def create_resource(call_id, from_tag, to_tag, config, query):
         )
     )
 
+def create_offer_resource(config, **kwargs):
+    global kubernetes_apis
+    for a in kubernetes_apis:
+        if a.call_id == kwargs.get('callid') and a.from_data:
+            logging.debug(f'A kubernetes resource are exist with this call-id: {kwargs.get("callid")}')
+            return
+
+    ws = True if config['protocol'] == 'ws' else False
+
+    from_data = {
+        'tag': kwargs.get('from_tag'),
+        'local_ip': kwargs.get('client_ip'),
+        'local_rtp_port': kwargs.get('client_rtp_port'),
+        'local_rtcp_port': kwargs.get('client_rtcp_port'),
+        'remote_rtp_port': kwargs.get('rtpe_rtp_port'),
+        'remote_rtcp_port': kwargs.get('rtpe_rtcp_port'),
+    }
+
+    kubernetes_apis.append(
+        Client(
+            call_id=kwargs.get('callid'),
+            from_data=from_data,
+            without_jsonsocket=config['without_jsonsocket'],
+            ws=ws,
+            envoy=config['envoy_operator'],
+            update_owners=config['update_owners'],
+            udp_mode=config['udp_mode']
+        )
+    )
+
+def create_answer_resource(config, **kwargs):
+    global kubernetes_apis
+    for a in kubernetes_apis:
+        if a.call_id == kwargs.get('callid') and a.to_data:
+            logging.debug(f'A kubernetes resource are exist with this call-id: {kwargs.get("callid")}')
+            return
+
+    ws = True if config['protocol'] == 'ws' else False
+
+    to_data = {
+        'tag': kwargs.get('to_tag'),
+        'local_ip': kwargs.get('client_ip'),
+        'local_rtp_port': kwargs.get('client_rtp_port'),
+        'local_rtcp_port': kwargs.get('client_rtcp_port'),
+        'remote_rtp_port': kwargs.get('rtpe_rtp_port'),
+        'remote_rtcp_port': kwargs.get('rtpe_rtcp_port'),
+    }
+
+    logging.info('answer')
+    kubernetes_apis.append(
+        Client(
+            call_id=kwargs.get('callid'),
+            to_data=to_data,
+            without_jsonsocket=config['without_jsonsocket'],
+            ws=ws,
+            envoy=config['envoy_operator'],
+            update_owners=config['update_owners'],
+            udp_mode=config['udp_mode']
+        )
+    )
+
 def create_json(caller_port, callee_port, call_id):
     return json.dumps({
         "caller_rtp": caller_port,

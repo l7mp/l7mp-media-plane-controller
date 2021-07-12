@@ -5,13 +5,16 @@ import time
 class TCPSocket():
 
     def __init__(self, address, port, delay=0):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.address = address
         self.port = port
+        self.create_socket()
+        self.connect(delay)
+
+    def create_socket(self):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 1)
         self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 3)
-        self.connect(delay)
 
     def send(self, message, no_wait_response=False):
         counter = 0
@@ -41,7 +44,7 @@ class TCPSocket():
         time.sleep(delay)
         logging.info(f"Delay connection by {delay} seconds")
         while True:
-            try:            
+            try:
                 self.sock.connect((self.address, self.port))
                 logging.info("Successful connection")
                 break
