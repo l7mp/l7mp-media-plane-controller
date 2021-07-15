@@ -141,16 +141,17 @@ def ffmpeg(calls):
     for process in processes:
         process.communicate()
 
-def rtpsend(calls):
+def rtpsend(calls, transcode=False):
     logging.info('Start every rtpsend process')
     processes = []
     locations = []
-    if config['transcoding'] == 'yes':
+    transcoding = config['transcoding'] == 'yes' and transcode
+    if transcoding:
         locations.append(config['rtpe_dump_codec1_location'])
         locations.append(config['rtpe_dump_codec2_location'])
     switch = 0
     for key, value in calls.items():
-        if config['transcoding'] == 'yes':
+        if transcoding:
             processes.append(
                 subprocess.Popen(
                     ["rtpsend", "-s", value, "-f", 
@@ -170,7 +171,7 @@ def rtpsend(calls):
     for process in processes:
         process.communicate()
 
-def generate_sdp(address, port, **kwargs):
+def generate_sdp(address, port, transcode=False, **kwargs):
     sdp_dict = {
         'version': 0,
         'origin': {
@@ -196,7 +197,8 @@ def generate_sdp(address, port, **kwargs):
             }
         ]
     }
-    if config['transcoding'] == 'yes':
+    transcoding = config['transcoding'] == 'yes' and transcode
+    if transcoding:
         if kwargs['codec'] == 'pcmu':
             sdp_dict['media'][0]['rtp'].append({
                 'payload': 101,
@@ -213,13 +215,13 @@ def generate_sdp(address, port, **kwargs):
             sdp_dict['media'][0]['payloads'] = "8"
     return sdp_transform.write(sdp_dict)
 
-def offer(start, end):
+def offer(start, end, transcode=False):
     global calls
     options = {
         "ICE": "remove",
         "label": "caller"
     }
-    if config['transcoding'] == 'yes':
+    if config['transcoding'] == 'yes' and transcode:
         options['codec'] = {
             "mask": ["all"],
             "transcode": ["PCMU","PCMA"]
@@ -245,12 +247,12 @@ def offer(start, end):
     logging.info(f'Offers sent with call-id: {str(start)}-{str(end)}')
     return res
 
-def answer(start, end):
+def answer(start, end, transcode=False):
     options = {
         "ICE": "remove",
         "label": "callee",
     }
-    if config['transcoding'] == 'yes':
+    if config['transcoding'] == 'yes' and transcode:
         options['codec'] = {
             "mask": ["all"],
             "transcode": ["PCMU","PCMA"]
@@ -273,8 +275,6 @@ def answer(start, end):
     return res
 
 def query(start, end):
-    logging.info("Wait 10 sec")
-    time.sleep(10)
     if config['protocol'] == 'ws':
         query = ws_send(commands.query(f'{str(start)}-{str(end)}'))
     else:
@@ -319,21 +319,26 @@ def generate_calls():
     ffmpeg_addresses = []
     rtpsend_addresses = {}
     ids = {}
+    number_of_transcoding_calls = int(config['transcoding_calls']) or 0
     for i in range(3002, 3000 + int(config['number_of_calls']) * 4, 4):
-        ids[str(i)] = i + 2
+        transcoded = False
+        if number_of_transcoding_calls != 0:
+            transcoded=True
+        ids[str(i)] = {'end': i + 2, 'transcoded': transcoded}
 
     logging.debug(ids)
 
-    for start, end in ids.items():
-        out = offer(int(start), end)
+    for start, value in ids.items():
+        out = offer(int(start), value['end'], value['transcoded'])
         if not out:
             return
-        out = answer(int(start), end)
+        out = answer(int(start), value['end'], value['transcoded'])
         if not out:
             return
-        q = query(int(start), end)
-        logging.info(f"Offer side rtpengine ports: {q['offer_rtp_port']}-{q['offer_rtcp_port']}")
-        logging.info(f"Answer side rtpengine ports: {q['answer_rtp_port']}-{q['answer_rtcp_port']}")
+        q = query(int(start), value['end'])
+        # logging.info(f"Offer side rtpengine ports: {q['offer_rtp_port']}-{q['offer_rtcp_port']}")
+        # logging.info(f"Answer side rtpengine ports: {q['answer_rtp_port']}-{q['answer_rtcp_port']}")
+        logging.info(f'{start}-{str(value["end"])} call is created')
         if config['sender_method'] == 'ffmpeg':
             ffmpeg_addresses.append(
                 f'rtp://{config["rtpe_address"]}:{str(q["offer_rtp_port"])}'
@@ -341,14 +346,14 @@ def generate_calls():
             )
             ffmpeg_addresses.append(
                 f'rtp://{config["rtpe_address"]}:{str(q["answer_rtp_port"])}'
-                f'?localrtpport={str(end)}'
+                f'?localrtpport={str(value["end"])}'
             )
             logging.debug('ffmpeg address added both offer and answer side.')
         if config['sender_method'] == 'rtpsend':
             dest = f'{config["rtpe_address"]}/{str(q["offer_rtp_port"])}'
             rtpsend_addresses[dest] = str(start)
             dest = f'{config["rtpe_address"]}/{str(q["answer_rtp_port"])}'
-            rtpsend_addresses[dest] = str(end)
+            rtpsend_addresses[dest] = str(value["end"])
             logging.debug('rtpsend address added both offer and answer side.')
     
     if config['linphone'] == 'yes':
@@ -358,7 +363,7 @@ def generate_calls():
     if config['sender_method'] == 'ffmpeg':
         ffmpeg(ffmpeg_addresses)
     if config['sender_method'] == 'rtpsend':
-        rtpsend(rtpsend_addresses)
+        rtpsend(rtpsend_addresses, value['transcoded'])
     if config['sender_method'] == 'wait':
         logging.info('Waiting for 10 minutes, before delete calls.')
         time.sleep(600)

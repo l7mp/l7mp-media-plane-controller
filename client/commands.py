@@ -1,9 +1,8 @@
-import json
-
 class Commands:
     ''' This class contain the RTPengine ng protocol commands.
     '''
 
+    @classmethod
     def ping(self):
         ''' Test connection with rptengine.
 
@@ -14,6 +13,7 @@ class Commands:
             'command': 'ping'
         }
 
+    @classmethod
     def offer(self, sdp, call_id, from_tag, **kwargs):
         ''' Send an offer message.
         
@@ -59,6 +59,7 @@ class Commands:
             **kwargs
         }
 
+    @classmethod
     def answer(self, sdp, call_id, from_tag, to_tag, **kwargs):
         ''' Send an answer message.
         
@@ -105,6 +106,7 @@ class Commands:
             **kwargs
         }
 
+    @classmethod
     def delete(self, call_id, from_tag, **kwargs):
         ''' Delete a call session from rtpengine.
 
@@ -124,6 +126,7 @@ class Commands:
             **kwargs
         }
 
+    @classmethod
     def list_calls(self, limit = 32):
         ''' Get a list of call-ids.
 
@@ -139,6 +142,7 @@ class Commands:
             'limit': str(limit)
         }
 
+    @classmethod
     def query(self, call_id, **kwargs):
         ''' Query data about a call by call_id.
 
@@ -157,6 +161,7 @@ class Commands:
             **kwargs
         }
 
+    @classmethod
     def start_recording(self, call_id, **kwargs):
         ''' Enables call recording for the call. 
 
@@ -179,6 +184,7 @@ class Commands:
             **kwargs
         }
 
+    @classmethod
     def stop_recording(self, call_id, **kwargs):
         ''' Disables call recording for the call. 
         
@@ -196,6 +202,7 @@ class Commands:
             **kwargs
         }
 
+    @classmethod
     def block_dtmf(self, call_id, **kwargs):
         ''' Disable DTMF events. (RFC 4733)
         
@@ -217,6 +224,7 @@ class Commands:
             **kwargs
         }
 
+    @classmethod
     def unblock_dtmf(self, call_id, **kwargs):
         ''' Unblock DTMF. 
 
