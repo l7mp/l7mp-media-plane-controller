@@ -6,6 +6,9 @@ rules:
 - apiGroups: ["l7mp.io"]
   resources: ["virtualservices", "targets", "rules"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: [""] # "" indicates the core API group
+  resources: ["pods"]
+  verbs: ["get", "watch", "list"]
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1

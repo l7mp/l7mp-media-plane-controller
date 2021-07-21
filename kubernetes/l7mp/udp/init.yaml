@@ -34,7 +34,7 @@ spec:
               "config/l7mp-sidecar.yaml",
               "-s",
               "-l",
-              "info",
+              "silly",
             ]
           ports:
             - containerPort: 1234
@@ -50,7 +50,7 @@ spec:
             - name: controller-volume
               mountPath: /app/config
           command: ["python"]
-          args: ["controller.py", "-c", "config/config.conf", "-l", "debug"]
+          args: ["new_controller.py", "-c", "config/config.conf", "-l", "debug"]
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -119,6 +119,7 @@ spec:
               "--config-file=/etc/rtpengine/rtpengine.conf",
               "-f",
               "-E",
+              "--endpoint-learning", "off"
             ]
           volumeMounts:
             - name: rtpengine-config-volume
@@ -192,6 +193,7 @@ spec:
               "--config-file=/etc/rtpengine/rtpengine.conf",
               "-f",
               "-E",
+              "--endpoint-learning", "off"
             ]
           volumeMounts:
             - name: rtpengine-config-volume

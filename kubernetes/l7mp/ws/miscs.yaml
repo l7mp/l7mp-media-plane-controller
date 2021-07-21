@@ -11,13 +11,65 @@ data:
       log_file: stdout
       access_log_path: /tmp/admin_access.log
     listeners:
-      - name: controller-listener
+      - name: controller-listener-admin
         spec: { protocol: HTTP, port: 1234 }
         rules:
           - action:
               route:
                 destination:
                   spec: { protocol: L7mpController }
+                retry:
+                  retry_on: always
+                  num_retries: 10
+                  timeout: 500
+      - name: worker-rtp-listener
+        spec:
+          protocol: JSONSocket
+          transport: { protocol: UDP, port: 19000 }
+        rules: worker-rtp-rulelist
+        options:
+          track: 3600 # 1 hour
+      - name: worker-rtcp-listener
+        spec:
+          protocol: JSONSocket
+          transport: { protocol: UDP, port: 19001 }
+        rules: worker-rtcp-rulelist
+        options:
+          track: 3600 # 1 hour
+    rulelists:
+      - name: worker-rtp-rulelist
+        rules: []
+      - name: worker-rtcp-rulelist
+        rules: []
+    clusters:
+      - name: ingress-metric-counter
+        spec: { protocol: Metric }
+      - name: egress-metric-counter
+        spec: { protocol: Metric }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: l7mp-sidecar-config
+data:
+  l7mp-sidecar.yaml: |
+    # Controller listening on 1234, plus some useful debug clusters
+    admin:
+      log_level: info
+      log_file: stdout
+      access_log_path: /tmp/admin_access.log
+    listeners:
+      - name: controller-listener-admin
+        spec: { protocol: HTTP, port: 1234 }
+        rules:
+          - action:
+              route:
+                destination:
+                  spec: { protocol: L7mpController }
+                retry:
+                  retry_on: always
+                  num_retries: 10
+                  timeout: 500
     clusters:
       - name: ingress-metric-counter
         spec: { protocol: Metric }
@@ -35,8 +87,8 @@ data:
     # access only via the sidecar proxy
     # listen-ng=MY_IP:22222
     # interface=MY_IP
-    # listen-tcp=127.0.0.1:22223
-    listen-ng=127.0.0.1:22222
+    listen-tcp-ng=127.0.01:1200
+    listen-http=127.0.0.1:22222
     interface=127.0.0.1
 
     foreground=true
@@ -76,49 +128,83 @@ data:
   redis-config: |
     notify-keyspace-events KEA
 ---
-apiVersion: l7mp.io/v1
-kind: VirtualService
+apiVersion: v1
+kind: ConfigMap
 metadata:
-  name: ws-worker-rtpengine-ng
-spec:
-  selector:
-    matchLabels:
-      app: l7mp-worker
-  listener:
-    spec:
-      WebSocket:
-        port: 22222
-    rules:
-      - action:
-          route:
-            destinationRef: /apis/l7mp.io/v1/namespaces/default/targets/ws-worker-rtpengine-ng-target
-          # rewrite:
-          #   - path: "HTTP/headers/sec-websocket-protocol"
-          #     valueStr: "ng.rtpengine.com"
-          #   - path: "HTTP/headers/sec-websocket-key"
-          #     valueStr: " "
-          #   - path: "HTTP/headers/host"
-          #     valueStr: " "
+  name: controller-config
+data:
+  config.conf: |
+    [controller]
+    protocol=ws
+    rtpe_address=127.0.0.1
+    rtpe_port=22222
+    # envoy_address=1.0.0.0
+    # envoy_port=22222
+    local_address=127.0.0.1
+    local_port=2001
+    without_jsonsocket=no
+    ingress_address=192.168.99.105
+    sidecar_type=l7mp
+    envoy_operator=no
+    update_owners=no
+    udp_mode=server
 ---
 apiVersion: l7mp.io/v1
 kind: Target
 metadata:
-  name: ws-worker-rtpengine-ng-target
+    name: ingress-rtp-target
 spec:
-  selector:
-    matchLabels:
-      app: l7mp-worker
+  selector: 
+    matchLabels: 
+      app: l7mp-ingress
   cluster:
     spec:
-      UDP:
-        port: 22222
+      JSONSocket:
+        transport:
+          UDP:
+            port: 19000
+        header:
+          - path:
+              from: '/labels'
+              to: '/labels'
     endpoints:
-      - { spec: { address: "127.0.0.1" } }
+      - selector:
+          matchLabels:
+            app: l7mp-worker
+    loadbalancer:
+      policy: ConsistentHash
+      key: '/labels/callid'
+---
+apiVersion: l7mp.io/v1
+kind: Target
+metadata:
+    name: ingress-rtcp-target
+spec:
+  selector: 
+    matchLabels: 
+      app: l7mp-ingress
+  cluster:
+    spec:
+      JSONSocket:
+        transport:
+          UDP:
+            port: 19001
+        header:
+          - path:
+              from: '/labels'
+              to: '/labels'
+    endpoints:
+      - selector:
+          matchLabels:
+            app: l7mp-worker
+    loadbalancer:
+      policy: ConsistentHash
+      key: '/labels/callid'
 ---
 apiVersion: l7mp.io/v1
 kind: VirtualService
 metadata:
-  name: ws-ingress-rtpengine-controller
+  name: ingress-controller-listener
 spec:
   selector:
     matchLabels:
@@ -126,29 +212,26 @@ spec:
   listener:
     spec:
       WebSocket:
-        port: 2000
+        port: 22222
     rules:
       - action:
           route:
-            destinationRef: /apis/l7mp.io/v1/namespaces/default/targets/ws-ingress-rtpengine-controller-target
-          # rewrite:
-          #   - path: "HTTP/headers/sec-websocket-protocol"
-          #     valueStr: " "
-          #   - path: "HTTP/headers/sec-websocket-key"
-          #     valueStr: " "
-          #   - path: "HTTP/headers/host"
-          #     valueStr: " "
+            destinationRef: /l7mp.io/v1/Target/default/ingress-controller-target
+            retry:
+                retry_on: always
+                num_retries: 10
+                timeout: 500
 ---
 apiVersion: l7mp.io/v1
 kind: Target
 metadata:
-  name: ws-ingress-rtpengine-controller-target
+  name: ingress-controller-target
 spec:
   selector:
     matchLabels:
       app: l7mp-ingress
   cluster:
-    spec:
+    spec: 
       WebSocket:
         port: 2000
     endpoints:
@@ -159,7 +242,43 @@ spec:
 apiVersion: l7mp.io/v1
 kind: VirtualService
 metadata:
-  name: ws-worker-rtpengine-controller
+  name: worker-ng-listener
+spec:
+  selector:
+    matchLabels:
+      app: l7mp-worker
+  listener:
+    spec:
+      WebSocket:
+        port: 22221
+    rules:
+      - action:
+          route:
+            destinationRef: /l7mp.io/v1/Target/default/worker-ng-target
+            retry:
+              retry_on: never
+              num_retries: 10
+              timeout: 500
+---
+apiVersion: l7mp.io/v1
+kind: Target
+metadata:
+  name: worker-ng-target
+spec:
+  selector:
+    matchLabels:
+      app: l7mp-worker
+  cluster:
+    spec:
+      WebSocket:
+        port: 22222
+    endpoints:
+      - { spec: { address: "127.0.0.1" } }
+---
+apiVersion: l7mp.io/v1
+kind: VirtualService
+metadata:
+  name: controller-listener
 spec:
   selector:
     matchLabels:
@@ -171,19 +290,12 @@ spec:
     rules:
       - action:
           route:
-            destinationRef: /apis/l7mp.io/v1/namespaces/default/targets/ws-worker-rtpengine-controller-target
-          # rewrite:
-          #   - path: "HTTP/headers/sec-websocket-protocol"
-          #     valueStr: " "
-          #   - path: "HTTP/headers/sec-websocket-key"
-          #     valueStr: " "
-          #   - path: "HTTP/headers/host"
-          #     valueStr: " "
+            destinationRef: /l7mp.io/v1/Target/default/controller-target
 ---
 apiVersion: l7mp.io/v1
 kind: Target
 metadata:
-  name: ws-worker-rtpengine-controller-target
+  name: controller-target
 spec:
   selector:
     matchLabels:
@@ -194,3 +306,40 @@ spec:
         port: 1999
     endpoints:
       - { spec: { address: "127.0.0.1" } }
+---
+apiVersion: l7mp.io/v1
+kind: VirtualService
+metadata:
+  name: controller-ng-listener
+spec:
+  selector:
+    matchLabels:
+      app: rtpe-controller
+  listener:
+    spec:
+      WebSocket:
+        port: 22222
+    rules:
+      - action:
+          route:
+            destinationRef: /l7mp.io/v1/Target/default/controller-ng-target
+---
+apiVersion: l7mp.io/v1
+kind: Target
+metadata:
+  name: controller-ng-target
+spec:
+  selector:
+    matchLabels:
+      app: rtpe-controller
+  cluster:
+    spec:
+      WebSocket:
+        port: 22221
+    endpoints:
+      - selector:
+          matchLabels:
+            app: l7mp-worker
+    loadbalancer:
+      policy: ConsistentHash
+      key: HTTP/headers/callid

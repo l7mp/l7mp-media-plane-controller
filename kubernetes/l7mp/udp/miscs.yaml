@@ -137,8 +137,8 @@ data:
     protocol=ws
     rtpe_address=127.0.0.1
     rtpe_port=22221
-    # envoy_address=1.0.0.0
-    # envoy_port=22222
+    envoy_address=1.0.0.0
+    envoy_port=22222
     local_address=127.0.0.1
     local_port=2001
     without_jsonsocket=no
