@@ -10,8 +10,6 @@
 - **local_address**: address used to send ng commands, only IP
 - **local_port**: port used to send ng commands
 - **sidecar_type**: type of used sidecars (l7mp, envoy)
-- **without_jsonsocket**: define which type of crds have to apply (yes, no)
-- **ingress_address**: Kubernetes node IP address
 - **envoy_operator**: If you want to use with envoy proxies (yes, no)
 - **update_owners**: If you want to use ownerReferences (yes, no)
 - **udp_mode**: You can set it to singleton or server mode.
@@ -31,12 +29,10 @@ data:
     protocol=ws
     rtpe_address=127.0.0.1
     rtpe_port=22221
-    # envoy_address=1.0.0.0
-    # envoy_port=22222
+    envoy_address=1.0.0.0
+    envoy_port=22222
     local_address=127.0.0.1
     local_port=2001
-    without_jsonsocket=no
-    ingress_address=192.168.99.113
     sidecar_type=l7mp
     envoy_operator=no
     update_owners=no
@@ -60,6 +56,8 @@ spec:
           mountPath: /app/config
       command: ["python"]
       args: ["controller.py", "-c", "config/config.conf", "-l", "debug"]
+      # OR 
+      args: ["new_controller.py", "-c", "config/config.conf", "-l", "debug"]
 ...
 ```
 
