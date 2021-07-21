@@ -21,21 +21,22 @@ envoy_socket = None
 
 config = {}
 
-class TCPRequestHandler(socketserver.BaseRequestHandler):
+class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
 
     def handle(self):
+        time_start = time.time()
         global rtpe_socket
         global envoy_socket
+
         raw_data = str(self.request.recv(4096), 'utf-8')
         data = parse_data(raw_data)
-        call_id = " "
+        call_id = ""
         client_ip, client_rtp_port = None, None
         if 'sdp' in data:
             sdp = sdp_transform.parse(data['sdp'])
             client_ip, client_rtp_port = sdp['origin']['address'], sdp['media'][0]['port']
         if "call-id" in data:
             call_id = ''.join(e for e in data['call-id'] if e.isalnum()).lower()
-        logging.warning(f'Received {data["command"]}')
         logging.debug(f'Received message: {raw_data}')
 
         if config['sidecar_type'] == 'l7mp':
@@ -66,6 +67,7 @@ class TCPRequestHandler(socketserver.BaseRequestHandler):
                     # query = parse_bc(rtpe_socket.send(query_message(data['call-id'])))
                     # create_resource(call_id, data['from-tag'], data['to-tag'], config, query)
                 # time.sleep(0.1)
+                logging.info(f"Call setup time: {int((time.time() - time_start) * 1000)}")
                 self.request.sendall(bytes(data['cookie'] + " " + bc.encode(response).decode(), 'utf-8'))
                 logging.debug("Response from rtpengine sent back to client")
         if config['sidecar_type'] == 'envoy':
@@ -112,8 +114,8 @@ class TCPRequestHandler(socketserver.BaseRequestHandler):
                 self.request.sendall(bytes(data['cookie'] + " " + bc.encode(response).decode(), 'utf-8'))
                 logging.debug("Response from rtpengine sent back to client")
 
-# class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
-#     pass
+class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    pass
 
 def serve(conf):
     global config
@@ -122,19 +124,20 @@ def serve(conf):
     config = conf
 
     rtpe_socket = TCPSocket(config['rtpe_address'], config['rtpe_port'], delay=45)
-    if config['envoy_operator'] == 'no':
+    if config['envoy_operator'] == 'no' and config['sidecar_type'] == 'envoy':
         envoy_socket = TCPSocket(config['envoy_address'], config['envoy_port'])
 
     HOST, PORT = config['local_address'], int(config['local_port'])
-    with socketserver.TCPServer((HOST, PORT), TCPRequestHandler) as server:
-        server.serve_forever()
-    # server = ThreadedTCPServer((HOST, PORT), ThreadedTCPRequestHandler)
-    # with server:
-    #     server_thread = threading.Thread(target=server.serve_forever)
-    #     try:
-    #         server_thread.daemon = True
-    #         server_thread.start()
-    #         logging.info(f"Server loop running in thread: {server_thread.name}")
-    #         server_thread.run()
-    #     except KeyboardInterrupt:
-    #         server.shutdown()
+    # with socketserver.TCPServer((HOST, PORT), TCPRequestHandler) as server:
+    #     server.serve_forever()
+
+    server = ThreadedTCPServer((HOST, PORT), ThreadedTCPRequestHandler)
+    with server:
+        server_thread = threading.Thread(target=server.serve_forever)
+        try:
+            # server_thread.daemon = True
+            server_thread.start()
+            logging.info(f"Server loop running in thread: {server_thread.name}")
+            server_thread.run()
+        except KeyboardInterrupt:
+            server.shutdown()

@@ -31,9 +31,9 @@ spec:
           spec:
             UDP:
               port: 10000
-              bind:
-                address: 127.0.0.1
-                port: 3000
+              # bind:
+              #   address: 127.0.0.1
+              #   port: 3000
           endpoints:
             - spec:
                 address: 127.0.0.1

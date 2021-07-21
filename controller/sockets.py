@@ -1,6 +1,8 @@
 import socket
 import logging
 import time
+import threading
+from urllib.parse import non_hierarchical
 
 class TCPSocket():
 
@@ -9,6 +11,7 @@ class TCPSocket():
         self.port = port
         self.create_socket()
         self.connect(delay)
+        self.lock = threading.Lock()
 
     def create_socket(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -17,27 +20,30 @@ class TCPSocket():
         self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 3)
 
     def send(self, message, no_wait_response=False):
-        counter = 0
-        while counter < 3:
-            try:
-                self.sock.sendall(bytes(message, 'utf-8'))
-                if no_wait_response:
-                    return
-                response = str(self.sock.recv(10240), 'utf-8')
-                return response.strip()
-            except ConnectionResetError as e:
-                self.sock.close()
-                logging.error(f"Server connection closed with {e}")
-                logging.info("Trying to reconnect")
-                self.connect(0)
-                counter += 1
-            except IOError as e:
-                self.sock.close()
-                logging.error(f'IOError: {e}')
-                logging.info("Trying to reconnect")
-                self.connect(0)
-                counter += 1
-        return
+        with self.lock:
+            counter = 0
+            while counter < 3:
+                try:
+                    self.sock.sendall(bytes(message, 'utf-8'))
+                    if no_wait_response:
+                        return
+                    response = str(self.sock.recv(10240), 'utf-8')
+                    return response.strip()
+                except ConnectionResetError as e:
+                    self.sock.close()
+                    self.create_socket()
+                    logging.error(f"Server connection closed with {e}")
+                    logging.info("Trying to reconnect")
+                    self.connect(0)
+                    counter += 1
+                except IOError as e:
+                    self.sock.close()
+                    self.create_socket()
+                    logging.error(f'IOError: {e}')
+                    logging.info("Trying to reconnect")
+                    self.connect(0)
+                    counter += 1
+            return
 
     def connect(self, delay):
         counter = 0
@@ -62,11 +68,13 @@ class UDPSocket():
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         time.sleep(delay)
 
-    def send(self, message, address):
+    def send(self, message, address, no_wait_response=False):
         counter = 0
         while counter < 3:
             try:
                 self.sock.sendto(bytes(message, 'utf-8'), address)
+                if no_wait_response:
+                    return
                 response = str(self.sock.recv(4096), 'utf-8')
                 return response.strip()
             except OSError as e:
