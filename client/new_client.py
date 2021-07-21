@@ -112,6 +112,8 @@ if __name__ == '__main__':
         
         threaded_calls(calls)
         start_rtp_streams(rtp_commands)
+        for c in calls:
+            c.delete()
     except KeyboardInterrupt:
         for c in calls:
             c.delete()

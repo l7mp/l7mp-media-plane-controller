@@ -85,12 +85,12 @@ class NormalCall(CallBase):
 
         o_rtp = self.offer()
         if not o_rtp: return None
+        logging.info(f'Offer with callid: {self.call_id} created in {int((time.time() - start_time) * 1000)} ms')
         
         a_rtp = self.answer()
         if not a_rtp: return None
         
-        end_time = time.time()
-        logging.info(f'Call with callid: {self.call_id} created in {int((end_time - start_time) * 1000)} ms')
+        logging.info(f'Call with callid: {self.call_id} created in {int((time.time() - start_time) * 1000)} ms')
 
         if self.sender_method == 'ffmpeg':
             return [

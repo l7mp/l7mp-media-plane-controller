@@ -105,17 +105,23 @@ class CallBase:
     def ws_send(self, command):
         sock = self._create_ws_socket()
         if not sock: return None
-        sock.send(command)
+
+        cookie = ''.join(random.choice(string.ascii_lowercase) for _ in range(5))
+        data = bencodepy.encode(command).decode()
+        message = str(cookie) + " " + str(data)
+        
+        sock.send(message.encode('utf-8'))
         logging.info(f'Command sent to rtpengine: {command}')
         response = sock.recv()
         logging.debug(f'Received from rtpengine: {str(response)}')
         try:
-            data = response.decode()
+            if isinstance(response, (bytes, bytearray)):
+                data = response.decode()
             data = data.split(" ", 1)
             logging.debug(f"Return with: {data[1]}")
             return self._bc.decode(data[1])
         except Exception as e:
-            logging.error(f'Received response is not a string. {str(response)}. Error: {e}')
+            logging.error(f'Received response {str(response)} is not a string for command {command} Error: {e}')
             return None
 
     def start_rtp_stream(self, command1, command2): # For both rtpsend and ffmpeg
