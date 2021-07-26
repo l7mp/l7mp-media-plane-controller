@@ -76,6 +76,7 @@ def threaded_calls(calls):
 def start_rtp_streams(rtp_commands):
     processes = []
     for r in rtp_commands:
+        logging.info(f'Started stream: {r}')
         processes.append(subprocess.Popen(r.split(" ")))
     for p in processes:
         p.communicate()
