@@ -6,16 +6,6 @@ from callbase import CallBase
 from commands import Commands
 
 
-PAYLOAD_FORMATS = {
-    "0": "PCMU",
-    "0 101": "PCMU",
-    "8": "PCMA",
-    "9": "G722",
-    "4": "G723.1",
-    "18": "G729",
-    "3": "GSM"
-}
-
 class TranscodedCall(CallBase):
 
     def __init__(self, start, end, **kwargs):
@@ -39,31 +29,111 @@ class TranscodedCall(CallBase):
 
     def generate_sdp(self, address, port, codec):
         # codec is a string like "0 101"
-        sdp_dict = {
-            'version': 0,
-            'origin': {
-                'address': address,
-                'ipVer': 4,
-                'netType': 'IN',
-                'sessionId': random.randint(1000000000, 9999999999),
-                'sessionVersion': 1,
-                'username': '-'
-            },
-            'name': 'tester',
-            'connection': {'ip': address, 'version': 4},
-            'timing': {'start': 0, 'stop': 0},
-            'media': [
-                {
-                    'direction': 'sendrecv',
-                    'fmtp': [],
-                    'payloads': codec, # 0 101 pcmu , 3 gsm, 8 pcma
-                    'port': port,
-                    'protocol': 'RTP/AVP',
-                    'rtp': [],
-                    'type': 'audio'
-                }
-            ]
-        }
+        # sdp_dict = {
+        #     'version': 0,
+        #     'origin': {
+        #         'address': address,
+        #         'ipVer': 4,
+        #         'netType': 'IN',
+        #         'sessionId': random.randint(1000000000, 9999999999),
+        #         'sessionVersion': 1,
+        #         'username': '-'
+        #     },
+        #     'name': 'tester',
+        #     'connection': {'ip': address, 'version': 4},
+        #     'timing': {'start': 0, 'stop': 0}
+        # }
+
+        if codec == "0 101":
+            sdp_dict = {
+                "version":0,
+                "origin":{
+                    "address": "127.0.0.1",
+                    "username":123,
+                    "sessionId":3092,
+                    "sessionVersion":1,
+                    "netType":"IN",
+                    "ipVer":4,
+                },
+                "name":"Talk",
+                "connection":{ "version":4, "ip":"127.0.0.1"},
+                "timing":{"start":0,"stop":0},
+                "media":[
+                    {
+                        "rtp":[{"payload":101,"codec":"telephone-event","rate":8000}],
+                        "fmtp":[],
+                        "type":"audio",
+                        "port":port,
+                        "protocol":"RTP/AVP",
+                        "payloads":"0 101",
+                    }
+                ]
+            }
+        if codec == '96':
+            sdp_dict = {
+                "version":0,
+                "origin":{
+                    "address":"127.0.0.1",
+                    "username":456,
+                    "sessionId":2278,
+                    "sessionVersion":1,
+                    "netType":"IN",
+                    "ipVer":4,
+                },
+                "name":"Talk",
+                "connection":{"version":4,"ip":"127.0.0.1"},
+                "timing":{"start":0,"stop":0},
+                "media":[
+                    {
+                        "rtp":[{"payload":96, "codec":"speex","rate":16000}],
+                        "fmtp":[{"payload":96,"config":"vbr=on"}],
+                        "type":"audio",
+                        "port":port,
+                        "protocol":"RTP/AVP",
+                        "payloads":96,
+                    }
+                ]
+            }
+
+        # if codec == "0 101":
+        #     sdp_dict['media'] = [
+        #         {
+        #             "rtp":[
+        #                 {
+        #                 "payload":0,
+        #                 "codec":"telephone-event",
+        #                 "rate":8000
+        #                 }
+        #             ],
+        #             "fmtp":[],
+        #             "type":"audio",
+        #             "port":port,
+        #             "protocol":"RTP/AVP",
+        #             "payloads":"0 101",
+        #         }
+        #     ]
+        # elif codec == "96":
+        #     sdp_dict['media'] = [
+        #         {
+        #             "rtp":[
+        #                 {
+        #                 "payload":96,
+        #                 "codec":"speex",
+        #                 "rate":16000
+        #                 }
+        #             ],
+        #             "fmtp":[
+        #                 {
+        #                 "payload":96,
+        #                 "config":"vbr=on"
+        #                 }
+        #             ],
+        #             "type":"audio",
+        #             "port": port,
+        #             "protocol":"RTP/AVP",
+        #             "payloads":"96 101"
+        #         }
+        #     ]
 
         return sdp_transform.write(sdp_dict)
 
@@ -71,16 +141,24 @@ class TranscodedCall(CallBase):
         options = {
             "ICE": "remove", 
             "label": "caller",
-            "codec": {
-                "mask": "all", 
-                "transcode": [
-                    PAYLOAD_FORMATS[self.codec1],
-                    PAYLOAD_FORMATS[self.codec2]
-                ]
-            }
+            "supports": [
+                "load limit"
+            ],
+            "flags": [
+                "SIP-source-address"
+            ],
+            "replace": [
+                "origin",
+                "session-connection"
+            ],
+            "received-from": [
+                "IP4",
+                "127.0.0.1"
+            ],
+            "codec": { "mask": ["all"], "transcode": ["PCMU", "speex"]}
         }
         command = Commands.offer(
-            self.generate_sdp('127.0.0.1', self.start, self.codec1),
+            self.generate_sdp('127.0.0.1', self.start, "0 101"),
             self.call_id, self.from_tag, **options
         )
         data = super().ws_send(command) if super().__getattribute__('protocol') == 'ws' else super().send(command, self.start)
@@ -93,17 +171,25 @@ class TranscodedCall(CallBase):
     def answer(self):
         options = {
             "ICE": "remove", 
-            "label": "callee", 
-            "codec": {
-                "mask": "all", 
-                "transcode": [
-                    PAYLOAD_FORMATS[self.codec1],
-                    PAYLOAD_FORMATS[self.codec2]
-                ]
-            }
+            "label": "caller",
+            "supports": [
+                "load limit"
+            ],
+            "flags": [
+                "SIP-source-address"
+            ],
+            "replace": [
+                "origin",
+                "session-connection"
+            ],
+            "received-from": [
+                "IP4",
+                "127.0.0.1"
+            ],
+            "codec": { "mask": ["all"], "transcode": ["PCMU", "speex"]}
         }
         command = Commands.answer(
-            self.generate_sdp('127.0.0.1', self.end, self.codec2),
+            self.generate_sdp('127.0.0.1', self.end, "96"),
             self.call_id, self.from_tag, self.to_tag, **options
         )
         data = super().ws_send(command) if super().__getattribute__('protocol') == 'ws' else super().send(command, self.end)
@@ -130,6 +216,6 @@ class TranscodedCall(CallBase):
         logging.info(f'Call with callid: {self.call_id} created in {int((end_time - start_time) * 1000)} ms')
 
         return [
-            f'rtpsend -s {self.start} -f {self.file1} {rtpe_address}/{o_rtp}',
-            f'rtpsend -s {self.end} -f {self.file2} {rtpe_address}/{a_rtp}'
+            f'rtpsend -s {self.start} -f {self.file1} {rtpe_address}/{a_rtp}',
+            f'rtpsend -s {self.end} -f {self.file2} {rtpe_address}/{o_rtp}'
         ]
