@@ -141,8 +141,6 @@ data:
     envoy_port=1234
     local_address=0.0.0.0
     local_port=2000
-    without_jsonsocket=no
-    ingress_address=10.0.1.2
     sidecar_type=l7mp
     envoy_operator=no
     update_owners=no

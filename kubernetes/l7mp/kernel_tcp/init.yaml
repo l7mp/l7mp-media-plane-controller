@@ -59,6 +59,11 @@ spec:
               mountPath: /app/config
           command: ["python"]
           args: ["new_controller.py", "-c", "config/config.conf", "-l", "info"]
+          env:
+            - name: NODE_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -141,87 +146,87 @@ spec:
             - name: rtpengine-config-volume
               mountPath: /etc/rtpengine
 ---
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: l7mp-worker2
-  labels:
-    app: l7mp-worker
-    name: l7mp-worker2
-spec:
-  # replicas: 2
-  replicas: 1
-  selector:
-    matchLabels:
-      # app: l7mp-worker
-      name: l7mp-worker2
-  template:
-    metadata:
-      labels:
-        app: l7mp-worker
-        name: l7mp-worker2
-    spec:
-      volumes:
-        - name: l7mp-config-volume
-          configMap:
-            name: l7mp-worker-config
-        - name: rtpengine-config-volume
-          configMap:
-            name: rtpengine-config
-        - name: kernel-debug
-          hostPath:
-            path: /sys/kernel/debug
-            type: Directory
-      containers:
-        # sidecar
-        - name: l7mp
-          image: l7mp/l7mp:latest
-          imagePullPolicy: IfNotPresent
-          # command: ["/bin/sh"]
-          # args: ["-c", "while true; do echo hello; sleep 10;done"]
-          command: ["node"]
-          args:
-            [
-              "l7mp-proxy.js",
-              "-c",
-              "config/l7mp-worker.yaml",
-              "-s",
-              "-l",
-              "info",
-              # "-o",
-              # "init",
-              # "-i",
-              # "all"
-            ]
-          ports:
-            - containerPort: 1234
-          volumeMounts:
-            - name: l7mp-config-volume
-              mountPath: /app/config
-          securityContext:
-            capabilities:
-              add: ["NET_ADMIN", "SYS_ADMIN"]
-            privileged: true
-        - name: net-debug
-          image: l7mp/net-debug:0.5.3
-        - name: rtpengine
-          # image: drachtio/rtpengine
-          image: drachtio/rtpengine
-          imagePullPolicy: Always
-          # command: ["/bin/sh"]
-          # args: ["-c", "while true; do echo hello; sleep 10;done"]
-          command: ["/usr/local/bin/rtpengine"]
-          args:
-            [
-              "--config-file=/etc/rtpengine/rtpengine.conf",
-              "-f",
-              "-E",
-              "--endpoint-learning", "immediate"
-            ]
-          volumeMounts:
-            - name: rtpengine-config-volume
-              mountPath: /etc/rtpengine
----
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: l7mp-worker2
+#   labels:
+#     app: l7mp-worker
+#     name: l7mp-worker2
+# spec:
+#   # replicas: 2
+#   replicas: 1
+#   selector:
+#     matchLabels:
+#       # app: l7mp-worker
+#       name: l7mp-worker2
+#   template:
+#     metadata:
+#       labels:
+#         app: l7mp-worker
+#         name: l7mp-worker2
+#     spec:
+#       volumes:
+#         - name: l7mp-config-volume
+#           configMap:
+#             name: l7mp-worker-config
+#         - name: rtpengine-config-volume
+#           configMap:
+#             name: rtpengine-config
+#         - name: kernel-debug
+#           hostPath:
+#             path: /sys/kernel/debug
+#             type: Directory
+#       containers:
+#         # sidecar
+#         - name: l7mp
+#           image: l7mp/l7mp:latest
+#           imagePullPolicy: IfNotPresent
+#           # command: ["/bin/sh"]
+#           # args: ["-c", "while true; do echo hello; sleep 10;done"]
+#           command: ["node"]
+#           args:
+#             [
+#               "l7mp-proxy.js",
+#               "-c",
+#               "config/l7mp-worker.yaml",
+#               "-s",
+#               "-l",
+#               "info",
+#               # "-o",
+#               # "init",
+#               # "-i",
+#               # "all"
+#             ]
+#           ports:
+#             - containerPort: 1234
+#           volumeMounts:
+#             - name: l7mp-config-volume
+#               mountPath: /app/config
+#           securityContext:
+#             capabilities:
+#               add: ["NET_ADMIN", "SYS_ADMIN"]
+#             privileged: true
+#         - name: net-debug
+#           image: l7mp/net-debug:0.5.3
+#         - name: rtpengine
+#           # image: drachtio/rtpengine
+#           image: drachtio/rtpengine
+#           imagePullPolicy: Always
+#           # command: ["/bin/sh"]
+#           # args: ["-c", "while true; do echo hello; sleep 10;done"]
+#           command: ["/usr/local/bin/rtpengine"]
+#           args:
+#             [
+#               "--config-file=/etc/rtpengine/rtpengine.conf",
+#               "-f",
+#               "-E",
+#               "--endpoint-learning", "immediate"
+#             ]
+#           volumeMounts:
+#             - name: rtpengine-config-volume
+#               mountPath: /etc/rtpengine
+# ---
 # Redis keyspace
 apiVersion: apps/v1
 kind: Deployment
