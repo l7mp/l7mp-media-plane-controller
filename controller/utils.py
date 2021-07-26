@@ -107,7 +107,6 @@ def create_resource(call_id, from_tag, to_tag, config, query):
             call_id=call_id,
             from_data=from_data,
             to_data=to_data,
-            without_jsonsocket=config['without_jsonsocket'],
             ws=ws,
             envoy=config['envoy_operator'],
             update_owners=config['update_owners'],
@@ -154,7 +153,6 @@ async def async_create_resource(call_id, from_tag, to_tag, config, query):
             call_id=call_id,
             from_data=from_data,
             to_data=to_data,
-            without_jsonsocket=config['without_jsonsocket'],
             ws=ws,
             envoy=config['envoy_operator'],
             update_owners=config['update_owners'],
@@ -186,7 +184,6 @@ def create_offer_resource(config, **kwargs):
         Client(
             call_id=kwargs.get('callid'),
             from_data=from_data,
-            without_jsonsocket=config['without_jsonsocket'],
             ws=ws,
             envoy=config['envoy_operator'],
             update_owners=config['update_owners'],
@@ -216,7 +213,6 @@ def create_answer_resource(config, **kwargs):
         Client(
             call_id=kwargs.get('callid'),
             to_data=to_data,
-            without_jsonsocket=config['without_jsonsocket'],
             ws=ws,
             envoy=config['envoy_operator'],
             update_owners=config['update_owners'],

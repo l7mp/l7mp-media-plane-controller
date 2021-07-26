@@ -44,7 +44,9 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             if raw_response:
                 response = parse_bc(raw_response)
                 if 'sdp' in response:
-                    address = os.getenv('NODE_IP', config['ingress_address'])
+                    address = os.getenv('NODE_IP', None)
+                    if not address:
+                        logging.exception("Cannot retrieve NODE_IP")
                     response['sdp'] = response['sdp'].replace('127.0.0.1', address)
                 if data['command'] == 'delete':
                     delete_kube_resources(call_id)
@@ -75,7 +77,9 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             if raw_response:
                 response = parse_bc(raw_response)
                 if 'sdp' in response:
-                    address = os.getenv('NODE_IP', config['ingress_address'])
+                    address = os.getenv('NODE_IP', None)
+                    if not address:
+                        logging.exception("Cannot retrieve NODE_IP")
                     response['sdp'] = response['sdp'].replace('127.0.0.1', address)
                 if data['command'] == 'answer' and config['envoy_operator'] == 'no':
                     raw_query = rtpe_socket.send(query_message(data['call-id']))

@@ -57,7 +57,9 @@ async def handle(websocket, path):
             response = ws_send(raw_data, ws_socket)
             if response:
                 if 'sdp' in response:
-                    address = os.getenv('NODE_IP', config['ingress_address'])
+                    address = os.getenv('NODE_IP', None)
+                    if not address:
+                        logging.exception("Cannot retrieve NODE_IP")
                     response['sdp'] = response['sdp'].replace('127.0.0.1', address)
                 if data['command'] == 'delete':
                     delete_kube_resources(call_id)
@@ -72,7 +74,9 @@ async def handle(websocket, path):
         response = ws_send(raw_data, ws_socket)
         if response:
             if 'sdp' in response:
-                address = os.getenv('NODE_IP', config['ingress_address'])
+                address = os.getenv('NODE_IP', None)
+                if not address:
+                    logging.exception("Cannot retrieve NODE_IP")
                 response['sdp'] = response['sdp'].replace('127.0.0.1', address)
             if data['command'] == 'answer' and config['envoy_operator'] == 'no':
                 raw_query = ws_send(query_message(data['call-id']), ws_socket)

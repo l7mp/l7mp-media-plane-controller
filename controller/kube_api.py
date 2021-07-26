@@ -37,7 +37,6 @@ class Client():
         self.call_id = kwargs.get('call_id', None)
         self.simple_call_id = ''.join(e for e in self.call_id if e.isalnum()).lower()
 
-        self.without_jsonsocket = kwargs.get('without_jsonsocket', None)
         self.ws = kwargs.get('ws', None)
         self.envoy = kwargs.get('envoy', 'no')
         self.update_owners = kwargs.get('update_owners', 'no')
@@ -381,7 +380,6 @@ class Client():
             f'local-rtcp-port: {str(self.local_rtcp_port)}\n'
             f'remote-port: {str(self.remote_rtp_port)}\n'
             f'remote-rtcp-port: {str(self.remote_rtcp_port)}\n'
-            f'without-jsonsocket: {str(self.without_jsonsocket)}\n'
         )
         
     
