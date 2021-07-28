@@ -63,6 +63,7 @@ def call(call):
         if not r:
             raise Exception
         rtp_commands += r
+        logging.info(f'{len(rtp_commands)} calls running')
     except Exception as e:
         logging.exception(e)
 

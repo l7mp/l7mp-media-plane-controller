@@ -62,6 +62,9 @@ class NormalCall(CallBase):
         if not data:
             logging.error("No data come back from rtpengine. (offer)") 
             return None
+        if 'sdp' not in data:
+            logging.exception(f'There is no sdp part in response: {data}')
+            return None
         sdp_data = sdp_transform.parse(data["sdp"])
         return sdp_data['media'][0]['port']
 
@@ -74,6 +77,9 @@ class NormalCall(CallBase):
         data = super().ws_send(command) if super().__getattribute__('protocol') == 'ws' else super().send(command, self.end)
         if not data:
             logging.error("No data come back from rtpengine (answer)")
+            return None
+        if 'sdp' not in data:
+            logging.exception(f'There is no sdp part in response: {data}')
             return None
         sdp_data = sdp_transform.parse(data["sdp"])
         return sdp_data['media'][0]['port']
