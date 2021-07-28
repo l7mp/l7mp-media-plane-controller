@@ -72,6 +72,7 @@ def threaded_calls(calls):
             for c in calls:
                 future = executor.submit(call, c)
                 if isinstance(future.result(), Exception):
+                    logging.error(future.result())
                     break
     except KeyboardInterrupt:
         return
@@ -127,7 +128,8 @@ if __name__ == '__main__':
         # for r in rtp_commands:
         #     r.kill()
         for c in calls:
-            c.delete()
+            if c.running:
+                c.delete()
     except Exception as e:
         logging.exception(e)
     except:

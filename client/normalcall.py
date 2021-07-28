@@ -23,6 +23,7 @@ class NormalCall(CallBase):
         self.to_tag = f'to-tag{str(self.start)}'
         self.sender_method = kwargs.get('sender_method', None)
         self.file = kwargs.get('file', None)
+        self.running = False
 
     def generate_sdp(self, address, port):
         sdp_dict = {
@@ -80,6 +81,7 @@ class NormalCall(CallBase):
         super().delete(self.call_id, self.from_tag, self.start)
 
     def generate_call(self, wait=0):
+        self.running = True
         rtpe_address = super().__getattribute__('rtpe_address')
         start_time = time.time()
 
