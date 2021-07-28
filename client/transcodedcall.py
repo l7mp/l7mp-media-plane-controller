@@ -1,7 +1,8 @@
-import random
+from tokenize import Pointfloat
 import sdp_transform
 import logging
 import time
+import subprocess
 from callbase import CallBase
 from commands import Commands
 
@@ -202,7 +203,7 @@ class TranscodedCall(CallBase):
     def delete(self):
         super().delete(self.call_id, self.from_tag, self.start)
 
-    def generate_call(self):
+    def generate_call(self, wait):
         rtpe_address = super().__getattribute__('rtpe_address')
         start_time = time.time()
 
@@ -211,11 +212,13 @@ class TranscodedCall(CallBase):
         
         a_rtp = self.answer()
         if not a_rtp: return None
-        
-        end_time = time.time()
-        logging.info(f'Call with callid: {self.call_id} created in {int((end_time - start_time) * 1000)} ms')
 
-        return [
-            f'rtpsend -s {self.start} -f {self.file1} {rtpe_address}/{a_rtp}',
-            f'rtpsend -s {self.end} -f {self.file2} {rtpe_address}/{o_rtp}'
+        logging.info(f'Call with callid: {self.call_id} created in {int((time.time() - start_time) * 1000)} ms')
+        
+        ret = [
+            subprocess.Popen("rtpsend", "-s", str(self.start), "-f", self.file1, f'{rtpe_address}/{a_rtp}'),
+            subprocess.Popen("rtpsend", "-s", str(self.end), "-f", self.file2, f'{rtpe_address}/{o_rtp}')
         ]
+
+        time.sleep(wait)
+        return ret

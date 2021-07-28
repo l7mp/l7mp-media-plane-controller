@@ -2,6 +2,8 @@ import random
 import sdp_transform
 import time
 import logging
+import subprocess
+import threading
 from callbase import CallBase
 from commands import Commands
 
@@ -79,28 +81,46 @@ class NormalCall(CallBase):
     def delete(self):
         super().delete(self.call_id, self.from_tag, self.start)
 
-    def generate_call(self):
+    def generate_call(self, wait=0):
         rtpe_address = super().__getattribute__('rtpe_address')
         start_time = time.time()
 
         o_rtp = self.offer()
         if not o_rtp: return None
-        logging.info(f'Offer with callid: {self.call_id} created in {int((time.time() - start_time) * 1000)} ms')
+        logging.debug(f'Offer with callid: {self.call_id} created in {int((time.time() - start_time) * 1000)} ms')
         
         a_rtp = self.answer()
         if not a_rtp: return None
         
         logging.info(f'Call with callid: {self.call_id} created in {int((time.time() - start_time) * 1000)} ms')
 
+        ret = []
         if self.sender_method == 'ffmpeg':
-            return [
-                f'ffmpeg -re -i {self.file} -ar 8000 -ac 1 -acodec pcm_mulaw -f rtp rtp://{rtpe_address}:{o_rtp}?localrtpport={self.start}',
-                f'ffmpeg -re -i {self.file} -ar 8000 -ac 1 -acodec pcm_mulaw -f rtp rtp://{rtpe_address}:{a_rtp}?localrtpport={self.end}'
-            ]
+            ret.append(
+                subprocess.Popen([
+                    "ffmpeg", "-re", "-i", self.file, "-ar", "8000", "-ac", "1", "-acodec", "pcm_mulaw",
+                    "-f", "rtp", f'rtp://{rtpe_address}:{o_rtp}?localrtpport={self.start}'
+                ])
+            )
+            ret.append(
+                subprocess.Popen([
+                    "ffmpeg", "-re", "-i", self.file, "-ar", "8000", "-ac", "1", "-acodec", "pcm_mulaw",
+                    "-f", "rtp" f'rtp://{rtpe_address}:{a_rtp}?localrtpport={self.end}'
+                ])
+            )
         if self.sender_method == 'rtpsend':
-            return [
-                f'rtpsend -s {self.start} -f {self.file} {rtpe_address}/{o_rtp}',
-                f'rtpsend -s {self.end} -f {self.file} {rtpe_address}/{a_rtp}'
-            ]
+            # return [
+            #     f'rtpsend -s {self.start} -f {self.file} {rtpe_address}/{o_rtp}',
+            #     f'rtpsend -s {self.end} -f {self.file} {rtpe_address}/{a_rtp}'
+            # ]
+            ret.append(subprocess.Popen(["rtpsend", "-s", str(self.start), "-f", self.file, f'{rtpe_address}/{o_rtp}']))
+            ret.append(subprocess.Popen(["rtpsend", "-s", str(self.end), "-f", self.file, f'{rtpe_address}/{a_rtp}']))        
         if self.sender_method == 'wait':
-            return ['sleep 600']
+            ret.append('sleep 600')
+        
+        # For non-blocking wait
+        event = threading.Event()
+        event.wait(wait)
+
+        # time.sleep(wait)
+        return ret

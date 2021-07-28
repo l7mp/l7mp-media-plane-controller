@@ -9,6 +9,8 @@ from transcodedcall import TranscodedCall
 from ssh_handler import ShellHandler
 from collections import deque
 
+LINPHONE_ARGS = ['ssh_linphone1', 'ssh_linphone2', 'linphone_time', 'record_filename']
+
 log_levels = {
     'debug': logging.DEBUG, 
     'info': logging.INFO,
@@ -28,7 +30,7 @@ def load_config(conf):
     except Exception:
         logging.error("Cannot read or parse the configuration file.")
         return None
-    config = parser._sections['client']
+    config = parser['client']
     logging.info("Configuration file loaded!")
     return config
 
@@ -57,7 +59,7 @@ def linphone(linphone1, linphone2, linphone_time, record_filename):
 def call(call):
     global rtp_commands
     try:
-        r = call.generate_call()
+        r = call.generate_call(config.getfloat('wait', 0))
         if not r:
             raise Exception
         rtp_commands += r
@@ -67,7 +69,7 @@ def call(call):
 def threaded_calls(calls): 
     # calls: A list of call objects
     try:
-        with ThreadPoolExecutor(max_workers=10) as executor:
+        with ThreadPoolExecutor(max_workers=config.getint('max_workers', 1)) as executor:
             for c in calls:
                 executor.submit(call, c)
     except KeyboardInterrupt:
@@ -99,23 +101,30 @@ if __name__ == '__main__':
         logging.debug(config)
         calls = []
         ports = deque()
-        number_of_calls = int(config['number_of_calls']) + int(config['transcoding_calls'])
+        number_of_calls = config.getint('number_of_calls', 0) + config.getint('transcoding_calls', 0)
         for i in range(3002, (3000 + number_of_calls * 4) + 1, 2):
             ports.append(i)
 
-        for t in range(int(config['transcoding_calls'])):
+        for t in range(config.getint('transcoding_calls', 0)):
             calls.append(TranscodedCall(ports.popleft(), ports.popleft(), **config))
-        for n in range(int(config['number_of_calls'])):
+        for n in range(config.getint('number_of_calls', 0)):
             calls.append(NormalCall(ports.popleft(), ports.popleft(), **config))
 
-        if config['linphone'] == 'yes':
+        if config.get('linphone', 'no') == 'yes':
+            for i in LINPHONE_ARGS:
+                if not config.get(i, None):
+                    logging.exception(f'Config parameter: {i} not found!')
             linphone(config['ssh_linphone1'], config['ssh_linphone2'], config['linphone_time'], config['record_filename'])
         
         threaded_calls(calls)
-        start_rtp_streams(rtp_commands)
-        for c in calls:
-            c.delete()
+        # start_rtp_streams(rtp_commands)
+        for r in rtp_commands:
+            r.communicate()
+        # for c in calls:
+        #     c.delete()
     except KeyboardInterrupt:
+        # for r in rtp_commands:
+        #     r.kill()
         for c in calls:
             c.delete()
     except Exception as e:
