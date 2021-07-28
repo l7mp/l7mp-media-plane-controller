@@ -59,12 +59,8 @@ class NormalCall(CallBase):
             self.call_id, self.from_tag, **options
         )
         data = super().ws_send(command) if super().__getattribute__('protocol') == 'ws' else super().send(command, self.start)
-        if not data:
-            logging.error("No data come back from rtpengine. (offer)") 
-            return None
-        if 'sdp' not in data:
-            logging.exception(f'There is no sdp part in response: {data}')
-            return None
+        if not data: return Exception("No data come back from rtpengine (answer)")
+        if 'sdp' not in data: return Exception(f'There is no sdp part in response: {data}')
         sdp_data = sdp_transform.parse(data["sdp"])
         return sdp_data['media'][0]['port']
 
@@ -75,12 +71,8 @@ class NormalCall(CallBase):
             self.call_id, self.from_tag, self.to_tag, **options
         )
         data = super().ws_send(command) if super().__getattribute__('protocol') == 'ws' else super().send(command, self.end)
-        if not data:
-            logging.error("No data come back from rtpengine (answer)")
-            return None
-        if 'sdp' not in data:
-            logging.exception(f'There is no sdp part in response: {data}')
-            return None
+        if not data: return Exception("No data come back from rtpengine (answer)")
+        if 'sdp' not in data: return Exception(f'There is no sdp part in response: {data}')
         sdp_data = sdp_transform.parse(data["sdp"])
         return sdp_data['media'][0]['port']
 
@@ -92,12 +84,11 @@ class NormalCall(CallBase):
         start_time = time.time()
 
         o_rtp = self.offer()
-        if not o_rtp: return None
+        if isinstance(o_rtp, Exception): return o_rtp
         logging.debug(f'Offer with callid: {self.call_id} created in {int((time.time() - start_time) * 1000)} ms')
         
         a_rtp = self.answer()
-        if not a_rtp: return None
-        
+        if isinstance(a_rtp, Exception): return a_rtp
         logging.info(f'Call with callid: {self.call_id} created in {int((time.time() - start_time) * 1000)} ms')
 
         ret = []

@@ -58,21 +58,21 @@ def linphone(linphone1, linphone2, linphone_time, record_filename):
 
 def call(call):
     global rtp_commands
-    try:
-        r = call.generate_call(config.getfloat('wait', 0))
-        if not r:
-            raise Exception
-        rtp_commands += r
-        logging.info(f'{len(rtp_commands)} calls running')
-    except Exception as e:
-        logging.exception(e)
+    r = call.generate_call(config.getfloat('wait', 0))
+    if isinstance(r, Exception):
+        return r
+    rtp_commands += r
+    logging.info(f'{int(len(rtp_commands)/2)} calls running')
+    return None
 
 def threaded_calls(calls): 
     # calls: A list of call objects
     try:
         with ThreadPoolExecutor(max_workers=config.getint('max_workers', 1)) as executor:
             for c in calls:
-                executor.submit(call, c)
+                future = executor.submit(call, c)
+                if isinstance(future.result(), Exception):
+                    break
     except KeyboardInterrupt:
         return
 

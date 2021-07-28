@@ -46,10 +46,10 @@ class CallBase:
             return None
         try:
             sock.connect((self.rtpe_address, int(self.rtpe_port)))
-        except Exception:
+        except Exception as e:
             sock.close()
             logging.error('Cannot make a new connection with this address: '
-            f'{self.rtpe_address}:{self.rtpe_port}')
+            f'{self.rtpe_address}:{self.rtpe_port} Error: {e}')
             return None
         # sock.settimeout(10)
         logging.debug(f'Socket created on tcp:{self.local_address}:{port}')
