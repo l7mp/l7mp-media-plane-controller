@@ -217,8 +217,8 @@ class TranscodedCall(CallBase):
         logging.info(f'Call with callid: {self.call_id} created in {int((time.time() - start_time) * 1000)} ms')
 
         ret = [
-            subprocess.Popen("rtpsend", "-s", str(self.start), "-f", self.file1, f'{rtpe_address}/{a_rtp}'),
-            subprocess.Popen("rtpsend", "-s", str(self.end), "-f", self.file2, f'{rtpe_address}/{o_rtp}')
+            subprocess.Popen(["rtpsend", "-s", str(self.start), "-f", self.file1, f'{rtpe_address}/{a_rtp}']),
+            subprocess.Popen(["rtpsend", "-s", str(self.end), "-f", self.file2, f'{rtpe_address}/{o_rtp}'])
         ]
 
         # For non-blocking wait
