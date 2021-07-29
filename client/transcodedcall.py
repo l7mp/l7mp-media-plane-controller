@@ -3,6 +3,7 @@ import sdp_transform
 import logging
 import time
 import subprocess
+import threading
 from callbase import CallBase
 from commands import Commands
 
@@ -27,6 +28,7 @@ class TranscodedCall(CallBase):
 
         self.codec1 = kwargs.get('codec1', None)
         self.codec2 = kwargs.get('codec2', None)
+        self.running = False
 
     def generate_sdp(self, address, port, codec):
         # codec is a string like "0 101"
@@ -163,9 +165,8 @@ class TranscodedCall(CallBase):
             self.call_id, self.from_tag, **options
         )
         data = super().ws_send(command) if super().__getattribute__('protocol') == 'ws' else super().send(command, self.start)
-        if not data:
-            logging.error("No data come back from rtpengine. (offer)") 
-            return None
+        if not data: return Exception("No data come back from rtpengine (answer)")
+        if 'sdp' not in data: return Exception(f'There is no sdp part in response: {data}')
         sdp_data = sdp_transform.parse(data["sdp"])
         return sdp_data['media'][0]['port']
 
@@ -194,9 +195,8 @@ class TranscodedCall(CallBase):
             self.call_id, self.from_tag, self.to_tag, **options
         )
         data = super().ws_send(command) if super().__getattribute__('protocol') == 'ws' else super().send(command, self.end)
-        if not data:
-            logging.error("No data come back from rtpengine. (answer)") 
-            return None
+        if not data: return Exception("No data come back from rtpengine (answer)")
+        if 'sdp' not in data: return Exception(f'There is no sdp part in response: {data}')
         sdp_data = sdp_transform.parse(data["sdp"])
         return sdp_data['media'][0]['port']
 
@@ -204,21 +204,25 @@ class TranscodedCall(CallBase):
         super().delete(self.call_id, self.from_tag, self.start)
 
     def generate_call(self, wait):
+        self.running = True
         rtpe_address = super().__getattribute__('rtpe_address')
         start_time = time.time()
 
         o_rtp = self.offer()
-        if not o_rtp: return None
+        if isinstance(o_rtp, Exception): return o_rtp
+        logging.debug(f'Offer with callid: {self.call_id} created in {int((time.time() - start_time) * 1000)} ms')
         
         a_rtp = self.answer()
-        if not a_rtp: return None
-
+        if isinstance(a_rtp, Exception): return a_rtp
         logging.info(f'Call with callid: {self.call_id} created in {int((time.time() - start_time) * 1000)} ms')
-        
+
         ret = [
             subprocess.Popen("rtpsend", "-s", str(self.start), "-f", self.file1, f'{rtpe_address}/{a_rtp}'),
             subprocess.Popen("rtpsend", "-s", str(self.end), "-f", self.file2, f'{rtpe_address}/{o_rtp}')
         ]
 
-        time.sleep(wait)
+        # For non-blocking wait
+        event = threading.Event()
+        event.wait(wait)
+
         return ret
