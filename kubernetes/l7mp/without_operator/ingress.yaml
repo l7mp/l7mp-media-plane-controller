@@ -1,0 +1,67 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: l7mp-ingress
+data:
+  l7mp-ingress.yaml: |
+    admin:
+      log_level: info
+      log_file: stdout
+      access_log_path: /tmp/admin_access.log
+    listeners:
+      - name: controller-listener
+        spec: { protocol: HTTP, port: 1234 }
+        rules:
+          - action:
+              route:
+                destination:
+                  spec: { protocol: L7mpController }
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: l7mp-ingress
+  labels:
+    apps: l7mp-ingress
+spec:
+  selector:
+    matchLabels:
+      app: l7mp-ingress
+  template:
+    metadata:
+      labels:
+        app: l7mp-ingress
+    spec:
+      volumes:
+        - name: l7mp-ingress-config
+          configMap:
+            name: l7mp-ingress
+      containers:
+      - name: l7mp
+        image: l7mp/l7mp
+        imagePullPolicy: Never
+        command: [ "node" ]
+        args: [ "l7mp-proxy.js", "-c", "config/l7mp-ingress.yaml", "-s", "-l", "silly"]
+        ports:
+        - containerPort: 1234
+          protocol: TCP
+        volumeMounts:
+          - name: l7mp-ingress-config
+            mountPath: /app/config
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: l7mp-ingress
+  name: l7mp-ingress
+spec:
+  ports:
+  - name: controller-port
+    port: 1234
+    protocol: TCP
+    targetPort: 1234
+  selector:
+    app: l7mp-ingress
