@@ -116,8 +116,13 @@ if __name__ == '__main__':
             for i in LINPHONE_ARGS:
                 if not config.get(i, None):
                     logging.exception(f'Config parameter: {i} not found!')
-            linphone(config['ssh_linphone1'], config['ssh_linphone2'], config['linphone_time'], config['record_filename'])
-        
+            linphone(
+                config.get('ssh_linphone1'),
+                config.get('ssh_linphone2'),
+                config.getint('linphone_time'),
+                config.get('record_filename')
+            )
+                
         threaded_calls(calls)
         # start_rtp_streams(rtp_commands)
         for r in rtp_commands:
