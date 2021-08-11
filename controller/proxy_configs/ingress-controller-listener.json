@@ -1,0 +1,25 @@
+{
+    "label": "app=l7mp-ingress",
+    "resource": {
+        "res_name": "ingress-controller-listener",
+        "path": "listeners",
+        "config": {
+            "listener": {
+                "name": "ingress-controller-listener",
+                "spec": {
+                    "protocol": "TCP",
+                    "port": 22222
+                },
+                "rules": [{
+                    "name": "ingress-controller-rule",
+                    "action": {
+                        "route": {
+                            "name": "ingress-controller-route",
+                            "destination": "ingress-controller-target"
+                        }
+                    }
+                }]
+            }
+        }
+    }
+}

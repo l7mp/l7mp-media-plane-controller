@@ -1,0 +1,20 @@
+{
+    "label": "app=l7mp-worker",
+    "resource": {
+        "res_name": "worker-ng-target",
+        "path": "clusters",
+        "config": {
+            "cluster": {
+                "name": "worker-ng-target",
+                "spec": {
+                    "protocol": "TCP",
+                    "port": 22222
+                },
+                "endpoints": [{
+                    "name": "127.0.0.1",
+                    "spec": {"address": "127.0.0.1"}
+                }]
+            }    
+        }
+    }
+}

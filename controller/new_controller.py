@@ -2,9 +2,9 @@ import argparse
 import logging
 import asyncio
 from utils import load_config
-from tcp_server import serve as tcp_serve
-from udp_server import serve as udp_serve
-from ws_server import serve as ws_serve
+from servers.tcp_server import serve as tcp_serve
+from servers.udp_server import serve as udp_serve
+from servers.ws_server import serve as ws_serve
 
 log_levels = {
     'debug': logging.DEBUG, 

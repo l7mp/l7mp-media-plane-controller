@@ -1,0 +1,19 @@
+{
+    "label": "app=l7mp-ingress",
+    "resource": {
+        "res_name": "ingress-rtp-target",
+        "path": "clusters",
+        "endpoints_label": "app=l7mp-worker",
+        "config": {
+            "cluster": {
+                "name": "ingress-rtp-target",
+                "spec": {
+                    "protocol": "JSONSocket",
+                    "transport": {"protocol": "UDP", "port": 19000},
+                    "header": [{"path": {"from": "/labels", "to": "/labels"}}]
+                },
+                "loadbalancer": {"policy": "ConsistentHash", "key": "/labels/callid"}
+            }
+        }
+    }
+}

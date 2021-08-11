@@ -1,0 +1,17 @@
+{
+    "label": "app=l7mp-ingress",
+    "resource": {
+        "res_name": "ingress-controller-target",
+        "path": "clusters",
+        "endpoints_label": "app=rtpe-controller",
+        "config": {
+            "cluster": {
+                "name": "ingress-controller-target",
+                "spec": {
+                    "protocol": "TCP",
+                    "port": 2000
+                }
+            }
+        }
+    }
+}

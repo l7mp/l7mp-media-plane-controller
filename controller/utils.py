@@ -1,4 +1,7 @@
+from mimetypes import knownfiles
+import kubernetes
 from kubernetes.client.models import v1_label_selector
+from apis.l7mp_api import L7mpAPI
 from commands import Commands
 import logging
 import bencodepy
@@ -7,8 +10,9 @@ import json
 import random
 import string
 import configparser
-from kube_api import Client
-from async_kube_api import Client as async_client
+from apis.kube_api import KubeAPI
+from apis.async_kube_api import AsyncKubeAPI
+from apis.l7mp_api import L7mpAPI
 
 commands = Commands()
 kubernetes_apis = []
@@ -103,7 +107,7 @@ def create_resource(call_id, from_tag, to_tag, config, query):
     }
 
     kubernetes_apis.append(
-        Client(
+        KubeAPI(
             call_id=call_id,
             from_data=from_data,
             to_data=to_data,
@@ -149,7 +153,7 @@ async def async_create_resource(call_id, from_tag, to_tag, config, query):
         'remote_rtcp_port': to_port + 1,
     }
 
-    c = async_client(
+    c = AsyncKubeAPI(
             call_id=call_id,
             from_data=from_data,
             to_data=to_data,
@@ -180,16 +184,25 @@ def create_offer_resource(config, **kwargs):
         'remote_rtcp_port': kwargs.get('rtpe_rtcp_port'),
     }
 
-    kubernetes_apis.append(
-        Client(
-            call_id=kwargs.get('callid'),
-            from_data=from_data,
-            ws=ws,
-            envoy=config['envoy_operator'],
-            update_owners=config['update_owners'],
-            udp_mode=config['udp_mode']
+    if kwargs.get('without_operator') == 'no':
+        kubernetes_apis.append(
+            KubeAPI(
+                call_id=kwargs.get('callid'),
+                from_data=from_data,
+                ws=ws,
+                envoy=config['envoy_operator'],
+                update_owners=config['update_owners'],
+                udp_mode=config['udp_mode']
+            )
         )
-    )
+    else:
+        kubernetes_apis.append(
+            L7mpAPI(
+                call_id=kwargs.get('callid'),
+                from_data=from_data,
+                udp_mode=config.get('udp_mode')
+            )
+        )
 
 def create_answer_resource(config, **kwargs):
     global kubernetes_apis
@@ -209,16 +222,25 @@ def create_answer_resource(config, **kwargs):
         'remote_rtcp_port': kwargs.get('rtpe_rtcp_port'),
     }
 
-    kubernetes_apis.append(
-        Client(
-            call_id=kwargs.get('callid'),
-            to_data=to_data,
-            ws=ws,
-            envoy=config['envoy_operator'],
-            update_owners=config['update_owners'],
-            udp_mode=config['udp_mode']
+    if kwargs.get('without_operator') == 'no':
+        kubernetes_apis.append(
+            KubeAPI(
+                call_id=kwargs.get('callid'),
+                to_data=to_data,
+                ws=ws,
+                envoy=config['envoy_operator'],
+                update_owners=config['update_owners'],
+                udp_mode=config['udp_mode']
+            )
         )
-    )
+    else:
+        kubernetes_apis.append(
+            L7mpAPI(
+                call_id=kwargs.get('callid'),
+                to_data=to_data,
+                udp_mode=config.get('udp_mode')
+            )
+        )
 
 def create_json(caller_port, callee_port, call_id):
     return json.dumps({

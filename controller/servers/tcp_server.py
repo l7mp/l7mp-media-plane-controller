@@ -1,13 +1,11 @@
-import socket
 import threading
 import socketserver
 import logging
 import bencodepy
 import time
-import random
-import string
 import os
 import sdp_transform
+import apis.status_wrapper as statuses
 from utils import *
 from sockets import TCPSocket
 import time
@@ -56,7 +54,8 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     create_offer_resource(
                         config, callid=call_id, from_tag=data['from-tag'], rtpe_rtp_port=rtp_port,
                         rtpe_rtcp_port=rtcp_port, client_ip=client_ip, client_rtp_port=client_rtp_port,
-                        client_rtcp_port=client_rtp_port + 1
+                        client_rtcp_port=client_rtp_port + 1,
+                        without_operator=config.get('without_operator', 'no')
                     )
                 if data['command'] == 'answer':
                     sdp = sdp_transform.parse(response['sdp'])
@@ -64,12 +63,13 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     create_answer_resource(
                         config, callid=call_id, to_tag=data['to-tag'], rtpe_rtp_port=rtp_port,
                         rtpe_rtcp_port=rtcp_port, client_ip=client_ip, client_rtp_port=client_rtp_port,
-                        client_rtcp_port=client_rtp_port + 1
+                        client_rtcp_port=client_rtp_port + 1,
+                        without_operator=config.get('without_operator', 'no')
                     )
                     # query = parse_bc(rtpe_socket.send(query_message(data['call-id'])))
                     # create_resource(call_id, data['from-tag'], data['to-tag'], config, query)
                 # time.sleep(0.1)
-                logging.info(f"Call setup time: {int((time.time() - time_start) * 1000)}")
+                logging.info(f"{data['command']} setup time: {int((time.time() - time_start) * 1000)}")
                 self.request.sendall(bytes(data['cookie'] + " " + bc.encode(response).decode(), 'utf-8'))
                 logging.debug("Response from rtpengine sent back to client")
         if config['sidecar_type'] == 'envoy':
@@ -127,6 +127,14 @@ def serve(conf):
     global envoy_socket
     config = conf
 
+    if config.get('without_operator', 'no') == 'yes':
+        time.sleep(20)
+        for filename in os.listdir('proxy_configs'):
+            with open(f'proxy_configs/{filename}', 'r') as f:
+                logging.info(f'proxy_configs/{filename}')
+                statuses.statuses.post(f)
+
+
     rtpe_socket = TCPSocket(config['rtpe_address'], config['rtpe_port'], delay=45)
     if config['envoy_operator'] == 'no' and config['sidecar_type'] == 'envoy':
         envoy_socket = TCPSocket(config['envoy_address'], config['envoy_port'])
@@ -135,6 +143,9 @@ def serve(conf):
     # with socketserver.TCPServer((HOST, PORT), TCPRequestHandler) as server:
     #     server.serve_forever()
 
+    if config.get('without_operator', 'no') == 'yes':
+        threading.Thread(target=statuses.statuses.update, daemon=True).start()
+    
     server = ThreadedTCPServer((HOST, PORT), ThreadedTCPRequestHandler)
     with server:
         server_thread = threading.Thread(target=server.serve_forever)

@@ -1,0 +1,25 @@
+{
+    "label": "app=l7mp-worker",
+    "resource": {
+        "res_name": "worker-ng-listener",
+        "path": "listeners",
+        "config": {
+            "listener": {
+                "name": "worker-ng-listener",
+                "spec": {
+                    "protocol": "TCP",
+                    "port": 22220
+                },
+                "rules": [{
+                    "name": "worker-ng-rule",
+                    "action": {
+                        "route": {
+                            "name": "worker-ng-route",
+                            "destination": "worker-ng-target"
+                        }
+                    }
+                }]
+            }
+        }
+    }
+}

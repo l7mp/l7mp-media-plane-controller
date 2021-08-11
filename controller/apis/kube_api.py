@@ -4,11 +4,10 @@ import time
 import requests
 import concurrent.futures
 import copy
-import asyncio
 from kubernetes.client.exceptions import ApiException
 from kubernetes import client, config
 
-class Client():
+class KubeAPI():
 
     def __init__(self, **kwargs):
         config.load_incluster_config()
@@ -41,6 +40,8 @@ class Client():
         self.envoy = kwargs.get('envoy', 'no')
         self.update_owners = kwargs.get('update_owners', 'no')
         self.udp_mode = kwargs.get('udp_mode', 'server')
+
+        self.create_resources()
 
     def get_l7mp_config(self, url):
         # The url should contain the port number url:port
@@ -98,54 +99,16 @@ class Client():
                 break
         logging.info(f"{resource['metadata']['name']} created!")
 
-    async def async_create_object(self, resource, kind):
-        api = client.CustomObjectsApi()
-        api.create_namespaced_custom_object(
-            group='l7mp.io',
-            version='v1',
-            namespace='default',
-            plural=self.plurals[kind],
-            body=resource
-        )
-        while(True):
-            await asyncio.sleep(0.1)
-            try:
-                obj = api.get_namespaced_custom_object(
-                    group='l7mp.io',
-                    version='v1',
-                    namespace='default',
-                    plural=self.plurals[kind],
-                    name=resource['metadata']['name']
-                )
-            except ApiException as e: 
-                logging.error("Exception when calling CustomObjectsApi->get_cluster_custom_object: %s" % e)
-            if 'annotations' in obj['metadata']:
-                break
-        logging.info(f"{resource['metadata']['name']} created!")
-
     def threaded_create_objects(self, resources): # args=[(resource, kind), (resource, kind)]
         with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
             for res in resources:
                 executor.submit(lambda p: self.create_object(*p), res)
-
-    async def async_create_objects(self, resources):
-        tasks = [] 
-        for res in resources:
-            tasks.append(asyncio.create_task(self.async_create_object(res[0], res[1])))
-        for t in tasks:
-            await t
 
     def create_resources(self):
         if self.envoy == 'yes':
             self.threaded_create_objects(self.create_envoy_vsvc())
         else:
             self.threaded_create_objects(self.create_rule() + self.create_vsvc())
-
-    async def asnyc_create_resources(self):
-        if self.envoy == 'yes':
-            await self.async_create_objects(self.create_envoy_vsvc())
-        else:
-            await self.async_create_objects(self.create_rule() + self.create_vsvc())
 
     def delete_resource(self, resource):
         self.api.delete_namespaced_custom_object(
