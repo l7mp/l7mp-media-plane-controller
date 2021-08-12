@@ -48,7 +48,7 @@ def linphone(linphone1, linphone2, linphone_time, record_filename):
         logging.info(cmd2)
 
         client1.execute(cmd1)
-        time.sleep(1)
+        time.sleep(0.5)
         client2.execute(cmd2)
 
         time.sleep(linphone_time * 60)
@@ -112,6 +112,8 @@ if __name__ == '__main__':
         for n in range(config.getint('number_of_calls', 0)):
             calls.append(NormalCall(ports.popleft(), ports.popleft(), **config))
 
+        threaded_calls(calls)
+        
         if config.get('linphone', 'no') == 'yes':
             for i in LINPHONE_ARGS:
                 if not config.get(i, None):
@@ -123,7 +125,6 @@ if __name__ == '__main__':
                 config.get('record_filename')
             )
                 
-        threaded_calls(calls)
         # start_rtp_streams(rtp_commands)
         for r in rtp_commands:
             r.communicate()
