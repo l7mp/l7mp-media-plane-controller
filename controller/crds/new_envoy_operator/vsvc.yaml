@@ -1,0 +1,72 @@
+apiVersion: servicemesh.l7mp.io/v1
+kind: VirtualService
+metadata:
+  name: ingress-callid
+spec:
+  selector: 
+    app: l7mp-ingress
+  listeners:
+    - name: listener-rtp-callid-fromtag
+      udp:
+        port: 10000 # Port from rtpengine
+        cluster:
+          name: cluster-rtp-callid-fromtag
+          service_discovery: eds
+          health_check:
+            interval: 100
+            protocol: TCP
+          endpoints:
+            - name: endpoint-rtp-callid-fromtag
+              host:
+                selector: 
+                  app: l7mp-worker
+              port: 10000 # Port from rtpengine
+              health_check_port: 1233
+    - name: listener-rtcp-callid-fromtag
+      udp:
+        port: 10001 # Port from rtpengine
+        cluster:
+          name: cluster-rtcp-callid-fromtag
+          service_discovery: eds
+          health_check:
+            interval: 100
+            protocol: TCP
+          endpoints:
+            - name: endpoint-rtcp-callid-fromtag
+              host:
+                selector: 
+                  app: l7mp-worker
+              port: 10001 # Port from rtpengine
+              health_check_port: 1233
+    - name: listener-rtp-callid-totag
+      udp:
+        port: 10018 # Port from rtpengine
+        cluster:
+          name: cluster-rtp-callid-totag
+          service_discovery: eds
+          health_check:
+            interval: 100
+            protocol: TCP
+          endpoints:
+            - name: endpoint-rtp-callid-totag
+              host:
+                selector: 
+                  app: l7mp-worker
+              port: 10018 # Port from rtpengine
+              health_check_port: 1233
+    - name: listener-rtcp-callid-totag
+      udp:
+        port: 10019 # Port from rtpengine
+        cluster:
+          name: cluster-rtcp-callid-totag
+          service_discovery: eds
+          health_check:
+            interval: 100
+            protocol: TCP
+          endpoints:
+            - name: endpoint-rtcp-callid-totag
+              host:
+                selector: 
+                  app: l7mp-worker
+              port: 10019 # Port from rtpengine
+              health_check_port: 1233

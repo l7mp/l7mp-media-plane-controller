@@ -1,3 +1,4 @@
+from json import load
 import logging
 import yaml
 import time
@@ -6,6 +7,7 @@ import concurrent.futures
 import copy
 from kubernetes.client.exceptions import ApiException
 from kubernetes import client, config
+from yaml.loader import Loader
 
 class KubeAPI():
 
@@ -106,7 +108,7 @@ class KubeAPI():
 
     def create_resources(self):
         if self.envoy == 'yes':
-            self.threaded_create_objects(self.create_envoy_vsvc())
+            self.threaded_create_objects(self.new_envoy_vsvc())
         else:
             self.threaded_create_objects(self.create_rule() + self.create_vsvc())
 
@@ -302,6 +304,63 @@ class KubeAPI():
             resource['spec']['cluster']['spec']['UDP']['port'] = self.remote_rtcp_port
             self.create_object(resource, 'Target')
             self.resource_names.append(('Target', resource['metadata']['name']))
+
+    def _listener_conf(self, **kwargs):
+        return {
+            'name': f'listener-{kwargs.get("type")}-{self.simple_call_id}-{kwargs.get("tag")}',
+            'udp': {
+                'port': kwargs.get('port'),
+                'cluster': {
+                    'name': f'cluster-{kwargs.get("type")}-{self.simple_call_id}-{kwargs.get("tag")}',
+                    'service_discovery': 'eds',
+                    'health_check': {
+                        'interval': 100,
+                        'protocol': 'TCP'
+                    },
+                    'endpoints': [{
+                        'name': f'endpoint-{kwargs.get("type")}-{self.simple_call_id}-{kwargs.get("tag")}',
+                        'host': {
+                            'selector': {
+                                'app': 'l7mp-worker'
+                            }
+                        },
+                        'port': kwargs.get('port'),
+                        'health_check_port': 1233
+                    }]
+                }
+            }
+        }
+
+    def new_envoy_vsvc(self):
+        resource = {
+            'apiVersion': 'servicemesh.l7mp.io/v1',
+            'kind': 'VirtualService',
+            'metadata': {
+                'name': f'ingress-{self.simple_call_id}'
+            },
+            'spec': {
+                'selector': {
+                    'app': 'l7mp-ingress'
+                },
+                'listeners': []
+            }
+        }
+        if self.from_data and self.to_data:
+            resource['spec']['listener'].append(self._listener_conf(
+                type='rtp', tag=self.from_data['simple_tag'], port=self.from_data['remote_rtp_port']
+            ))
+            resource['spec']['listener'].append(self._listener_conf(
+                type='rtcp', tag=self.from_data['simple_tag'], port=self.from_data['remote_rtcp_port']
+            ))
+            resource['spec']['listener'].append(self._listener_conf(
+                type='rtp', tag=self.to_data['simple_tag'], port=self.to_data['remote_rtp_port']
+            ))
+            resource['spec']['listener'].append(self._listener_conf(
+                type='rtcp', tag=self.to_data['simple_tag'], port=self.to_data['remote_rtcp_port']
+            ))
+            self.resource_names(('VirtualService', resource['metadata']['name']))
+        return ((resource, 'VirtualService'))
+
 
     def create_envoy_vsvc(self):
         with open('crds/envoy_operator/vsvc.yaml', 'r') as f:

@@ -97,22 +97,31 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                         logging.debug(f"Data to envoy: {json_data}")
                         envoy_socket.send(json_data, no_wait_response=True)
                         logging.debug("After envoy send")
-                elif data['command'] == 'offer':
-                    sdp = sdp_transform.parse(response['sdp'])
-                    rtp_port, rtcp_port = sdp['media'][0]['port'], sdp['media'][0]['rtcp']['port']
-                    create_offer_resource(
-                        config, callid=call_id, from_tag=data['from-tag'], rtpe_rtp_port=rtp_port,
-                        rtpe_rtcp_port=rtcp_port, client_ip=client_ip, client_rtp_port=client_rtp_port,
-                        client_rtcp_port=client_rtp_port + 1
-                    )
+                # elif data['command'] == 'offer':
+                #     sdp = sdp_transform.parse(response['sdp'])
+                #     rtp_port, rtcp_port = sdp['media'][0]['port'], sdp['media'][0]['rtcp']['port']
+                #     create_offer_resource(
+                #         config, callid=call_id, from_tag=data['from-tag'], rtpe_rtp_port=rtp_port,
+                #         rtpe_rtcp_port=rtcp_port, client_ip=client_ip, client_rtp_port=client_rtp_port,
+                #         client_rtcp_port=client_rtp_port + 1
+                #     )
                 elif data['command'] == 'answer':
-                    sdp = sdp_transform.parse(response['sdp'])
-                    rtp_port, rtcp_port = sdp['media'][0]['port'], sdp['media'][0]['rtcp']['port']
-                    create_answer_resource(
-                        config, callid=call_id, to_tag=data['to-tag'], rtpe_rtp_port=rtp_port,
-                        rtpe_rtcp_port=rtcp_port, client_ip=client_ip, client_rtp_port=client_rtp_port,
-                        client_rtcp_port=client_rtp_port + 1
-                    )
+                    raw_query = rtpe_socket.send(query_message[data['call-id']])
+                    logging.debug(f"Query for {call_id} sent out")
+                    if not raw_query:
+                        logging.exception('Cannot make a query to rtpengine.')
+                    else:
+                        query = parse_bc(raw_query)
+                        create_resource(call_id, data['from-tag'], data['to-tag'], config, query)
+
+
+                    # sdp = sdp_transform.parse(response['sdp'])
+                    # rtp_port, rtcp_port = sdp['media'][0]['port'], sdp['media'][0]['rtcp']['port']
+                    # create_answer_resource(
+                    #     config, callid=call_id, to_tag=data['to-tag'], rtpe_rtp_port=rtp_port,
+                    #     rtpe_rtcp_port=rtcp_port, client_ip=client_ip, client_rtp_port=client_rtp_port,
+                    #     client_rtcp_port=client_rtp_port + 1
+                    # )
                 elif data['command'] == 'delete' and config['envoy_operator'] == 'yes':
                     delete_kube_resources(call_id)
                 self.request.sendall(bytes(data['cookie'] + " " + bc.encode(response).decode(), 'utf-8'))
