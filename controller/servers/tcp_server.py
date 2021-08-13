@@ -124,6 +124,11 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     # )
                 elif data['command'] == 'delete' and config['envoy_operator'] == 'yes':
                     delete_kube_resources(call_id)
+                
+                # For non-blocking wait
+                event = threading.Event()
+                event.wait(0.1)
+                logging.info(f"{data['command']} setup time: {int((time.time() - time_start) * 1000)}")
                 self.request.sendall(bytes(data['cookie'] + " " + bc.encode(response).decode(), 'utf-8'))
                 logging.debug("Response from rtpengine sent back to client")
 
