@@ -83,6 +83,7 @@ def create_resource(call_id, from_tag, to_tag, config, query):
     to_port = query['tags'][to_tag]['medias'][0]['streams'][0]['local port']
     to_c_address = query['tags'][to_tag]['medias'][0]['streams'][0]['endpoint']['address']
     to_c_port = query['tags'][to_tag]['medias'][0]['streams'][0]['endpoint']['port']
+    
     from_port = query['tags'][from_tag]['medias'][0]['streams'][0]['local port']
     from_c_address = query['tags'][from_tag]['medias'][0]['streams'][0]['endpoint']['address']
     from_c_port = query['tags'][from_tag]['medias'][0]['streams'][0]['endpoint']['port']
@@ -242,13 +243,14 @@ def create_answer_resource(config, **kwargs):
             )
         )
 
-def create_json(caller_port, callee_port, call_id):
+def create_json(caller_port, callee_port, call_id, rtpe_address):
     return json.dumps({
         "caller_rtp": caller_port,
         "caller_rtcp": caller_port + 1,
         "callee_rtp": callee_port,
         "callee_rtcp": callee_port + 1,
-        "call_id": call_id
+        "call_id": call_id,
+        "rtpe_address": rtpe_address
     })
 
 def load_config(conf):
