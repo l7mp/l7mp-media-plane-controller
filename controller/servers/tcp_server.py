@@ -92,7 +92,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                         json_data = create_json(
                             query['tags'][data['from-tag']]['medias'][0]['streams'][0]['local port'],
                             query['tags'][data['to-tag']]['medias'][0]['streams'][0]['local port'],
-                            call_id, config['rtpe_address']
+                            call_id
                         )
                         logging.debug(f"Data to envoy: {json_data}")
                         envoy_socket.send(json_data, no_wait_response=True)

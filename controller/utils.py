@@ -13,6 +13,7 @@ import configparser
 from apis.kube_api import KubeAPI
 from apis.async_kube_api import AsyncKubeAPI
 from apis.l7mp_api import L7mpAPI
+from apis.kube_api import get_worker_pod_address
 
 commands = Commands()
 kubernetes_apis = []
@@ -243,14 +244,14 @@ def create_answer_resource(config, **kwargs):
             )
         )
 
-def create_json(caller_port, callee_port, call_id, rtpe_address):
+def create_json(caller_port, callee_port, call_id):
     return json.dumps({
         "caller_rtp": caller_port,
         "caller_rtcp": caller_port + 1,
         "callee_rtp": callee_port,
         "callee_rtcp": callee_port + 1,
         "call_id": call_id,
-        "rtpe_address": rtpe_address
+        "rtpe_address": get_worker_pod_address('app=worker')
     })
 
 def load_config(conf):

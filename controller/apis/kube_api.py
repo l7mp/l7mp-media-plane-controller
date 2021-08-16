@@ -9,6 +9,13 @@ from kubernetes.client.exceptions import ApiException
 from kubernetes import client, config
 from yaml.loader import Loader
 
+def get_worker_pod_address(label):
+    config.load_incluster_config()
+    api = client.CoreV1Api()
+    pods = api.list_namespaced_pod(namespace='default', label_selector=label).to_dict()
+    return pods['items'][0]['status']['pod_ip']
+
+
 class KubeAPI():
 
     def __init__(self, **kwargs):
