@@ -354,16 +354,16 @@ class KubeAPI():
             }
         }
         if self.from_data and self.to_data:
-            resource['spec']['listener'].append(self._listener_conf(
+            resource['spec']['listeners'].append(self._listener_conf(
                 type='rtp', tag=self.from_data['simple_tag'], port=self.from_data['remote_rtp_port']
             ))
-            resource['spec']['listener'].append(self._listener_conf(
+            resource['spec']['listeners'].append(self._listener_conf(
                 type='rtcp', tag=self.from_data['simple_tag'], port=self.from_data['remote_rtcp_port']
             ))
-            resource['spec']['listener'].append(self._listener_conf(
+            resource['spec']['listeners'].append(self._listener_conf(
                 type='rtp', tag=self.to_data['simple_tag'], port=self.to_data['remote_rtp_port']
             ))
-            resource['spec']['listener'].append(self._listener_conf(
+            resource['spec']['listeners'].append(self._listener_conf(
                 type='rtcp', tag=self.to_data['simple_tag'], port=self.to_data['remote_rtcp_port']
             ))
             self.resource_names(('VirtualService', resource['metadata']['name']))
