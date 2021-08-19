@@ -62,13 +62,23 @@ class KubeAPI():
 
     def create_object(self, resource, kind):
         api = client.CustomObjectsApi()
-        api.create_namespaced_custom_object(
-            group='l7mp.io',
-            version='v1',
-            namespace='default',
-            plural=self.plurals[kind],
-            body=resource
-        )
+        if self.envoy == 'yes':
+            api.create_namespaced_custom_object(
+                group='servicemesh.l7mp.io/v1',
+                version='v1',
+                namespace='default',
+                plural=self.plurals[kind],
+                body=resource
+            )
+        else:
+            api.create_namespaced_custom_object(
+                group='l7mp.io',
+                version='v1',
+                namespace='default',
+                plural=self.plurals[kind],
+                body=resource
+            )
+        logging.info(resource['metadata']['name'])
         # logging.info("After")
         # if self.envoy == 'no':
         # label = resource['spec']['selector']['matchLabels']['app']
@@ -115,7 +125,7 @@ class KubeAPI():
 
     def create_resources(self):
         if self.envoy == 'yes':
-            self.threaded_create_objects(self.new_envoy_vsvc())
+            self.threaded_create_objects(self.new_envoy_ingress_vsvc() + self.new_envoy_worker_vsvc())
         else:
             self.threaded_create_objects(self.create_rule() + self.create_vsvc())
 
@@ -313,6 +323,7 @@ class KubeAPI():
             self.resource_names.append(('Target', resource['metadata']['name']))
 
     def _listener_conf(self, **kwargs):
+        host = kwargs.get('host')
         return {
             'name': f'listener-{kwargs.get("type")}-{self.simple_call_id}-{kwargs.get("tag")}',
             'udp': {
@@ -339,12 +350,12 @@ class KubeAPI():
             }
         }
 
-    def new_envoy_vsvc(self):
+    def new_envoy_ingress_vsvc(self):
         resource = {
             'apiVersion': 'servicemesh.l7mp.io/v1',
             'kind': 'VirtualService',
             'metadata': {
-                'name': f'ingress-{self.simple_call_id}'
+                'name': f'worker-{self.simple_call_id}'
             },
             'spec': {
                 'selector': {
@@ -355,19 +366,49 @@ class KubeAPI():
         }
         if self.from_data and self.to_data:
             resource['spec']['listeners'].append(self._listener_conf(
-                type='rtp', tag=self.from_data['simple_tag'], port=self.from_data['remote_rtp_port']
+                type='rtp', tag=self.from_data['simple_tag'], port=self.from_data['remote_rtp_port'], host={'selector': {'app': 'worker'}}
             ))
             resource['spec']['listeners'].append(self._listener_conf(
-                type='rtcp', tag=self.from_data['simple_tag'], port=self.from_data['remote_rtcp_port']
+                type='rtcp', tag=self.from_data['simple_tag'], port=self.from_data['remote_rtcp_port'], host={'selector': {'app': 'worker'}}
             ))
             resource['spec']['listeners'].append(self._listener_conf(
-                type='rtp', tag=self.to_data['simple_tag'], port=self.to_data['remote_rtp_port']
+                type='rtp', tag=self.to_data['simple_tag'], port=self.to_data['remote_rtp_port'], host={'selector': {'app': 'worker'}}
             ))
             resource['spec']['listeners'].append(self._listener_conf(
-                type='rtcp', tag=self.to_data['simple_tag'], port=self.to_data['remote_rtcp_port']
+                type='rtcp', tag=self.to_data['simple_tag'], port=self.to_data['remote_rtcp_port'], host={'selector': {'app': 'worker'}}
             ))
             self.resource_names.append(('VirtualService', resource['metadata']['name']))
-        return ((resource, 'VirtualService'))
+        return [(resource, 'VirtualService')]
+
+    def new_envoy_worker_vsvc(self):
+        resource = {
+            'apiVersion': 'servicemesh.l7mp.io/v1',
+            'kind': 'VirtualService',
+            'metadata': {
+                'name': f'worker-{self.simple_call_id}'
+            },
+            'spec': {
+                'selector': {
+                    'app': 'worker'
+                },
+                'listeners': []
+            }
+        }
+        if self.from_data and self.to_data:
+            resource['spec']['listeners'].append(self._listener_conf(
+                type='rtp', tag=self.from_data['simple_tag'], port=self.from_data['remote_rtp_port'], host='127.0.0.1'
+            ))
+            resource['spec']['listeners'].append(self._listener_conf(
+                type='rtcp', tag=self.from_data['simple_tag'], port=self.from_data['remote_rtcp_port'], host='127.0.0.1'
+            ))
+            resource['spec']['listeners'].append(self._listener_conf(
+                type='rtp', tag=self.to_data['simple_tag'], port=self.to_data['remote_rtp_port'], host='127.0.0.1'
+            ))
+            resource['spec']['listeners'].append(self._listener_conf(
+                type='rtcp', tag=self.to_data['simple_tag'], port=self.to_data['remote_rtcp_port'], host='127.0.0.1'
+            ))
+            self.resource_names.append(('VirtualService', resource['metadata']['name']))
+        return [(resource, 'VirtualService')]        
 
 
     def create_envoy_vsvc(self):
