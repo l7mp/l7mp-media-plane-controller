@@ -319,7 +319,8 @@ class KubeAPI():
                 'port': kwargs.get('port'),
                 'cluster': {
                     'name': f'cluster-{kwargs.get("type")}-{self.simple_call_id}-{kwargs.get("tag")}',
-                    'service_discovery': 'eds',
+                    'service_discovery': 'strictdns',
+                    'hash_key': self.simple_call_id,
                     'health_check': {
                         'interval': 100,
                         'protocol': 'TCP'
@@ -328,7 +329,7 @@ class KubeAPI():
                         'name': f'endpoint-{kwargs.get("type")}-{self.simple_call_id}-{kwargs.get("tag")}',
                         'host': {
                             'selector': {
-                                'app': 'l7mp-worker'
+                                'app': 'worker'
                             }
                         },
                         'port': kwargs.get('port'),
@@ -347,7 +348,7 @@ class KubeAPI():
             },
             'spec': {
                 'selector': {
-                    'app': 'l7mp-ingress'
+                    'app': 'envoy-ingress'
                 },
                 'listeners': []
             }
