@@ -5,10 +5,13 @@ import bencodepy
 import time
 import os
 import sdp_transform
+from apis.status import Status
 import apis.status_wrapper as statuses
 from utils import *
 from sockets import TCPSocket
 import time
+import apis.l7mp_api as L7mpAPI
+
 
 bc = bencodepy.Bencode(
     encoding='utf-8'
@@ -106,7 +109,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 #         client_rtcp_port=client_rtp_port + 1
                 #     )
                 elif data['command'] == 'answer':
-                    raw_query = rtpe_socket.send(query_message[data['call-id']])
+                    raw_query = rtpe_socket.send(query_message(data['call-id']))
                     logging.debug(f"Query for {call_id} sent out")
                     if not raw_query:
                         logging.exception('Cannot make a query to rtpengine.')
@@ -142,12 +145,7 @@ def serve(conf):
     config = conf
 
     if config.get('without_operator', 'no') == 'yes':
-        time.sleep(20)
-        for filename in os.listdir('proxy_configs'):
-            with open(f'proxy_configs/{filename}', 'r') as f:
-                logging.info(f'proxy_configs/{filename}')
-                statuses.statuses.post(f)
-
+        L7mpAPI.init()
 
     rtpe_socket = TCPSocket(config['rtpe_address'], config['rtpe_port'], delay=45)
     if config['envoy_operator'] == 'no' and config['sidecar_type'] == 'envoy':
@@ -158,7 +156,7 @@ def serve(conf):
     #     server.serve_forever()
 
     if config.get('without_operator', 'no') == 'yes':
-        threading.Thread(target=statuses.statuses.update, daemon=True).start()
+        threading.Thread(target=L7mpAPI.update, daemon=True).start()
     
     server = ThreadedTCPServer((HOST, PORT), ThreadedTCPRequestHandler)
     with server:
