@@ -366,7 +366,7 @@ class KubeAPI():
             resource['spec']['listeners'].append(self._listener_conf(
                 type='rtcp', tag=self.to_data['simple_tag'], port=self.to_data['remote_rtcp_port']
             ))
-            self.resource_names(('VirtualService', resource['metadata']['name']))
+            self.resource_names.append(('VirtualService', resource['metadata']['name']))
         return ((resource, 'VirtualService'))
 
 
