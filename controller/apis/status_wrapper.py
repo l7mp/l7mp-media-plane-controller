@@ -2,7 +2,7 @@ import time
 import json
 import threading
 import logging
-from status import Statuses, Operations
+from status import Status, Statuses, Operations
 from kubernetes import client, config, watch
 
 lock = threading.Lock()
@@ -22,6 +22,12 @@ class StatusWrapper():
     def delete(self, res_name, label):
         self.statuses.delete_res_from_statuses(res_name, label)
 
+    def get_statuses(self):
+        return self.statuses
+
+    def set_statuses(self, statuses):
+        self.statuses = statuses
+
     def update(self):
         config.load_incluster_config()
         w = watch.Watch()
@@ -30,14 +36,18 @@ class StatusWrapper():
             logging.info(event['type'])
             if event['type'] == 'DELETED':
                 self.statuses.delete_status(event['object'].metadata.name, event['object'].status.pod_ip)
-            # if event['type'] == 'MODIFIED' and event['object'].status.phase == 'Running':
-            #     for st in self.statuses.statuses:
-            #         logging.info(st)
-            #     self.statuses.add_endpoint(event)
-            #     self.statuses.copy(event)
+            if event['type'] == 'MODIFIED' and event['object'].status.phase == 'Running':
+                for st in self.statuses.statuses:
+                    logging.info(st)
+                self.statuses.add_endpoint(event)
+                self.statuses.copy(event)
             # if event['type'] == 'MODIFIED':
             #     logging.info(event)
 
         # self.statuses.update(event)
 
-statuses = StatusWrapper()
+
+def init():
+    global statuses
+    with lock:
+        statuses = StatusWrapper()

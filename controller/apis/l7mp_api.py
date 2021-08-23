@@ -1,10 +1,39 @@
 import logging
 import json
 import concurrent.futures
+import os
+from apis.status import Status
 import status_wrapper as statuses
 import threading
+import time
+from kubernetes import client, config, watch
 
 lock = threading.Lock()
+
+def init():
+    statuses.init()
+    time.sleep(20)
+    for filename in os.listdir('proxy_configs'):
+        with open(f'proxy_configs/{filename}', 'r') as f:
+            logging.info(f'proxy_configs/{filename}')
+            statuses.statuses.post(f)
+
+def update():
+    config.load_incluster_config()
+    w = watch.Watch()
+    api = client.CoreV1Api()
+    s = statuses.statuses.get_statuses()
+    for event in w.stream(api.list_namespaced_pod, namespace='default',
+        label_selector='app=l7mp-worker'):
+        if event['type'] == 'DELETED':
+            logging.info(event['type'])
+            s.delete_status(event['object'].metadata.name, event['object'].status.pod_ip)
+        if event['type'] == 'MODIFIED':
+            time.sleep(2)
+            if event['object'].status.pod_ip:
+                s.add_endpoint(event)
+                s.copy(event)
+                statuses.statuses.set_statuses(s)
 
 class L7mpAPI():
 
@@ -110,12 +139,14 @@ class L7mpAPI():
         })
 
     def _create_resources(self):
+        global statuses
         resources = self._create_rule() + self._create_listener()
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             for r in resources:
                 executor.submit(statuses.statuses.post(r[0]))
 
     def delete_resources(self):
+        global statuses
         for r in self.resource_names:
             statuses.statuses.delete(r[1], r[0])
             logging.info(f'{r[1]} deleted.')

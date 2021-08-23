@@ -33,7 +33,7 @@ class Operations():
                 time.sleep(1)
                 continue
 
-        if response.status_code != 200:
+        if response.status_code != 200 and 'already defined' not in str(response.content):
             logging.info(f'{response.status_code}:{response.text}')
         return response
 
@@ -93,24 +93,51 @@ class Status(Operations):
         if response.status_code == 200:
             self.resources.append(resource)
     
-    def delete_resource(self, res_name):
+    def delete_resource(self, res_name, recursive=False):
         for r in self.resources:
             logging.info(f'{r["res_name"]}, {res_name}')
             if r['res_name'] == res_name:
                 self.resources = list(filter(lambda i: i['res_name'] != res_name, self.resources))
                 path = 'rules' if 'rules' in r['path'] else r['path']
-                return super().delete(r['label'], path, r['res_name'])
+                name = r['res_name'] + '?recursive=true' if recursive else r['res_name']
+                return super().delete(r['label'], path, name)
 
-    def delete_endpoint(self, pod_ip):
+    def delete_endpoint(self, pod):
+        # switch = False
         for r in self.resources:
             if 'endpoints_label' in r:
-                new_endpoint_ips = []
-                for e in r['endpoint_ips']:
-                    if e['ip'] == pod_ip:
-                        super().delete(r['label'], 'endpoints', r['res_name'] + pod_ip)
-                        continue
-                    new_endpoint_ips.append(e)
-                r['endpoint_ips'] = new_endpoint_ips
+                ips = [e['ip'] for e in r['endpoint_ips']]
+                if pod['ip'] in ips and r['path'] == 'clusters':
+                    # switch = True
+                    ep = None
+                    for i in r['config']['cluster']['endpoints']:
+                        if i['spec']['address'] == pod['ip']:
+                            ep = i
+                    
+                    logging.info(r)
+                    super().delete(r['label'], 'endpoints', ep['name'] + '?recursive=true')
+                    r['config']['cluster']['endpoints'].remove(ep)
+                    r['endpoint_ips'].remove(pod)
+                            # self.delete_resource(r['res_name'], recursive=True)
+                            # del save['endpoint_ips']
+                            # self.add_resource(save)
+                    # TODO: USe endpoint delete recursive 
+        # if switch:
+        #     for r in self.resources:
+        #         if 'controller' not in r['res_name'] and r['path'] == 'listeners':
+        #             save = r
+        #             super().delete('app=l7mp-ingress', 'rules', r['config']['listener']['rules'][0]['name'])
+        #             # self.delete_resource(r['res_name'])
+        #             self.add_resource(save)
+
+
+                # new_endpoint_ips = []
+                # for e in r['endpoint_ips']:
+                #     if e['ip'] == pod_ip:
+                #         super().delete(r['label'], 'endpoints', r['res_name'] + pod_ip + '?recursive=true')
+                #         continue
+                #     new_endpoint_ips.append(e)
+                # r['endpoint_ips'] = new_endpoint_ips
 
     def add_endpoint(self, pod_name, pod_ip, labels):
         for r in self.resources:
@@ -216,8 +243,8 @@ class Statuses():
     def delete_status(self, pod_name, pod_ip):
         new_statuses = []
         for s in self.statuses:
-            if s.pod_name != pod_name:
-                s.delete_endpoint(pod_ip)
+            if s.pod_name != pod_name and 'app=l7mp-ingress' == s.label:
+                s.delete_endpoint({'name': pod_name, 'ip': pod_ip})
                 new_statuses.append(s)
         self.statuses = new_statuses
 
@@ -235,14 +262,9 @@ class Statuses():
         if pod_dict['pod_name'] in names:
             return
 
-        logging.info(pod_dict)
-
-        logging.info(f'len of statuses {len(self.statuses)}')
         for s in self.statuses:
             if s.label in labels:
                 for r in s.resources:
-                    logging.info(f'len of resources {len(s.resources)}')
-                    logging.info(r)
                     self.add_status(pod_dict, s.label, r)
 
     def update(self, pod):
