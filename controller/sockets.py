@@ -56,7 +56,7 @@ class TCPSocket():
                 break
             except socket.error as error:
                 logging.debug(f"Address {self.address}:{self.port}")
-                logging.error(f"Connection Failed **BECAUSE:** {error}")
+                logging.error(f"Connection Failed ({self.address})**BECAUSE:** {error}")
                 logging.info(f"Attempt {counter} of 3")
                 time.sleep(5)
                 counter += 1

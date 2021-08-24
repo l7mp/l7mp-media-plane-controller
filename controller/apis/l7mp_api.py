@@ -23,14 +23,16 @@ def update():
     w = watch.Watch()
     api = client.CoreV1Api()
     s = statuses.statuses.get_statuses()
-    for event in w.stream(api.list_namespaced_pod, namespace='default',
-        label_selector='app=l7mp-worker'):
-        if event['type'] == 'DELETED':
-            logging.info(event['type'])
-            s.delete_status(event['object'].metadata.name, event['object'].status.pod_ip)
-        if event['type'] == 'MODIFIED':
-            time.sleep(2)
+    deleted_pod = None
+    for event in w.stream(api.list_namespaced_pod, namespace='default', label_selector='app=l7mp-worker'):
+        if event['type'] == 'MODIFIED' and event['object'].metadata.deletion_timestamp != None:
+            logging.info(f'pod name: {event["object"].metadata.name}, deleted pod name: {deleted_pod}')
+            if event['object'].metadata.name != deleted_pod:
+                deleted_pod = event['object'].metadata.name
+                s.delete_status(event['object'].metadata.name, event['object'].status.pod_ip)
+        if event['type'] == 'MODIFIED' and event['object'].metadata.deletion_timestamp == None:
             if event['object'].status.pod_ip:
+                time.sleep(2)
                 s.add_endpoint(event)
                 s.copy(event)
                 statuses.statuses.set_statuses(s)
@@ -75,7 +77,7 @@ class L7mpAPI():
                                 "route": {
                                     "name": f"{kwargs.get('res_name')}-route",
                                     "destination": kwargs.get('destination'),
-                                    "retry": { "retry_on": "always", "num_retries": 5, "timeout": 250 }
+                                    "retry": { "retry_on": "always", "num_retries": 1000, "timeout": 250 }
                                 },
                                 "rewrite": [
                                     {"path": "/labels/callid", "value": self.call_id},
@@ -128,7 +130,7 @@ class L7mpAPI():
                                 },
                                 "retry": {
                                     "retry_on": "always",
-                                    "num_retries": 5,
+                                    "num_retries": 1000,
                                     "timeout": 250
                                 }
                             }

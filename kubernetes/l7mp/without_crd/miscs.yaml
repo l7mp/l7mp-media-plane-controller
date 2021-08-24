@@ -84,9 +84,6 @@ metadata:
 data:
   rtpengine.conf: |
     [rtpengine]
-    # access only via the sidecar proxy
-    # listen-ng=MY_IP:22222
-    # interface=MY_IP
     listen-tcp-ng=127.0.0.1:22222
     interface=127.0.0.1
 
@@ -96,28 +93,13 @@ data:
     port-min=10000
     port-max=20000
 
-    # recording-dir=/tmp
-    # recording-method=pcap
-    # recording-format=eth
-
-    log-level=6
+    log-level=7
     delete-delay=0
 
     timeout=6000
 
     redis = redis:6379/1
     subscribe-keyspace=1
-    # redis-write = password@12.23.34.45:6379/42
-    # redis-num-threads = 8
-    # no-redis-required = false
-    # redis-expires = 86400
-    # redis-allowed-errors = -1
-    # redis-disable-time = 10
-    # redis-cmd-timeout = 0
-    # redis-connect-timeout = 1000
-
-    # sip-source = falsecontrol-worker
-    # dtls-passive = false
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -146,139 +128,3 @@ data:
     update_owners=no
     udp_mode=server
     without_operator=yes
-# ---
-# apiVersion: l7mp.io/v1
-# kind: Target
-# metadata:
-#     name: ingress-rtp-target
-# spec:
-#   selector: 
-#     matchLabels: 
-#       app: l7mp-ingress
-#   cluster:
-#     spec:
-#       JSONSocket:
-#         transport:
-#           UDP:
-#             port: 19000
-#         header:
-#           - path:
-#               from: '/labels'
-#               to: '/labels'
-#     endpoints:
-#       - selector:
-#           matchLabels:
-#             app: l7mp-worker
-#     loadbalancer:
-#       policy: ConsistentHash
-#       key: '/labels/callid'
-# ---
-# apiVersion: l7mp.io/v1
-# kind: Target
-# metadata:
-#     name: ingress-rtcp-target
-# spec:
-#   selector: 
-#     matchLabels: 
-#       app: l7mp-ingress
-#   cluster:
-#     spec:
-#       JSONSocket:
-#         transport:
-#           UDP:
-#             port: 19001
-#         header:
-#           - path:
-#               from: '/labels'
-#               to: '/labels'
-#     endpoints:
-#       - selector:
-#           matchLabels:
-#             app: l7mp-worker
-#     loadbalancer:
-#       policy: ConsistentHash
-#       key: '/labels/callid'
-# ---
-# apiVersion: l7mp.io/v1
-# kind: VirtualService
-# metadata:
-#   name: ingress-controller-listener
-# spec:
-#   selector:
-#     matchLabels:
-#       app: l7mp-ingress
-#   listener:
-#     spec:
-#       TCP:
-#         port: 22222
-#     rules:
-#       - action:
-#           route:
-#             destinationRef: /l7mp.io/v1/Target/default/ingress-controller-target
-# ---
-# apiVersion: l7mp.io/v1
-# kind: Target
-# metadata:
-#   name: ingress-controller-target
-# spec:
-#   selector:
-#     matchLabels:
-#       app: l7mp-ingress
-#   cluster:
-#     spec:
-#       TCP:
-#         port: 2000
-#     endpoints:
-#       - selector: 
-#           matchLabels:
-#             app: rtpe-controller
-# ---
-# apiVersion: l7mp.io/v1
-# kind: VirtualService
-# metadata:
-#   name: worker-ng-listener
-# spec:
-#   selector:
-#     matchLabels:
-#       app: l7mp-worker
-#   listener:
-#     spec:
-#       TCP:
-#         port: 22220
-#     rules:
-#       - action:
-#           route:
-#             destinationRef: /l7mp.io/v1/Target/default/worker-ng-target
-# ---
-# apiVersion: l7mp.io/v1
-# kind: Target
-# metadata:
-#   name: worker-ng-target
-# spec:
-#   selector:
-#     matchLabels:
-#       app: l7mp-worker
-#   cluster:
-#     spec:
-#       TCP:
-#         port: 22222
-#     endpoints:
-#       - {spec: {address: "127.0.0.1" }}
-
-
-# apiVersion: l7mp.io/v1
-# kind: VirtualService
-# metadata:
-#   name: test-listener
-# spec:
-#   selector:
-#     matchLabels:
-#       app: l7mp-ingress
-#   listener:
-#     spec:
-#       TCP:
-#         port: 22220
-#     rules:
-#       - action:
-#           route:
-#             destinationRef: /l7mp.io/v1/Target/default/ingress-controller-target
