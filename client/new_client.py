@@ -8,6 +8,7 @@ from normalcall import NormalCall
 from transcodedcall import TranscodedCall
 from ssh_handler import ShellHandler
 from collections import deque
+import threading
 
 LINPHONE_ARGS = ['ssh_linphone1', 'ssh_linphone2', 'linphone_time', 'record_filename']
 
@@ -34,7 +35,7 @@ def load_config(conf):
     logging.info("Configuration file loaded!")
     return config
 
-def linphone(linphone1, linphone2, linphone_time, record_filename):
+def linphone(linphone1, linphone2, record_filename, calls):
         client1_config = linphone1.split('@')
         client2_config = linphone2.split('@')
         
@@ -51,10 +52,14 @@ def linphone(linphone1, linphone2, linphone_time, record_filename):
         time.sleep(0.5)
         client2.execute(cmd2)
 
-        time.sleep(linphone_time * 60)
+        time.sleep(10)
+        threaded_calls(calls)
 
-        client1.execute(chr(3))
-        client2.execute(chr(3))
+def linphone_sleep(client1, client2, linphone_time):
+    logging.info(f'sleep time: {linphone_time * 60}')
+    time.sleep(linphone_time * 60)
+    client1.execute(chr(3))
+    client2.execute(chr(3))
 
 def call(call):
     global rtp_commands
@@ -112,19 +117,40 @@ if __name__ == '__main__':
         for n in range(config.getint('number_of_calls', 0)):
             calls.append(NormalCall(ports.popleft(), ports.popleft(), **config))
 
-        threaded_calls(calls)
         
         if config.get('linphone', 'no') == 'yes':
             for i in LINPHONE_ARGS:
                 if not config.get(i, None):
                     logging.exception(f'Config parameter: {i} not found!')
-            linphone(
-                config.get('ssh_linphone1'),
-                config.get('ssh_linphone2'),
-                config.getint('linphone_time'),
-                config.get('record_filename')
-            )
-                
+            client1_config = config.get('ssh_linphone1').split('@')
+            client2_config = config.get('ssh_linphone2').split('@')
+        
+            client1 = ShellHandler(client1_config[1], client1_config[0], client1_config[0])
+            client2 = ShellHandler(client2_config[1], client2_config[0], client2_config[0])
+        
+            cmd1 = f'python app.py -p /home/user/shanty.wav -r /home/user/{config.get("record_filename")} -c "call 456" -pr 10.0.1.6:8000'
+            cmd2 = f'python app.py -p /home/user/shanty.wav -r /home/user/{config.get("record_filename")} -c "answer 1" -pr 10.0.1.7:8000'
+        
+            logging.info(cmd1)
+            logging.info(cmd2)
+
+            client1.execute(cmd1)
+            time.sleep(0.5)
+            client2.execute(cmd2)
+
+            time.sleep(20)
+
+            if len(calls) > 0:
+                threaded_calls(calls)
+                threading.Thread(target=linphone_sleep, args=(client1, client2, config.getint('linphone_time'), ), daemon=True).start()
+                # client1.execute(chr(3))
+                # client2.execute(chr(3))
+            else:
+                linphone_sleep(client1, client2, config.getint('linphone_time'))
+        else:
+            threaded_calls(calls)
+
+        
         # start_rtp_streams(rtp_commands)
         for r in rtp_commands:
             r.communicate()

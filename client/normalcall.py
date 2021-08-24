@@ -54,7 +54,7 @@ class NormalCall(CallBase):
         return sdp_transform.write(sdp_dict)
 
     def offer(self):
-        options = {"ICE": "remove", "label": "caller"}
+        options = {"ICE": "remove", "label": "caller", "flags": ["media-handover"]}
         command = Commands.offer(
             self.generate_sdp('127.0.0.1', self.start),
             self.call_id, self.from_tag, **options
@@ -66,7 +66,7 @@ class NormalCall(CallBase):
         return sdp_data['media'][0]['port']
 
     def answer(self):
-        options = {"ICE": "remove", "label": "callee"}
+        options = {"ICE": "remove", "label": "callee", "flags": ["media-handover"]}
         command = Commands.answer(
             self.generate_sdp('127.0.0.1', self.end),
             self.call_id, self.from_tag, self.to_tag, **options
