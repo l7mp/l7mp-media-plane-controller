@@ -34,11 +34,11 @@ spec:
               "config/l7mp-sidecar.yaml",
               "-s",
               "-l",
-              "info",
-              # "-o",
-              # "init",
-              # "-i",
-              # "all"
+              "silly",
+              "-o",
+              "init",
+              "-i",
+              "all"
             ]
           ports:
             - containerPort: 1234
@@ -111,11 +111,11 @@ spec:
               "config/l7mp-worker.yaml",
               "-s",
               "-l",
-              "info",
-              # "-o",
-              # "init",
-              # "-i",
-              # "all"
+              "silly",
+              "-o",
+              "init",
+              "-i",
+              "all"
             ]
           ports:
             - containerPort: 1234

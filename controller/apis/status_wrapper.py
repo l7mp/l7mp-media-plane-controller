@@ -28,24 +28,6 @@ class StatusWrapper():
     def set_statuses(self, statuses):
         self.statuses = statuses
 
-    def update(self):
-        config.load_incluster_config()
-        w = watch.Watch()
-        api = client.CoreV1Api()
-        for event in w.stream(api.list_namespaced_pod, namespace='default', label_selector='app=l7mp-worker'):
-            logging.info(event['type'])
-            if event['type'] == 'DELETED':
-                self.statuses.delete_status(event['object'].metadata.name, event['object'].status.pod_ip)
-            if event['type'] == 'MODIFIED' and event['object'].status.phase == 'Running':
-                for st in self.statuses.statuses:
-                    logging.info(st)
-                self.statuses.add_endpoint(event)
-                self.statuses.copy(event)
-            # if event['type'] == 'MODIFIED':
-            #     logging.info(event)
-
-        # self.statuses.update(event)
-
 
 def init():
     global statuses

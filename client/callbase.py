@@ -124,14 +124,6 @@ class CallBase:
             logging.error(f'Received response {str(response)} is not a string for command {command} Error: {e}')
             return None
 
-    def start_rtp_stream(self, command1, command2): # For both rtpsend and ffmpeg
-        # command is a list
-        p1, p2 = subprocess.Popen(command1.split(" ")), subprocess.Popen(command2.split(" "))
-        logging.info(f'rtpstream command1: {command1}')
-        logging.info(f'rtpstream command2: {command2}')
-        p1.communicate()
-        p2.communicate()
-
     def delete(self, call_id, from_tag, port):
         command = Commands.delete(call_id, from_tag)
         self.ws_send(command) if self.protocol == 'ws' else self.send(command, port)

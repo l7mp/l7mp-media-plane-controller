@@ -59,29 +59,6 @@ class AsyncKubeAPI():
             plural=self.plurals[kind],
             body=resource
         )
-        # logging.info("After")
-        # if self.envoy == 'no':
-        # label = resource['spec']['selector']['matchLabels']['app']
-
-        # items = self.l7mp_api.list_namespaced_pod(namespace='default', label_selector=f'app={label}')
-        # items_dict = items.to_dict()
-
-        # route = None 
-        # if self.plurals[kind] == 'virtualservices':
-        #     name = f'/l7mp.io/v1/VirtualService/default/{resource["metadata"]["name"]}'.replace("/", "%2F")
-        #     route = f'listeners/{name}'
-        # elif self.plurals[kind] == 'rules':
-        #     name = f'/l7mp.io/v1/Rule/default/{resource["metadata"]["name"]}'.replace("/", "%2F")
-        #     route = f'rules/{name}'
-
-        # for i in items_dict['items']:
-        #     url = f"http://{i['status']['pod_ip']}:1234/api/v1/{route}"
-        #     while True:
-        #         time.sleep(0.25)
-        #         response = self.get_l7mp_config(url)
-        #         if response == 200:
-        #             break;
-        # else:
         while(True):
             time.sleep(0.1)
             try:

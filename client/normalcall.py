@@ -25,6 +25,7 @@ class NormalCall(CallBase):
         self.file = kwargs.get('file', None)
         self.running = False
 
+    # Simple SDP
     def generate_sdp(self, address, port):
         sdp_dict = {
             'version': 0,
@@ -53,7 +54,10 @@ class NormalCall(CallBase):
         }
         return sdp_transform.write(sdp_dict)
 
+    # Send offer to rtpengine
     def offer(self):
+        # Here you can add more params to the offer 
+        # media-handover required for proper resiliency 
         options = {"ICE": "remove", "label": "caller", "flags": ["media-handover"]}
         command = Commands.offer(
             self.generate_sdp('127.0.0.1', self.start),
@@ -65,7 +69,10 @@ class NormalCall(CallBase):
         sdp_data = sdp_transform.parse(data["sdp"])
         return sdp_data['media'][0]['port']
 
+    # Send answer to rtpengine
     def answer(self):
+        # Here you can add more params to the offer 
+        # media-handover required for proper resiliency
         options = {"ICE": "remove", "label": "callee", "flags": ["media-handover"]}
         command = Commands.answer(
             self.generate_sdp('127.0.0.1', self.end),
@@ -80,6 +87,7 @@ class NormalCall(CallBase):
     def delete(self):
         super().delete(self.call_id, self.from_tag, self.start)
 
+    # Setup a call
     def generate_call(self, wait=0):
         self.running = True
         rtpe_address = super().__getattribute__('rtpe_address')
@@ -93,6 +101,7 @@ class NormalCall(CallBase):
         if isinstance(a_rtp, Exception): return a_rtp
         logging.info(f'Call with callid: {self.call_id} created in {int((time.time() - start_time) * 1000)} ms')
 
+        # Start rtp processes
         ret = []
         if self.sender_method == 'ffmpeg':
             ret.append(
@@ -108,10 +117,6 @@ class NormalCall(CallBase):
                 ])
             )
         if self.sender_method == 'rtpsend':
-            # return [
-            #     f'rtpsend -s {self.start} -f {self.file} {rtpe_address}/{o_rtp}',
-            #     f'rtpsend -s {self.end} -f {self.file} {rtpe_address}/{a_rtp}'
-            # ]
             ret.append(subprocess.Popen(["rtpsend", "-s", str(self.start), "-f", self.file, f'{rtpe_address}/{o_rtp}']))
             ret.append(subprocess.Popen(["rtpsend", "-s", str(self.end), "-f", self.file, f'{rtpe_address}/{a_rtp}']))        
         if self.sender_method == 'wait':
@@ -121,5 +126,4 @@ class NormalCall(CallBase):
         event = threading.Event()
         event.wait(wait)
 
-        # time.sleep(wait)
         return ret

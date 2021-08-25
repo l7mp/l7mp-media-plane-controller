@@ -1,0 +1,130 @@
+# Base: https://github.com/l7mp/rtpengine-k8s-l7mp-test/blob/master/kubernetes/rtpengine-worker.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: l7mp-worker-config
+data:
+  l7mp-worker.yaml: |
+    # Controller listening on 1234, plus some useful debug clusters
+    admin:
+      log_level: info
+      log_file: stdout
+      access_log_path: /tmp/admin_access.log
+    listeners:
+      - name: controller-listener-admin
+        spec: { protocol: HTTP, port: 1234 }
+        rules:
+          - action:
+              route:
+                destination:
+                  spec: { protocol: L7mpController }
+                retry:
+                  retry_on: always
+                  num_retries: 10
+                  timeout: 500
+      - name: worker-rtp-listener
+        spec:
+          protocol: JSONSocket
+          transport: { protocol: UDP, port: 19000 }
+        rules: worker-rtp-rulelist
+        options:
+          track: 3600 # 1 hour
+      - name: worker-rtcp-listener
+        spec:
+          protocol: JSONSocket
+          transport: { protocol: UDP, port: 19001 }
+        rules: worker-rtcp-rulelist
+        options:
+          track: 3600 # 1 hour
+    rulelists:
+      - name: worker-rtp-rulelist
+        rules: []
+      - name: worker-rtcp-rulelist
+        rules: []
+    clusters:
+      - name: ingress-metric-counter
+        spec: { protocol: Metric }
+      - name: egress-metric-counter
+        spec: { protocol: Metric }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: l7mp-sidecar-config
+data:
+  l7mp-sidecar.yaml: |
+    # Controller listening on 1234, plus some useful debug clusters
+    admin:
+      log_level: info
+      log_file: stdout
+      access_log_path: /tmp/admin_access.log
+    listeners:
+      - name: controller-listener-admin
+        spec: { protocol: HTTP, port: 1234 }
+        rules:
+          - action:
+              route:
+                destination:
+                  spec: { protocol: L7mpController }
+                retry:
+                  retry_on: always
+                  num_retries: 10
+                  timeout: 500
+    clusters:
+      - name: ingress-metric-counter
+        spec: { protocol: Metric }
+      - name: egress-metric-counter
+        spec: { protocol: Metric }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rtpengine-config
+  namespace: default
+data:
+  rtpengine.conf: |
+    [rtpengine]
+    listen-tcp-ng=127.0.0.1:22222
+    interface=127.0.0.1
+
+    foreground=true
+    log-stderr=true
+
+    port-min=10000
+    port-max=20000
+
+    log-level=7
+    delete-delay=0
+
+    timeout=6000
+
+    redis = redis:6379/1
+    subscribe-keyspace=1
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+data:
+  redis-config: |
+    notify-keyspace-events KEA
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: controller-config
+data:
+  config.conf: |
+    [controller]
+    protocol=tcp
+    rtpe_address=l7mp-worker
+    rtpe_port=22220
+    envoy_address=127.0.0.1
+    envoy_port=1234
+    local_address=0.0.0.0
+    local_port=2000
+    sidecar_type=l7mp
+    envoy_operator=no
+    update_owners=no
+    udp_mode=server
+    without_operator=yes
