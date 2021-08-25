@@ -95,7 +95,6 @@ class Status(Operations):
     
     def delete_resource(self, res_name, recursive=False):
         for r in self.resources:
-            logging.info(f'{r["res_name"]}, {res_name}')
             if r['res_name'] == res_name:
                 self.resources = list(filter(lambda i: i['res_name'] != res_name, self.resources))
                 path = 'rules' if 'rules' in r['path'] else r['path']
@@ -104,6 +103,7 @@ class Status(Operations):
 
     def delete_endpoint(self, pod):
         # switch = False
+        logging.info(pod)
         for r in self.resources:
             if 'endpoints_label' in r:
                 ips = [e['ip'] for e in r['endpoint_ips']]
@@ -111,17 +111,18 @@ class Status(Operations):
                     # switch = True
                     ep = None
                     for i in r['config']['cluster']['endpoints']:
+                        logging.info(i)
                         if i['spec']['address'] == pod['ip']:
                             ep = i
-                    
-                    logging.info(r)
-                    super().delete(r['label'], 'endpoints', ep['name'] + '?recursive=true')
-                    r['config']['cluster']['endpoints'].remove(ep)
-                    r['endpoint_ips'].remove(pod)
+                    if ep:
+                        super().delete(r['label'], 'endpoints', ep['name'] + '?recursive=true')
+                        r['config']['cluster']['endpoints'].remove(ep)
+                        r['endpoint_ips'].remove(pod)
                             # self.delete_resource(r['res_name'], recursive=True)
                             # del save['endpoint_ips']
                             # self.add_resource(save)
                     # TODO: USe endpoint delete recursive 
+        # logging.info(self)
         # if switch:
         #     for r in self.resources:
         #         if 'controller' not in r['res_name'] and r['path'] == 'listeners':
@@ -152,6 +153,12 @@ class Status(Operations):
                             'spec': {'address': pod_ip}
                             }
                         })
+                        r['config']['cluster']['endpoints'].append(
+                            {
+                            'name': cluster_name + pod_ip, 
+                            'spec': {'address': pod_ip}
+                            }
+                        )
                         r['endpoint_ips'].append({'name': pod_name, 'ip': pod_ip})
 
 
@@ -245,6 +252,8 @@ class Statuses():
         for s in self.statuses:
             if s.pod_name != pod_name and 'app=l7mp-ingress' == s.label:
                 s.delete_endpoint({'name': pod_name, 'ip': pod_ip})
+                new_statuses.append(s)
+            else:
                 new_statuses.append(s)
         self.statuses = new_statuses
 

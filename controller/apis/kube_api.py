@@ -78,7 +78,7 @@ class KubeAPI():
                 plural=self.plurals[kind],
                 body=resource
             )
-        logging.info(resource)
+
         # logging.info("After")
         # if self.envoy == 'no':
         # label = resource['spec']['selector']['matchLabels']['app']
@@ -116,7 +116,7 @@ class KubeAPI():
         #         logging.error("Exception when calling CustomObjectsApi->get_cluster_custom_object: %s" % e)
         #     if 'annotations' in obj['metadata']:
         #         break
-        # logging.info(f"{resource['metadata']['name']} created!")
+        logging.info(f"{resource['metadata']['name']} created!")
 
     def threaded_create_objects(self, resources): # args=[(resource, kind), (resource, kind)]
         with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
@@ -334,7 +334,6 @@ class KubeAPI():
             self.resource_names.append(('Target', resource['metadata']['name']))
 
     def _listener_conf(self, **kwargs):
-        host = kwargs.get('host')
         return {
             'name': f'listener-{kwargs.get("type")}-{self.simple_call_id}-{kwargs.get("tag")}',
             'udp': {
@@ -413,6 +412,7 @@ class KubeAPI():
             ))
             resource['spec']['listeners'].append(self._listener_conf(
                 type='rtcp', tag=self.to_data['simple_tag'], listener_port=self.to_data['remote_rtcp_port'] + 20000, host={'address': '127.0.0.1'}, endpoint_port=self.to_data['remote_rtcp_port']
+
             ))
             self.resource_names.append(('VirtualService', resource['metadata']['name']))
         return [(resource, 'VirtualService')]        
