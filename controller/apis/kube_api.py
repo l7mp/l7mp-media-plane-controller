@@ -78,7 +78,7 @@ class KubeAPI():
                 plural=self.plurals[kind],
                 body=resource
             )
-        logging.info(resource['metadata']['name'])
+        # logging.info(resource['metadata']['name'])
         # logging.info("After")
         # if self.envoy == 'no':
         # label = resource['spec']['selector']['matchLabels']['app']
@@ -102,20 +102,20 @@ class KubeAPI():
         #         if response == 200:
         #             break;
         # else:
-        while(True):
-            time.sleep(0.1)
-            try:
-                obj = api.get_namespaced_custom_object(
-                    group='l7mp.io',
-                    version='v1',
-                    namespace='default',
-                    plural=self.plurals[kind],
-                    name=resource['metadata']['name']
-                )
-            except ApiException as e: 
-                logging.error("Exception when calling CustomObjectsApi->get_cluster_custom_object: %s" % e)
-            if 'annotations' in obj['metadata']:
-                break
+        # while(True):
+        #     time.sleep(0.1)
+        #     try:
+        #         obj = api.get_namespaced_custom_object(
+        #             group='l7mp.io',
+        #             version='v1',
+        #             namespace='default',
+        #             plural=self.plurals[kind],
+        #             name=resource['metadata']['name']
+        #         )
+        #     except ApiException as e: 
+        #         logging.error("Exception when calling CustomObjectsApi->get_cluster_custom_object: %s" % e)
+        #     if 'annotations' in obj['metadata']:
+        #         break
         logging.info(f"{resource['metadata']['name']} created!")
 
     def threaded_create_objects(self, resources): # args=[(resource, kind), (resource, kind)]
@@ -130,14 +130,24 @@ class KubeAPI():
             self.threaded_create_objects(self.create_rule() + self.create_vsvc())
 
     def delete_resource(self, resource):
-        self.api.delete_namespaced_custom_object(
-            group='l7mp.io',
-            version='v1',
-            name=resource[1],
-            namespace='default',
-            plural=self.plurals[resource[0]],
-            body=client.V1DeleteOptions(),
-        )
+        if self.envoy == 'yes':
+            self.api.delete_namespaced_custom_object(
+                group='servicemesh.l7mp.io',
+                version='v1',
+                name=resource[1],
+                namespace='default',
+                plural=self.plurals[resource[0]],
+                body=client.V1DeleteOptions(),
+            )
+        else:
+            self.api.delete_namespaced_custom_object(
+                group='l7mp.io',
+                version='v1',
+                name=resource[1],
+                namespace='default',
+                plural=self.plurals[resource[0]],
+                body=client.V1DeleteOptions(),
+            )
         logging.info(f'{resource[1]} deleted.')
 
     def delete_resources(self):
@@ -323,7 +333,6 @@ class KubeAPI():
             self.resource_names.append(('Target', resource['metadata']['name']))
 
     def _listener_conf(self, **kwargs):
-        host = kwargs.get('host')
         return {
             'name': f'listener-{kwargs.get("type")}-{self.simple_call_id}-{kwargs.get("tag")}',
             'udp': {
