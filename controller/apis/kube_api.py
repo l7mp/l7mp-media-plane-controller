@@ -78,7 +78,7 @@ class KubeAPI():
                 plural=self.plurals[kind],
                 body=resource
             )
-        # logging.info(resource['metadata']['name'])
+
         # logging.info("After")
         # if self.envoy == 'no':
         # label = resource['spec']['selector']['matchLabels']['app']
@@ -121,6 +121,7 @@ class KubeAPI():
     def threaded_create_objects(self, resources): # args=[(resource, kind), (resource, kind)]
         with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
             for res in resources:
+                logging.info(f'res: {res}')
                 executor.submit(lambda p: self.create_object(*p), res)
 
     def create_resources(self):
@@ -336,7 +337,7 @@ class KubeAPI():
         return {
             'name': f'listener-{kwargs.get("type")}-{self.simple_call_id}-{kwargs.get("tag")}',
             'udp': {
-                'port': kwargs.get('port'),
+                'port': kwargs.get('listener_port'),
                 'cluster': {
                     'name': f'cluster-{kwargs.get("type")}-{self.simple_call_id}-{kwargs.get("tag")}',
                     'service_discovery': 'strictdns',
@@ -348,7 +349,7 @@ class KubeAPI():
                     'endpoints': [{
                         'name': f'endpoint-{kwargs.get("type")}-{self.simple_call_id}-{kwargs.get("tag")}',
                         'host': kwargs.get('host'),
-                        'port': kwargs.get('port'),
+                        'port': kwargs.get('endpoint_port'),
                         'health_check_port': 1233
                     }]
                 }
@@ -371,16 +372,16 @@ class KubeAPI():
         }
         if self.from_data and self.to_data:
             resource['spec']['listeners'].append(self._listener_conf(
-                type='rtp', tag=self.from_data['simple_tag'], port=self.from_data['remote_rtp_port'], host={'selector': {'app': 'worker'}}
+                type='rtp', tag=self.from_data['simple_tag'], listener_port=self.from_data['remote_rtp_port'], host={'selector': {'app': 'worker'}}, endpoint_port=self.from_data['remote_rtp_port']+20000
             ))
             resource['spec']['listeners'].append(self._listener_conf(
-                type='rtcp', tag=self.from_data['simple_tag'], port=self.from_data['remote_rtcp_port'], host={'selector': {'app': 'worker'}}
+                type='rtcp', tag=self.from_data['simple_tag'], listener_port=self.from_data['remote_rtcp_port'], host={'selector': {'app': 'worker'}}, endpoint_port=self.from_data['remote_rtcp_port']+20000
             ))
             resource['spec']['listeners'].append(self._listener_conf(
-                type='rtp', tag=self.to_data['simple_tag'], port=self.to_data['remote_rtp_port'], host={'selector': {'app': 'worker'}}
+                type='rtp', tag=self.to_data['simple_tag'], listener_port=self.to_data['remote_rtp_port'], host={'selector': {'app': 'worker'}}, endpoint_port=self.to_data['remote_rtp_port']+20000
             ))
             resource['spec']['listeners'].append(self._listener_conf(
-                type='rtcp', tag=self.to_data['simple_tag'], port=self.to_data['remote_rtcp_port'], host={'selector': {'app': 'worker'}}
+                type='rtcp', tag=self.to_data['simple_tag'], listener_port=self.to_data['remote_rtcp_port'], host={'selector': {'app': 'worker'}}, endpoint_port=self.to_data['remote_rtcp_port']+20000
             ))
             self.resource_names.append(('VirtualService', resource['metadata']['name']))
         return [(resource, 'VirtualService')]
@@ -401,16 +402,17 @@ class KubeAPI():
         }
         if self.from_data and self.to_data:
             resource['spec']['listeners'].append(self._listener_conf(
-                type='rtp', tag=self.from_data['simple_tag'], port=self.from_data['remote_rtp_port'], host={'address': '127.0.0.1'}
+                type='rtp', tag=self.from_data['simple_tag'], listener_port=self.from_data['remote_rtp_port'] + 20000, host={'address': '127.0.0.1'}, endpoint_port=self.from_data['remote_rtp_port']
             ))
             resource['spec']['listeners'].append(self._listener_conf(
-                type='rtcp', tag=self.from_data['simple_tag'], port=self.from_data['remote_rtcp_port'], host={'address': '127.0.0.1'}
+                type='rtcp', tag=self.from_data['simple_tag'], listener_port=self.from_data['remote_rtcp_port'] + 20000, host={'address': '127.0.0.1'}, endpoint_port=self.from_data['remote_rtcp_port']
             ))
             resource['spec']['listeners'].append(self._listener_conf(
-                type='rtp', tag=self.to_data['simple_tag'], port=self.to_data['remote_rtp_port'], host={'address': '127.0.0.1'}
+                type='rtp', tag=self.to_data['simple_tag'], listener_port=self.to_data['remote_rtp_port'] + 20000, host={'address': '127.0.0.1'}, endpoint_port=self.to_data['remote_rtp_port']
             ))
             resource['spec']['listeners'].append(self._listener_conf(
-                type='rtcp', tag=self.to_data['simple_tag'], port=self.to_data['remote_rtcp_port'], host={'address': '127.0.0.1'}
+                type='rtcp', tag=self.to_data['simple_tag'], listener_port=self.to_data['remote_rtcp_port'] + 20000, host={'address': '127.0.0.1'}, endpoint_port=self.to_data['remote_rtcp_port']
+
             ))
             self.resource_names.append(('VirtualService', resource['metadata']['name']))
         return [(resource, 'VirtualService')]        
