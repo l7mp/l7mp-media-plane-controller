@@ -1,12 +1,12 @@
 # API files
 
-Between these api files has a lot of duplications because I don't known how to do it
-in one file without a lot of conditional statement.  
+Between these API files have a lot of duplications because I don't know how to do it
+in one file without a lot of conditional statements.  
 
 ## async_kube_api.py
 
 This kind of Kubernetes API is only used when you want to handle ws traffic, because 
-you cannot use traditional threading when the websocket server is asyncio, because they
+you cannot use traditional threading when the WebSocket server is asyncio, because they
 will make a big mess, when they are used together.
 
 ## kube_api.py
@@ -15,7 +15,7 @@ Used with simple L7mp operator and Envoy operator.
 
 ## l7mp_api.py
 
-This will not create any CR, it is only communicate with L7mp proxies in the cluster
+This will not create any CR, it is only communicating with L7mp proxies in the cluster
 and configure them through HTTP. 
 
 ## status.py
@@ -32,9 +32,9 @@ pod L7mp proxy.
 
 ### Statuses class 
 
-Handle a list of `Status` object and modify them as needed. 
+Handle a list of `Status` objects and modify them as needed. 
 
 ## status_wrapper.py
 
-Create a global object which ensure the we only have one object which contains 
+Create a global object which ensures we only have one object which contains 
 the configs and pod's information. 

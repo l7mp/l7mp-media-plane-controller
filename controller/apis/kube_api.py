@@ -34,10 +34,13 @@ class KubeAPI():
 
         self.resource_names = [] # List of tuples (kind, name)
 
+        # This object can be used to create resources on offer and answer separately
+        # for offer use only from_data 
         self.from_data = kwargs.get('from_data', None)
         if self.from_data:
             self.from_data['simple_tag'] = ''.join(e for e in self.from_data["tag"] if e.isalnum()).lower()
         
+        # for answer use to_data
         self.to_data = kwargs.get('to_data', None)
         if self.to_data:
             self.to_data['simple_tag'] = ''.join(e for e in self.to_data["tag"] if e.isalnum()).lower()
@@ -52,14 +55,7 @@ class KubeAPI():
 
         self.create_resources()
 
-    def get_l7mp_config(self, url):
-        # The url should contain the port number url:port
-        response = requests.get(url)
-        if response.status_code != 200:
-            logging.warning(f"During {url} fetch got this code {response.status_code}. Retry")
-            return response.status_code
-        return 200
-
+    # Send objects to api server
     def create_object(self, resource, kind):
         api = client.CustomObjectsApi()
         if self.envoy == 'yes':
@@ -79,29 +75,7 @@ class KubeAPI():
                 body=resource
             )
 
-        # logging.info("After")
-        # if self.envoy == 'no':
-        # label = resource['spec']['selector']['matchLabels']['app']
-
-        # items = self.l7mp_api.list_namespaced_pod(namespace='default', label_selector=f'app={label}')
-        # items_dict = items.to_dict()
-
-        # route = None 
-        # if self.plurals[kind] == 'virtualservices':
-        #     name = f'/l7mp.io/v1/VirtualService/default/{resource["metadata"]["name"]}'.replace("/", "%2F")
-        #     route = f'listeners/{name}'
-        # elif self.plurals[kind] == 'rules':
-        #     name = f'/l7mp.io/v1/Rule/default/{resource["metadata"]["name"]}'.replace("/", "%2F")
-        #     route = f'rules/{name}'
-
-        # for i in items_dict['items']:
-        #     url = f"http://{i['status']['pod_ip']}:1234/api/v1/{route}"
-        #     while True:
-        #         time.sleep(0.25)
-        #         response = self.get_l7mp_config(url)
-        #         if response == 200:
-        #             break;
-        # else:
+        # Use this if you want to use the old kopf based operator
         # while(True):
         #     time.sleep(0.1)
         #     try:
@@ -118,10 +92,9 @@ class KubeAPI():
         #         break
         logging.info(f"{resource['metadata']['name']} created!")
 
-    def threaded_create_objects(self, resources): # args=[(resource, kind), (resource, kind)]
+    def threaded_create_objects(self, resources): 
         with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
             for res in resources:
-                logging.info(f'res: {res}')
                 executor.submit(lambda p: self.create_object(*p), res)
 
     def create_resources(self):
@@ -130,6 +103,7 @@ class KubeAPI():
         else:
             self.threaded_create_objects(self.create_rule() + self.create_vsvc())
 
+    # Delete a resource from the api server
     def delete_resource(self, resource):
         if self.envoy == 'yes':
             self.api.delete_namespaced_custom_object(
@@ -416,7 +390,6 @@ class KubeAPI():
             ))
             self.resource_names.append(('VirtualService', resource['metadata']['name']))
         return [(resource, 'VirtualService')]        
-
 
     def create_envoy_vsvc(self):
         with open('crds/envoy_operator/vsvc.yaml', 'r') as f:

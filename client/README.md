@@ -61,11 +61,11 @@ python new_client.py -c config/new_config.conf -l info
 
 ## Couple of words about the code architecture
 
-Further information in the comments. 
+Further information is in the comments. 
 
 ### new_client.py 
 
-- Thats the `main` file.
+- That's the `main` file.
 - This implements the config file parsing.
 - This implements the linphone client startups.
 - This implements the threaded call creations with the rtp streams.
@@ -76,7 +76,7 @@ Create ssh connection and execute commands as shell commands.
 
 ### commands.py
 
-In this you can find all of the ng protocols commands. 
+In this, you can find all of the ng protocols commands. 
 
 ### callbase.py
 
@@ -88,12 +88,12 @@ The base class of the `NormalCall` and `TranscodedCall` classes.
 
 ### normalcall.py
 
-Setup a call with a proper sdp and start the rtp stream process.
+Set up a call with a proper sdp and start the rtp stream process.
 For a normal call the codec will be PCMU. 
 
 ### transcodedcall.py
 
-setup a call with proper transcoded sdp and start the rtp stream process.
+Set up a call with proper transcoded sdp and start the rtp stream process.
 Used codecs are PCMU, speex.
 
 ## Obsolete files:

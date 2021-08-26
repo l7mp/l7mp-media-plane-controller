@@ -1,9 +1,6 @@
-import time
 import json
 import threading
-import logging
-from status import Status, Statuses, Operations
-from kubernetes import client, config, watch
+from status import Statuses, Operations
 
 lock = threading.Lock()
 
@@ -29,6 +26,7 @@ class StatusWrapper():
         self.statuses = statuses
 
 
+# Needed to use this object as a "singleton"
 def init():
     global statuses
     with lock:

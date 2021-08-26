@@ -1,6 +1,3 @@
-from mimetypes import knownfiles
-import kubernetes
-from kubernetes.client.models import v1_label_selector
 from apis.l7mp_api import L7mpAPI
 from commands import Commands
 import logging
@@ -16,29 +13,16 @@ from apis.l7mp_api import L7mpAPI
 from apis.kube_api import get_worker_pod_address
 
 commands = Commands()
+
+# Global list with kubernetes objects
 kubernetes_apis = []
 
 bc = bencodepy.Bencode(
     encoding='utf-8'
 )
 
-def client(ip, port, message):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-        counter = 0
-        while counter < 3:
-            try:            
-                sock.connect((ip, port))
-                break
-            except socket.error as error:
-                logging.debug(f"IP {ip}, PORT {port}")
-                logging.info(f"Connection Failed **BECAUSE:** {error}")
-                logging.info(f"Attempt {counter} of 3")
-                counter += 1
-        sock.sendall(bytes(message, 'utf-8'))
-        response = str(sock.recv(4096), 'utf-8')
-        return response.strip()
 
-
+# Parse bencoded data and return with cookie too
 def parse_data(data):
     logging.debug(type(data))
     if isinstance(data, (bytes, bytearray)):
@@ -50,6 +34,7 @@ def parse_data(data):
         **bc.decode(data_list[1])
     }
 
+# Parse a bencoded string
 def parse_bc(bc_string):
     if isinstance(bc_string, (bytes, bytearray)):
         bc_string = bc_string.decode()
@@ -57,10 +42,12 @@ def parse_bc(bc_string):
     logging.debug(f'Splitted string: {splitted}')
     return bc.decode(splitted)
 
+# Create out a query message
 def query_message(call_id):
-    cookie = ''.join(random.choice(string.ascii_lowercase) for i in range(5))
+    cookie = ''.join(random.choice(string.ascii_lowercase) for _ in range(5))
     return str(cookie) + " " + str(bencodepy.encode(commands.query(call_id)).decode())
 
+# Delete a kubernetes resource with a given callid 
 def delete_kube_resources(call_id):
     global kubernetes_apis
     delete_objects = []
@@ -72,6 +59,7 @@ def delete_kube_resources(call_id):
     for a in delete_objects:
         kubernetes_apis.remove(a)
 
+# Create every necessarily resource for a call for both sides
 def create_resource(call_id, from_tag, to_tag, config, query):
     global kubernetes_apis
     for a in kubernetes_apis:
@@ -120,6 +108,7 @@ def create_resource(call_id, from_tag, to_tag, config, query):
         )
     )
 
+# Same as create_resources just async
 async def async_create_resource(call_id, from_tag, to_tag, config, query):
     global kubernetes_apis
     for a in kubernetes_apis:
@@ -167,7 +156,7 @@ async def async_create_resource(call_id, from_tag, to_tag, config, query):
     await c.asnyc_create_resources()
     kubernetes_apis.append(c)
 
-
+# Create offer side resources
 def create_offer_resource(config, **kwargs):
     global kubernetes_apis
     for a in kubernetes_apis:
@@ -206,6 +195,7 @@ def create_offer_resource(config, **kwargs):
             )
         )
 
+# Create answer side resources
 def create_answer_resource(config, **kwargs):
     global kubernetes_apis
     for a in kubernetes_apis:
@@ -244,6 +234,7 @@ def create_answer_resource(config, **kwargs):
             )
         )
 
+# Json creator for envoy controlplane
 def create_json(caller_port, callee_port, call_id):
     return json.dumps({
         "caller_rtp": caller_port,
@@ -254,6 +245,7 @@ def create_json(caller_port, callee_port, call_id):
         "rtpe_address": get_worker_pod_address('app=worker')
     })
 
+# Load configuration from config file
 def load_config(conf):
     try:
         logging.info("Started!")
