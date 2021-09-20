@@ -58,6 +58,22 @@ class L7mpAPI():
         self._create_resources()
 
     def _listener_conf(self, **kwargs):
+        if self.udp_mode == 'singleton':
+            spec = {
+                "protocol": "UDP",
+                "port": kwargs.get('port'),
+                "connect": {
+                    "address": kwargs.get('local_ip'),
+                    "port": kwargs.get('local_port')
+                },
+                "option": {"mode": 'singleton'}
+            }
+        else:
+            spec = {
+                "protocol": "UDP",
+                "port": kwargs.get('port'),
+                "option": {"mode": 'server'}
+            }
         return json.dumps({
             "label": "app=l7mp-ingress",
             "resource": {
@@ -66,11 +82,7 @@ class L7mpAPI():
                 "config": {
                     "listener": {
                         "name": f"{kwargs.get('res_name')}-listener",
-                        "spec": {
-                            "protocol": "UDP",
-                            "port": kwargs.get('port'),
-                            "option": {"mode": 'server'}
-                        },
+                        "spec": spec,
                         "rules": [{
                             "name": f"{kwargs.get('res_name')}-rule",
                             "action": {
@@ -91,6 +103,16 @@ class L7mpAPI():
         })
 
     def _rule_conf(self, **kwargs):
+        if udp_mode == "singleton":
+            spec = {
+                "protocol": "UDP",
+                "port": kwargs.get('port'),
+                "connect": {
+                    "address": kwargs.get('local_ip'),
+                    "port": kwargs.get('local_port')
+                },
+                "option": {"mode": 'singleton'}
+            }
         return json.dumps({
             "label": "app=l7mp-worker",
             "resource": {
@@ -158,26 +180,26 @@ class L7mpAPI():
         if self.from_data:
             ret.append((self._listener_conf(
                 res_name=f'ingress-rtp-{self.simple_call_id}-{self.from_data["simple_tag"]}',
-                port=self.from_data["remote_rtp_port"], destination='ingress-rtp-target', tag=self.from_data['tag']
+                port=self.from_data["remote_rtp_port"], destination='ingress-rtp-target', tag=self.from_data['tag'], local_ip=self.from_data['local_ip'], local_port=self.from_data['local_rtp_port']
             ), 'app=l7mp-ingress'))
             self.resource_names.append(('app=l7mp-ingress', f'ingress-rtp-{self.simple_call_id}-{self.from_data["simple_tag"]}-listener'))
 
             ret.append((self._listener_conf(
                 res_name=f'ingress-rtcp-{self.simple_call_id}-{self.from_data["simple_tag"]}',
-                port=self.from_data["remote_rtcp_port"], destination='ingress-rtcp-target', tag=self.from_data['tag']
+                port=self.from_data["remote_rtcp_port"], destination='ingress-rtcp-target', tag=self.from_data['tag'], local_ip=self.from_data['local_ip'], local_port=self.from_data['local_rtcp_port']
             ), 'app=l7mp-ingress'))
             self.resource_names.append(('app=l7mp-ingress', f'ingress-rtcp-{self.simple_call_id}-{self.from_data["simple_tag"]}-listener'))
 
         if self.to_data:
             ret.append((self._listener_conf(
                 res_name=f'ingress-rtp-{self.simple_call_id}-{self.to_data["simple_tag"]}',
-                port=self.to_data["remote_rtp_port"], destination='ingress-rtp-target', tag=self.to_data['tag']
+                port=self.to_data["remote_rtp_port"], destination='ingress-rtp-target', tag=self.to_data['tag'], local_ip=self.to_data['local_ip'], local_port=self.to_data['local_rtp_port']
             ), 'app=l7mp-ingress'))
             self.resource_names.append(('app=l7mp-ingress', f'ingress-rtp-{self.simple_call_id}-{self.to_data["simple_tag"]}-listener'))
 
             ret.append((self._listener_conf(
                 res_name=f'ingress-rtcp-{self.simple_call_id}-{self.to_data["simple_tag"]}',
-                port=self.to_data["remote_rtcp_port"], destination='ingress-rtcp-target', tag=self.to_data['tag']
+                port=self.to_data["remote_rtcp_port"], destination='ingress-rtcp-target', tag=self.to_data['tag'], local_ip=self.to_data['local_ip'], local_port=self.to_data['local_rtcp_port']
             ), 'app=l7mp-ingress'))
             self.resource_names.append(('app=l7mp-ingress', f'ingress-rtcp-{self.simple_call_id}-{self.to_data["simple_tag"]}-listener'))
         return ret
