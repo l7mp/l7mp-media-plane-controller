@@ -28,27 +28,12 @@ spec:
           imagePullPolicy: IfNotPresent
           command: ["node"]
           args:
-            [
-              "l7mp-proxy.js",
-              "-c",
-              "config/l7mp-sidecar.yaml",
-              "-s",
-              "-l",
-              "silly",
-              "-o",
-              "init",
-              "-i",
-              "all"
-            ]
+            [ "l7mp-proxy.js", "-c", "config/l7mp-sidecar.yaml", "-s", "-l", "info" ]
           ports:
             - containerPort: 1234
           volumeMounts:
             - name: l7mp-config-volume
               mountPath: /app/config
-          securityContext:
-            capabilities:
-              add: ["NET_ADMIN", "SYS_ADMIN"]
-            privileged: true
         - name: net-debug
           image: l7mp/net-debug:0.5.3
         - name: rtpe-controller
@@ -58,27 +43,28 @@ spec:
             - name: controller-volume
               mountPath: /app/config
           command: ["python"]
-          args: ["controller.py", "-c", "config/config.conf", "-l", "debug"]
+          args: ["new_controller.py", "-c", "config/config.conf", "-l", "info"]
+          env:
+            - name: NODE_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: l7mp-worker1
+  name: l7mp-worker
   labels:
     app: l7mp-worker
-    name: l7mp-worker1
 spec:
-  # replicas: 2
   replicas: 1
   selector:
     matchLabels:
-      # app: l7mp-worker
-      name: l7mp-worker1
+      app: l7mp-worker
   template:
     metadata:
       labels:
         app: l7mp-worker
-        name: l7mp-worker1
     spec:
       volumes:
         - name: l7mp-config-volume
@@ -96,127 +82,27 @@ spec:
         - name: l7mp
           image: l7mp/l7mp:latest
           imagePullPolicy: IfNotPresent
-          # command: ["/bin/sh"]
-          # args: ["-c", "while true; do echo hello; sleep 10;done"]
           command: ["node"]
           args:
-            [
-              "l7mp-proxy.js",
-              "-c",
-              "config/l7mp-worker.yaml",
-              "-s",
-              "-l",
-              "silly",
-              "-o",
-              "init",
-              "-i",
-              "all"
-            ]
+            [ "l7mp-proxy.js", "-c", "config/l7mp-worker.yaml", "-s", "-l", "silly", "-o", "init", "-i", "all"]
+          securityContext:
+            capabilities:
+              add: ["NET_ADMIN", "SYS_ADMIN"]
+            privileged: true
           ports:
             - containerPort: 1234
           volumeMounts:
             - name: l7mp-config-volume
               mountPath: /app/config
-          securityContext:
-            capabilities:
-              add: ["NET_ADMIN", "SYS_ADMIN"]
-            privileged: true
         - name: net-debug
           image: l7mp/net-debug:0.5.3
         - name: rtpengine
           # image: drachtio/rtpengine
-          image: vidarhun/redis-rtpengine
-          imagePullPolicy: IfNotPresent
-          # command: ["/bin/sh"]
-          # args: ["-c", "while true; do echo hello; sleep 10;done"]
+          image: drachtio/rtpengine
+          imagePullPolicy: Always
           command: ["/usr/local/bin/rtpengine"]
           args:
-            [
-              "--config-file=/etc/rtpengine/rtpengine.conf",
-              "-f",
-              "-E",
-            ]
-          volumeMounts:
-            - name: rtpengine-config-volume
-              mountPath: /etc/rtpengine
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: l7mp-worker2
-  labels:
-    app: l7mp-worker
-    name: l7mp-worker2
-spec:
-  # replicas: 2
-  replicas: 1
-  selector:
-    matchLabels:
-      # app: l7mp-worker
-      name: l7mp-worker2
-  template:
-    metadata:
-      labels:
-        app: l7mp-worker
-        name: l7mp-worker2
-    spec:
-      volumes:
-        - name: l7mp-config-volume
-          configMap:
-            name: l7mp-worker-config
-        - name: rtpengine-config-volume
-          configMap:
-            name: rtpengine-config
-        - name: kernel-debug
-          hostPath:
-            path: /sys/kernel/debug
-            type: Directory
-      containers:
-        # sidecar
-        - name: l7mp
-          image: l7mp/l7mp:latest
-          imagePullPolicy: IfNotPresent
-          # command: ["/bin/sh"]
-          # args: ["-c", "while true; do echo hello; sleep 10;done"]
-          # command: ["/bin/sh", "-c"]
-          command: ["node"]
-          args:
-            [
-              "l7mp-proxy.js",
-              "-c",
-              "config/l7mp-worker.yaml",
-              "-s",
-              "-l",
-              "silly",
-              "-o",
-              "init",
-              "-i",
-              "all"
-            ]
-          ports:
-            - containerPort: 1234
-          volumeMounts:
-            - name: l7mp-config-volume
-              mountPath: /app/config
-          securityContext:
-            capabilities:
-              add: ["NET_ADMIN", "SYS_ADMIN"]
-            privileged: true
-        - name: net-debug
-          image: l7mp/net-debug:0.5.3
-        - name: rtpengine
-          # image: drachtio/rtpengine
-          image: vidarhun/redis-rtpengine
-          imagePullPolicy: IfNotPresent
-          # command: ["/bin/sh"]
-          # args: ["-c", "while true; do echo hello; sleep 10;done"]
-          command: ["/usr/local/bin/rtpengine"]
-          args:
-            [
-              "--config-file=/etc/rtpengine/rtpengine.conf",
-              "-f",
-              "-E",
-            ]
+            [ "--config-file=/etc/rtpengine/rtpengine.conf", "-f", "-E", "--endpoint-learning", "immediate" ]
           volumeMounts:
             - name: rtpengine-config-volume
               mountPath: /etc/rtpengine
@@ -285,10 +171,10 @@ spec:
       name: worker-rtcp-service-port
       protocol: UDP
       targetPort: 19001
-    - port: 22222
+    - port: 22220
       name: ws-rtpengine-ng-port
       protocol: TCP
-      targetPort: 22222
+      targetPort: 22220
   selector:
     app: l7mp-worker
   type: ClusterIP

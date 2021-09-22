@@ -13,15 +13,18 @@ class TCPSocket():
         self.connect(delay)
         self.lock = threading.Lock()
 
+    # Create tcp socket with keepalive mechanism
     def create_socket(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 1)
         self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 3)
 
+    # Send data 
     def send(self, message, no_wait_response=False):
         with self.lock:
             counter = 0
+            # Try to send out 3 times
             while counter < 3:
                 try:
                     self.sock.sendall(bytes(message, 'utf-8'))
@@ -45,6 +48,7 @@ class TCPSocket():
                     counter += 1
             return
 
+    # Connect to the defined address
     def connect(self, delay):
         counter = 0
         time.sleep(delay)

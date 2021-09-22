@@ -10,6 +10,7 @@ from ssh_handler import ShellHandler
 from collections import deque
 import threading
 
+# Required params for the linphone handling
 LINPHONE_ARGS = ['ssh_linphone1', 'ssh_linphone2', 'linphone_time', 'record_filename']
 
 log_levels = {
@@ -20,8 +21,9 @@ log_levels = {
     'critical': logging.CRITICAL
 }
 
-rtp_commands = []
+rtp_processes = []
 
+# This will parse the config file
 def load_config(conf):
     try:
         logging.info("Started!")
@@ -35,41 +37,24 @@ def load_config(conf):
     logging.info("Configuration file loaded!")
     return config
 
-def linphone(linphone1, linphone2, record_filename, calls):
-        client1_config = linphone1.split('@')
-        client2_config = linphone2.split('@')
-        
-        client1 = ShellHandler(client1_config[1], client1_config[0], client1_config[0])
-        client2 = ShellHandler(client2_config[1], client2_config[0], client2_config[0])
-        
-        cmd1 = f'python app.py -p /home/user/shanty.wav -r /home/user/{record_filename} -c "call 456" -pr 10.0.1.6:8000'
-        cmd2 = f'python app.py -p /home/user/shanty.wav -r /home/user/{record_filename} -c "answer 1" -pr 10.0.1.7:8000'
-        
-        logging.info(cmd1)
-        logging.info(cmd2)
-
-        client1.execute(cmd1)
-        time.sleep(0.5)
-        client2.execute(cmd2)
-
-        time.sleep(10)
-        threaded_calls(calls)
-
+# You can wait a given amount of time before the linphone streams ends
 def linphone_sleep(client1, client2, linphone_time):
     logging.info(f'sleep time: {linphone_time * 60}')
     time.sleep(linphone_time * 60)
     client1.execute(chr(3))
     client2.execute(chr(3))
 
+# Initialize calls and store the rtp stream processes
 def call(call):
-    global rtp_commands
+    global rtp_processes
     r = call.generate_call(config.getfloat('wait', 0))
     if isinstance(r, Exception):
         return r
-    rtp_commands += r
-    logging.info(f'{int(len(rtp_commands)/2)} calls running')
+    rtp_processes += r
+    logging.info(f'{int(len(rtp_processes)/2)} calls running')
     return None
 
+# Start creating calls with a configurable worker number
 def threaded_calls(calls): 
     # calls: A list of call objects
     try:
@@ -82,16 +67,9 @@ def threaded_calls(calls):
     except KeyboardInterrupt:
         return
 
-def start_rtp_streams(rtp_commands):
-    processes = []
-    for r in rtp_commands:
-        logging.info(f'Started stream: {r}')
-        processes.append(subprocess.Popen(r.split(" ")))
-    for p in processes:
-        p.communicate()
-
 if __name__ == '__main__':
     try:
+        # Parse command arguments, parse config arguments, setup logging
         parser = argparse.ArgumentParser(description='RTPengine controller.')
         parser.add_argument('--config-file', '-c', type=str, dest='config',
                             help='Location of configuration file.')
@@ -106,6 +84,8 @@ if __name__ == '__main__':
 
         config = load_config(args.config)
         logging.debug(config)
+
+        # Generate ports for streams and create call objects
         calls = []
         ports = deque()
         number_of_calls = config.getint('number_of_calls', 0) + config.getint('transcoding_calls', 0)
@@ -117,11 +97,12 @@ if __name__ == '__main__':
         for n in range(config.getint('number_of_calls', 0)):
             calls.append(NormalCall(ports.popleft(), ports.popleft(), **config))
 
-        
+        # Start linphone clients on two separate vm
         if config.get('linphone', 'no') == 'yes':
             for i in LINPHONE_ARGS:
                 if not config.get(i, None):
                     logging.exception(f'Config parameter: {i} not found!')
+            # ssh into clients username == password
             client1_config = config.get('ssh_linphone1').split('@')
             client2_config = config.get('ssh_linphone2').split('@')
         
@@ -134,31 +115,25 @@ if __name__ == '__main__':
             logging.info(cmd1)
             logging.info(cmd2)
 
+            # Execute commands on clients
             client1.execute(cmd1)
             time.sleep(0.5)
             client2.execute(cmd2)
 
             time.sleep(20)
 
-            if len(calls) > 0:
+            if len(calls) > 0: # If your don't specify calls 
                 threaded_calls(calls)
                 threading.Thread(target=linphone_sleep, args=(client1, client2, config.getint('linphone_time'), ), daemon=True).start()
-                # client1.execute(chr(3))
-                # client2.execute(chr(3))
             else:
                 linphone_sleep(client1, client2, config.getint('linphone_time'))
         else:
             threaded_calls(calls)
 
-        
-        # start_rtp_streams(rtp_commands)
-        for r in rtp_commands:
+        # Needed to be able to stop the subprocesses
+        for r in rtp_processes:
             r.communicate()
-        # for c in calls:
-        #     c.delete()
     except KeyboardInterrupt:
-        # for r in rtp_commands:
-        #     r.kill()
         for c in calls:
             if c.running:
                 c.delete()

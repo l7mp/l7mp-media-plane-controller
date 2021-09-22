@@ -1,10 +1,7 @@
-from contextlib import contextmanager
 import requests
-import json
 import time
 import logging
 from kubernetes import client, config
-from urllib3 import exceptions
 
 class Operations():
 
@@ -12,6 +9,7 @@ class Operations():
         config.load_incluster_config()
         self.api = client.CoreV1Api()
 
+    # Find pods names and ips
     def get_pods(self, label):
         pods = self.api.list_namespaced_pod(namespace='default', label_selector=label).to_dict()
         ret = []
@@ -21,7 +19,8 @@ class Operations():
                 'pod_ip': p['status']['pod_ip']
             })
         return ret
-
+    
+    # HTTP POST
     def post(self, pod_ip, path, data):
         logging.info(f"http://{pod_ip}:1234/api/v1/{path}")
         while True:
@@ -37,13 +36,11 @@ class Operations():
             logging.info(f'{response.status_code}:{response.text}')
         return response
 
+    # HTTP DELETE
     def delete(self, label, path, res_name):
         pods = self.api.list_namespaced_pod(namespace='default', label_selector=label).to_dict()
         ret = []
-        containers = []
         for p in pods['items']:
-            # for c in p['status']['container_statuses']:
-            #     containers.append({'name': c['name'], 'restart_count': c['restart_count']})
             logging.info(f"http://{p['status']['pod_ip']}:1234/api/v1/{path}/{res_name}")
             response = requests.delete(f"http://{p['status']['pod_ip']}:1234/api/v1/{path}/{res_name}")
             if response.status_code != 200:
@@ -58,7 +55,6 @@ class Status(Operations):
         self.pod_ip = pod_ip # Pod IP
         self.present = False # Is it configured
         self.label = label # Pod label
-        # self.containers = [{'name': containers['name'], 'restart_count': containers['restart_count']}]
         self.resources = [] # Proxy resources
         super().__init__()
 
@@ -72,11 +68,12 @@ class Status(Operations):
         ))
         
 
+    # Create a resource on L7mp proxy 
     def add_resource(self, res):
         resource = {
             'label': self.label, 
             'path': res['path'], 
-            'config': res['config'], 
+            'config': res['config'], # This is the json object which will be applied
             'res_name': res['res_name'],
         }
 
@@ -93,6 +90,7 @@ class Status(Operations):
         if response.status_code == 200:
             self.resources.append(resource)
     
+    # Delete a resource from an l7mp proxy
     def delete_resource(self, res_name, recursive=False):
         for r in self.resources:
             if r['res_name'] == res_name:
@@ -101,14 +99,13 @@ class Status(Operations):
                 name = r['res_name'] + '?recursive=true' if recursive else r['res_name']
                 return super().delete(r['label'], path, name)
 
+    # Delete an endpoint from an L7mp cluster
     def delete_endpoint(self, pod):
-        # switch = False
         logging.info(pod)
         for r in self.resources:
             if 'endpoints_label' in r:
                 ips = [e['ip'] for e in r['endpoint_ips']]
                 if pod['ip'] in ips and r['path'] == 'clusters':
-                    # switch = True
                     ep = None
                     for i in r['config']['cluster']['endpoints']:
                         logging.info(i)
@@ -118,28 +115,8 @@ class Status(Operations):
                         super().delete(r['label'], 'endpoints', ep['name'] + '?recursive=true')
                         r['config']['cluster']['endpoints'].remove(ep)
                         r['endpoint_ips'].remove(pod)
-                            # self.delete_resource(r['res_name'], recursive=True)
-                            # del save['endpoint_ips']
-                            # self.add_resource(save)
-                    # TODO: USe endpoint delete recursive 
-        # logging.info(self)
-        # if switch:
-        #     for r in self.resources:
-        #         if 'controller' not in r['res_name'] and r['path'] == 'listeners':
-        #             save = r
-        #             super().delete('app=l7mp-ingress', 'rules', r['config']['listener']['rules'][0]['name'])
-        #             # self.delete_resource(r['res_name'])
-        #             self.add_resource(save)
 
-
-                # new_endpoint_ips = []
-                # for e in r['endpoint_ips']:
-                #     if e['ip'] == pod_ip:
-                #         super().delete(r['label'], 'endpoints', r['res_name'] + pod_ip + '?recursive=true')
-                #         continue
-                #     new_endpoint_ips.append(e)
-                # r['endpoint_ips'] = new_endpoint_ips
-
+    # Add new endpoint to an L7mp cluster
     def add_endpoint(self, pod_name, pod_ip, labels):
         for r in self.resources:
             if 'endpoints_label' in r:
@@ -161,42 +138,6 @@ class Status(Operations):
                         )
                         r['endpoint_ips'].append({'name': pod_name, 'ip': pod_ip})
 
-
-    def update_endpoints(self, pod):
-        endpoints = {}
-        for r in self.resources:
-            if 'endpoints_label' in r:
-                if r['endpoints_label']:
-                    endpoints[r['endpoints_label']] = []
-                    # Get new IPs for endpoints
-                    labels = [f'{k}={v}' for k, v in pod['object'].metadata.labels.items()]
-                    if r['endpoints_label'] in labels:
-                        endpoints[r['endpoints_label']].append(pod['object'].status.pod_ip)
-                    # Delete old not existing endpoints
-                    deleted_eps = []
-                    for ei in r['endpoint_ips']:
-                        if ei not in endpoints[r['endpoints_label']]:
-                            super().delete(r['endpoints_label'], 'endpoints', ei)
-                            deleted_eps.append(ei)
-                    # Keep only the existing endpoints
-                    r['endpoint_ips'] = list(filter(lambda i: i not in deleted_eps, r['endpoint_ips']))
-                    # Filter to the new not setted endpoints
-                    endpoints[r['endpoints_label']] = list(filter(lambda i: i not in r['endpoint_ips'], endpoints[r['endpoints_label']]))
-                    logging.info(endpoints)
-                    # Append and set the new endpoints
-                    for ei in endpoints[r['endpoints_label']]:
-                        r['endpoint_ips'].append(ei)
-                        super().post(
-                            r['endpoints_label'], 
-                            f'clusters/{r["res_name"]}/endpoints', 
-                            json.dumps({
-                                'endpoint': {
-                                    'name': ei,
-                                    'spec': {'address': ei}
-                                }
-                            })
-                        )
-
 class Statuses():
 
     def __init__(self):
@@ -208,6 +149,7 @@ class Statuses():
                 return s
         return None
     
+    # Not used
     def _containers_check(s_containers, p_containers):
         for s in s_containers:
             for p in p_containers:
@@ -215,25 +157,19 @@ class Statuses():
                     return False
         return True
 
+    # Add status or just a resource
     def add_status(self, pod, label, resource):
         s = self._find_obj_by_key_value('pod_name', pod['pod_name'])
         if not s: 
-            s = Status(pod['pod_name'], pod['pod_ip'], label)
-        
-            # ret, containers = s.add_resource(resource['path'], resource['config'], resource['res_name'])
+            s = Status(pod['pod_name'], pod['pod_ip'], label)        
             s.add_resource(resource)
-            # s.containers += containers
             s.present = True
             self.statuses.append(s)
         else:
             s.add_resource(resource)
-            # s.containers += containers
             s.present = True
-        # for s in self.statuses:
-        #     logging.info(s)
-        # for st in self.statuses:
-        #     logging.info(st)
 
+    # Add endpoint to statuses 
     def add_endpoint(self, pod):
         labels = []
         for k, v in pod['object'].metadata.labels.items():
@@ -242,11 +178,13 @@ class Statuses():
             for s in self.statuses:
                 s.add_endpoint(pod['object'].metadata.name, pod['object'].status.pod_ip, labels)
 
+    # Delete a resource from a status
     def delete_res_from_statuses(self, res_name, label):
         for s in self.statuses:
             if s.label == label:
                 s.delete_resource(res_name)
 
+    # Delete a complet status object. Triggered on endpoint delete
     def delete_status(self, pod_name, pod_ip):
         new_statuses = []
         for s in self.statuses:
@@ -257,6 +195,8 @@ class Statuses():
                 new_statuses.append(s)
         self.statuses = new_statuses
 
+    # If a new worker pod created this method will copy every another 
+    # worker's config to the new one
     def copy(self, pod):
         labels = []
         for k, v in pod['object'].metadata.labels.items():
@@ -275,46 +215,3 @@ class Statuses():
             if s.label in labels:
                 for r in s.resources:
                     self.add_status(pod_dict, s.label, r)
-
-    def update(self, pod):
-        # args = list of pods
-        for s in self.statuses:
-            s.present = False
-        
-        pod_names = [i.pod_name for i in self.statuses]
-        new_resources = []
-        # if the pod already present there is no more work to do
-        if pod['object'].metadata.name in pod_names:
-            for s in self.statuses:
-                if s.pod_name == pod['object'].metadata.name:
-                    s.present = True
-                    logging.info(f'{pod["object"].metadata.name}: {pod["object"].status.pod_ip}')
-                # if a container restarted then reapply every resource
-                # if self._containers_check(s.containers, pod['object'].status.container_statuses):
-                #     s.containers = []
-                #     for r in s.resources:
-                #         _, containers = r.add_resource(r['path'], r['config'], r['res_name'])
-                #         s.containers += containers                            
-        else:
-            # save every new pod into a different array
-            r = {
-                'pod_name': pod['object'].metadata.name,
-                'pod_ip': pod['object'].status.pod_ip,
-                'labels': []
-            }
-            # logging.info(pod['object'].metadata.labels)
-            for k, v in pod['object'].metadata.labels.items():
-                r['labels'].append(f'{k}={v}')
-            logging.info(r)
-            new_resources.append(r)
-
-            # "copy" the old pods proxy configuration into the new ones if their have
-            # a matching label
-            self._copy_resources(new_resources)
-        
-        # update endpoints in cluster
-        for s in self.statuses:
-            s.update_endpoints(pod)
-        
-        # delete every pods which is not found
-        self.statuses = list(filter(lambda i: i.present == True, self.statuses))

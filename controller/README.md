@@ -98,3 +98,40 @@ docker build . -t rtpe-controller
 Before your want to apply the `kubernetes/l7mp/udp` library you have to edit resources in 
 `misc.yaml`. This resource is controller-config ConfigMap. Your have to change the 
 `ingress_address` field value to your minikube ip.
+
+## Couple of words about the code architecture
+
+Further information in the comments. 
+
+### /apis directory
+
+[apis](apis/README.md)
+
+### /servers directory
+
+[servers](servers/README.md)
+
+### commands.py
+
+In this you can find all of the ng protocols commands. 
+
+### new_controller.py
+
+Parse the config file, set the logging and start a server depending on the protocol. 
+
+### sockets.py
+
+Handle udp and tcp sockets for the servers.
+
+#### TCPSocket
+
+Create a TCP socket with keep alive mechanism. It has a sender method and it can reconnect
+if the connection lost. 
+
+#### UDPSocket
+
+With udp I don't think that we need reconnect because of the udp characteristic. 
+
+### utils.py
+
+Implements every method what is needed, but does not fit in any other class. 

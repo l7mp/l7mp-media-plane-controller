@@ -1,4 +1,3 @@
-from tokenize import Pointfloat
 import sdp_transform
 import logging
 import time
@@ -30,28 +29,13 @@ class TranscodedCall(CallBase):
         self.codec2 = kwargs.get('codec2', None)
         self.running = False
 
+    # Transcoded specific sdp PCMU, speex
     def generate_sdp(self, address, port, codec):
-        # codec is a string like "0 101"
-        # sdp_dict = {
-        #     'version': 0,
-        #     'origin': {
-        #         'address': address,
-        #         'ipVer': 4,
-        #         'netType': 'IN',
-        #         'sessionId': random.randint(1000000000, 9999999999),
-        #         'sessionVersion': 1,
-        #         'username': '-'
-        #     },
-        #     'name': 'tester',
-        #     'connection': {'ip': address, 'version': 4},
-        #     'timing': {'start': 0, 'stop': 0}
-        # }
-
         if codec == "0 101":
             sdp_dict = {
                 "version":0,
                 "origin":{
-                    "address": "127.0.0.1",
+                    "address": address,
                     "username":123,
                     "sessionId":3092,
                     "sessionVersion":1,
@@ -59,7 +43,7 @@ class TranscodedCall(CallBase):
                     "ipVer":4,
                 },
                 "name":"Talk",
-                "connection":{ "version":4, "ip":"127.0.0.1"},
+                "connection":{ "version":4, "ip":address},
                 "timing":{"start":0,"stop":0},
                 "media":[
                     {
@@ -76,7 +60,7 @@ class TranscodedCall(CallBase):
             sdp_dict = {
                 "version":0,
                 "origin":{
-                    "address":"127.0.0.1",
+                    "address":address,
                     "username":456,
                     "sessionId":2278,
                     "sessionVersion":1,
@@ -84,7 +68,7 @@ class TranscodedCall(CallBase):
                     "ipVer":4,
                 },
                 "name":"Talk",
-                "connection":{"version":4,"ip":"127.0.0.1"},
+                "connection":{"version":4,"ip":address},
                 "timing":{"start":0,"stop":0},
                 "media":[
                     {
@@ -98,66 +82,17 @@ class TranscodedCall(CallBase):
                 ]
             }
 
-        # if codec == "0 101":
-        #     sdp_dict['media'] = [
-        #         {
-        #             "rtp":[
-        #                 {
-        #                 "payload":0,
-        #                 "codec":"telephone-event",
-        #                 "rate":8000
-        #                 }
-        #             ],
-        #             "fmtp":[],
-        #             "type":"audio",
-        #             "port":port,
-        #             "protocol":"RTP/AVP",
-        #             "payloads":"0 101",
-        #         }
-        #     ]
-        # elif codec == "96":
-        #     sdp_dict['media'] = [
-        #         {
-        #             "rtp":[
-        #                 {
-        #                 "payload":96,
-        #                 "codec":"speex",
-        #                 "rate":16000
-        #                 }
-        #             ],
-        #             "fmtp":[
-        #                 {
-        #                 "payload":96,
-        #                 "config":"vbr=on"
-        #                 }
-        #             ],
-        #             "type":"audio",
-        #             "port": port,
-        #             "protocol":"RTP/AVP",
-        #             "payloads":"96 101"
-        #         }
-        #     ]
-
         return sdp_transform.write(sdp_dict)
 
+    # Send offer to rtpengine
     def offer(self):
         options = {
             "ICE": "remove", 
             "label": "caller",
-            "supports": [
-                "load limit"
-            ],
-            "flags": [
-                "SIP-source-address"
-            ],
-            "replace": [
-                "origin",
-                "session-connection"
-            ],
-            "received-from": [
-                "IP4",
-                "127.0.0.1"
-            ],
+            "supports": ["load limit"],
+            "flags": ["SIP-source-address"],
+            "replace": ["origin", "session-connection"],
+            "received-from": ["IP4", "127.0.0.1"],
             "codec": { "mask": ["all"], "transcode": ["PCMU", "speex"]}
         }
         command = Commands.offer(
@@ -170,24 +105,15 @@ class TranscodedCall(CallBase):
         sdp_data = sdp_transform.parse(data["sdp"])
         return sdp_data['media'][0]['port']
 
+    # Send answer to rtpengine
     def answer(self):
         options = {
             "ICE": "remove", 
             "label": "caller",
-            "supports": [
-                "load limit"
-            ],
-            "flags": [
-                "SIP-source-address"
-            ],
-            "replace": [
-                "origin",
-                "session-connection"
-            ],
-            "received-from": [
-                "IP4",
-                "127.0.0.1"
-            ],
+            "supports": ["load limit"],
+            "flags": ["SIP-source-address"],
+            "replace": ["origin", "session-connection"],
+            "received-from": ["IP4", "127.0.0.1"],
             "codec": { "mask": ["all"], "transcode": ["PCMU", "speex"]}
         }
         command = Commands.answer(
@@ -203,6 +129,7 @@ class TranscodedCall(CallBase):
     def delete(self):
         super().delete(self.call_id, self.from_tag, self.start)
 
+    # Set up a call 
     def generate_call(self, wait):
         self.running = True
         rtpe_address = super().__getattribute__('rtpe_address')
@@ -216,6 +143,7 @@ class TranscodedCall(CallBase):
         if isinstance(a_rtp, Exception): return a_rtp
         logging.info(f'Call with callid: {self.call_id} created in {int((time.time() - start_time) * 1000)} ms')
 
+        # Start rtp processes
         ret = [
             subprocess.Popen(["rtpsend", "-s", str(self.start), "-f", self.file1, f'{rtpe_address}/{a_rtp}']),
             subprocess.Popen(["rtpsend", "-s", str(self.end), "-f", self.file2, f'{rtpe_address}/{o_rtp}'])
