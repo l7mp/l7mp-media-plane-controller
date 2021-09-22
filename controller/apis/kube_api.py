@@ -131,7 +131,19 @@ class KubeAPI():
             self.threaded_create_objects(self.create_rule() + self.create_vsvc())
 
     def delete_resource(self, resource):
+        body = {
+            'metadata' : {
+                'finalizers' : [ "l7mp.io/delete" ]
+            }
+        }
         if self.envoy == 'yes':
+            self.api.patch_namespaced_custom_object(
+            group='servicemesh.l7mp.io',
+            version='v1',
+            name=resource[1],
+            namespace='default',
+            plural=self.plurals[resource[0]],
+            body=body)
             self.api.delete_namespaced_custom_object(
                 group='servicemesh.l7mp.io',
                 version='v1',
