@@ -60,7 +60,7 @@ class NormalCall(CallBase):
         # media-handover required for proper resiliency 
         options = {"ICE": "remove", "label": "caller", "flags": ["media-handover"]}
         command = Commands.offer(
-            self.generate_sdp('127.0.0.1', self.start),
+            self.generate_sdp(self.local_address, self.start),
             self.call_id, self.from_tag, **options
         )
         data = super().ws_send(command) if super().__getattribute__('protocol') == 'ws' else super().send(command, self.start)
@@ -75,7 +75,7 @@ class NormalCall(CallBase):
         # media-handover required for proper resiliency
         options = {"ICE": "remove", "label": "callee", "flags": ["media-handover"]}
         command = Commands.answer(
-            self.generate_sdp('127.0.0.1', self.end),
+            self.generate_sdp(self.local_address, self.end),
             self.call_id, self.from_tag, self.to_tag, **options
         )
         data = super().ws_send(command) if super().__getattribute__('protocol') == 'ws' else super().send(command, self.end)
@@ -117,8 +117,8 @@ class NormalCall(CallBase):
                 ])
             )
         if self.sender_method == 'rtpsend':
-            ret.append(subprocess.Popen(["rtpsend", "-s", str(self.start), "-f", self.file, f'{rtpe_address}/{o_rtp}']))
-            ret.append(subprocess.Popen(["rtpsend", "-s", str(self.end), "-f", self.file, f'{rtpe_address}/{a_rtp}']))        
+            ret.append(subprocess.Popen(["rtpsend", "-s", str(self.start), "-f", self.file, f'{rtpe_address}/{a_rtp}']))
+            ret.append(subprocess.Popen(["rtpsend", "-s", str(self.end), "-f", self.file, f'{rtpe_address}/{o_rtp}']))        
         if self.sender_method == 'wait':
             ret.append('sleep 600')
         
