@@ -103,7 +103,7 @@ class L7mpAPI():
         })
 
     def _rule_conf(self, **kwargs):
-        if udp_mode == "singleton":
+        if self.udp_mode == "singleton":
             spec = {
                 "protocol": "UDP",
                 "port": kwargs.get('port'),
@@ -247,4 +247,3 @@ class L7mpAPI():
             f'remote-rtcp-port: {str(self.remote_rtcp_port)}\n'
         )
         
-    
