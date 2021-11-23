@@ -55,28 +55,29 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 if data['command'] == 'delete':
                     delete_kube_resources(call_id)
                 # Currently this setup create resources when on offer and answer comes
-                if data['command'] == 'offer':
-                    sdp = sdp_transform.parse(response['sdp'])
-                    rtp_port, rtcp_port = sdp['media'][0]['port'], sdp['media'][0]['rtcp']['port']
-                    create_offer_resource(
-                        config, callid=call_id, from_tag=data['from-tag'], rtpe_rtp_port=rtp_port,
-                        rtpe_rtcp_port=rtcp_port, client_ip=client_ip, client_rtp_port=client_rtp_port,
-                        client_rtcp_port=client_rtp_port + 1,
-                        without_operator=config.get('without_operator', 'no')
-                    )
+                # if data['command'] == 'offer':
+                #     sdp = sdp_transform.parse(response['sdp'])
+                #     # logging.info(sdp)
+                #     rtp_port, rtcp_port = sdp['media'][0]['port'], sdp['media'][0]['rtcp']['port']
+                #     create_offer_resource(
+                #         config, callid=call_id, from_tag=data['from-tag'], rtpe_rtp_port=rtp_port,
+                #         rtpe_rtcp_port=rtcp_port, client_ip=client_ip, client_rtp_port=client_rtp_port,
+                #         client_rtcp_port=client_rtp_port + 1,
+                #         without_operator=config.get('without_operator', 'no')
+                #     )
                 if data['command'] == 'answer':
                     sdp = sdp_transform.parse(response['sdp'])
                     rtp_port, rtcp_port = sdp['media'][0]['port'], sdp['media'][0]['rtcp']['port']
-                    create_answer_resource(
-                        config, callid=call_id, to_tag=data['to-tag'], rtpe_rtp_port=rtp_port,
-                        rtpe_rtcp_port=rtcp_port, client_ip=client_ip, client_rtp_port=client_rtp_port,
-                        client_rtcp_port=client_rtp_port + 1,
-                        without_operator=config.get('without_operator', 'no')
-                    )
+                    # create_answer_resource(
+                    #     config, callid=call_id, to_tag=data['to-tag'], rtpe_rtp_port=rtp_port,
+                    #     rtpe_rtcp_port=rtcp_port, client_ip=client_ip, client_rtp_port=client_rtp_port,
+                    #     client_rtcp_port=client_rtp_port + 1,
+                    #     without_operator=config.get('without_operator', 'no')
+                    # )
                     # But if you want to create every resource at once you have to use this piece of 
                     # code when an answer comes 
-                    # query = parse_bc(rtpe_socket.send(query_message(data['call-id'])))
-                    # create_resource(call_id, data['from-tag'], data['to-tag'], config, query)
+                    query = parse_bc(rtpe_socket.send(query_message(data['call-id'])))
+                    create_resource(call_id, data['from-tag'], data['to-tag'], config, query, client_ip)
                 logging.info(f"{data['command']} setup time: {int((time.time() - time_start) * 1000)}")
                 # Send back data to clients
                 self.request.sendall(bytes(data['cookie'] + " " + bc.encode(response).decode(), 'utf-8'))
