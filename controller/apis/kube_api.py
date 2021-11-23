@@ -112,12 +112,13 @@ class KubeAPI():
         }
         if self.envoy == 'yes':
             self.api.patch_namespaced_custom_object(
-            group='servicemesh.l7mp.io',
-            version='v1',
-            name=resource[1],
-            namespace='default',
-            plural=self.plurals[resource[0]],
-            body=body)
+                group='servicemesh.l7mp.io',
+                version='v1',
+                name=resource[1],
+                namespace='default',
+                plural=self.plurals[resource[0]],
+                body=body
+            )
             self.api.delete_namespaced_custom_object(
                 group='servicemesh.l7mp.io',
                 version='v1',
