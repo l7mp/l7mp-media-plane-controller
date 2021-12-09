@@ -112,6 +112,7 @@ spec:
         - name: envoy-ingress-config
           configMap:
             name: envoy-ingress-config
+      terminationGracePeriodSeconds: 0
       containers:
         - name: net-debug
           image: l7mp/net-debug:0.5.3
@@ -134,6 +135,13 @@ spec:
               value: "rtpe-controller.default.svc" #127.0.0.1 on worker
             - name: "NG_CONTROL_CLUSTER_ENDPOINT_PORT"
               value: '2000' #22222 on worker
+            - name: "LOG_LEVEL"
+              #value: "-l debug"
+              value: "-l trace --component-log-level upstream:debug,connection:debug,misc:info,udp:debug"
+            - name: "DRAIN_TIME"
+              value: '0'
+            - name: "DRAIN_STRATEGY"  
+              value: 'gradual'
           ports:
             - containerPort: 1235
               name: admin

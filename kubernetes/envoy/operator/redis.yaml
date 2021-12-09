@@ -15,6 +15,7 @@ spec:
       labels:
         app: redis
     spec:
+      terminationGracePeriodSeconds: 0
       volumes:
         - name: data
           emptyDir: {}
