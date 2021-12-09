@@ -21,6 +21,8 @@ bc = bencodepy.Bencode(
     encoding='utf-8'
 )
 
+def without_keys(d, key):
+    return {x: d[x] for x in d if x != key}
 
 # Parse bencoded data and return with cookie too
 def parse_data(data):
@@ -104,7 +106,9 @@ def create_resource(call_id, from_tag, to_tag, config, query):
             ws=ws,
             envoy=config['envoy_operator'],
             update_owners=config['update_owners'],
-            udp_mode=config['udp_mode']
+            udp_mode=config['udp_mode'],
+            service_discovery=config['service_discovery'],
+            healthcheck_interval=config['healthcheck_interval']
         )
     )
 
@@ -151,7 +155,9 @@ async def async_create_resource(call_id, from_tag, to_tag, config, query):
             ws=ws,
             envoy=config['envoy_operator'],
             update_owners=config['update_owners'],
-            udp_mode=config['udp_mode']
+            udp_mode=config['udp_mode'],
+            service_discovery=config['service_discovery'],
+            healthcheck_interval=config['healthcheck_interval']
         )
     await c.asnyc_create_resources()
     kubernetes_apis.append(c)
@@ -183,7 +189,9 @@ def create_offer_resource(config, **kwargs):
                 ws=ws,
                 envoy=config['envoy_operator'],
                 update_owners=config['update_owners'],
-                udp_mode=config['udp_mode']
+                udp_mode=config['udp_mode'],
+                service_discovery=config['service_discovery'],
+                healthcheck_interval=config['healthcheck_interval']
             )
         )
     else:
@@ -222,7 +230,9 @@ def create_answer_resource(config, **kwargs):
                 ws=ws,
                 envoy=config['envoy_operator'],
                 update_owners=config['update_owners'],
-                udp_mode=config['udp_mode']
+                udp_mode=config['udp_mode'],
+                service_discovery=config['service_discovery'],
+                healthcheck_interval=config['healthcheck_interval']
             )
         )
     else:

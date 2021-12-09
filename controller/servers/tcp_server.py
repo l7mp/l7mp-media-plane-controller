@@ -31,7 +31,7 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         # parse the received data
         raw_data = str(self.request.recv(4096), 'utf-8')
         data = parse_data(raw_data)
-        
+
         call_id = ""
         client_ip, client_rtp_port = None, None
         if 'sdp' in data:
@@ -82,7 +82,22 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 self.request.sendall(bytes(data['cookie'] + " " + bc.encode(response).decode(), 'utf-8'))
                 logging.debug("Response from rtpengine sent back to client")
         if config['sidecar_type'] == 'envoy':
-            raw_response = rtpe_socket.send(raw_data)
+            '''
+                    Add media handover flag
+            '''
+            extended_raw_data = raw_data
+            if 'flags' in data:
+                data['flags'].append('media-handover')
+                logging.debug(f'data: {data}')
+                if 'cookie' in data:
+                    cookie = data['cookie']
+                    extended_raw_data = cookie + " " + bc.encode(without_keys(data, 'cookie')).decode()
+                    '''
+                    bytes(cookie + " " + bc.encode(data_without_cookie).decode(), 'utf-8')
+                    '''
+                    asd = parse_data(extended_raw_data)
+                    logging.debug(f'extended {asd}')
+            raw_response = rtpe_socket.send(extended_raw_data)
             if raw_response:
                 response = parse_bc(raw_response)
                 if 'sdp' in response:
