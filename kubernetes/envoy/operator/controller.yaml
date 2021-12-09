@@ -18,6 +18,10 @@ data:
     envoy_operator=yes
     update_owners=no
     udp_mode=server
+    service_discovery=eds
+    #or 'strictdns'
+    healthcheck_interval=100
+
 ---
 # rtpe-controller
 apiVersion: apps/v1
@@ -36,6 +40,7 @@ spec:
       labels:
         app: rtpe-controller
     spec:
+      terminationGracePeriodSeconds: 0
       volumes:
         - name: controller-volume
           configMap:
@@ -44,7 +49,8 @@ spec:
         - name: net-debug
           image: l7mp/net-debug:0.5.3
         - name: rtpe-controller
-          image: rtpe-controller
+          image: controller-eds:latest
+          #image: rtpe-controller
           imagePullPolicy: Never
           volumeMounts:
             - name: controller-volume
