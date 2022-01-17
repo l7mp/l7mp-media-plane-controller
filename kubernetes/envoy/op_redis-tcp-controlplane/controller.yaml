@@ -18,7 +18,7 @@ data:
     envoy_operator=yes
     update_owners=no
     udp_mode=server
-    service_discovery=eds
+    service_discovery=eds 
     #or 'strictdns'
     healthcheck_interval=100
 
@@ -50,8 +50,7 @@ spec:
           image: l7mp/net-debug:0.5.3
         - name: rtpe-controller
           image: controller-eds:latest
-          #image: rtpe-controller
-          imagePullPolicy: Never
+          imagePullPolicy: IfNotPresent
           volumeMounts:
             - name: controller-volume
               mountPath: /app/config

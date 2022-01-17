@@ -108,24 +108,29 @@ spec:
         app: envoy-ingress
         # app: l7mp-ingress
     spec:
+      terminationGracePeriodSeconds: 1
       volumes:
         - name: envoy-ingress-config
           configMap:
             name: envoy-ingress-config
-      terminationGracePeriodSeconds: 0
       containers:
         - name: net-debug
           image: l7mp/net-debug:0.5.3
+          command: [ "tcpdump"]
+          args: ["-i", "any", "udp" ]
         - name: envoy
           image: l7mp/envoy-parameterizable
+          #image: envoy_debug:0.1
           imagePullPolicy: Never
+          #command: [ "/bin/bash", "-c", "--" ]
+          #args: [ "while true; do sleep 30; done;" ] 
           env:
             - name: "NODE_POD_UID"
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.uid
             - name: "GRPC_SERVICE_NAME"
-              #value: '172.17.0.2'
+              #value: '172.17.0.3'
               value: "operator-service.operator-system.svc" 
             - name: "GRPC_SERVICE_PORT"
               value: '18000'
@@ -136,10 +141,10 @@ spec:
             - name: "NG_CONTROL_CLUSTER_ENDPOINT_PORT"
               value: '2000' #22222 on worker
             - name: "LOG_LEVEL"
-              #value: "-l debug"
-              value: "-l trace --component-log-level upstream:debug,connection:debug,misc:info,udp:debug"
+              value: "-l info"
+              #value: "-l trace --component-log-level upstream:debug"
             - name: "DRAIN_TIME"
-              value: '0'
+              value: '3'
             - name: "DRAIN_STRATEGY"  
               value: 'gradual'
           ports:

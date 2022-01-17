@@ -106,7 +106,7 @@ metadata:
   labels:
     app: worker
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: worker
@@ -117,12 +117,15 @@ spec:
       annotations:
         sidecar.istio.io/inject: "false"
     spec:
-      terminationGracePeriodSeconds: 0
+      terminationGracePeriodSeconds: 1
       securityContext:
         sysctls:
         - name: net.ipv4.ip_local_port_range
           value: "50001 60999"
       volumes:
+        # - name: envoy-config-volume
+        #   configMap:
+        #     name: envoy-worker-config
         - name: rtpengine-config-volume
           configMap:
             name: rtpengine-config
@@ -146,6 +149,7 @@ spec:
                   fieldPath: metadata.uid
             - name: "GRPC_SERVICE_NAME"
               value: "operator-service.operator-system.svc"
+              #value: '10.233.54.235'
             - name: "GRPC_SERVICE_PORT"
               value: '18000'
             - name: "NG_CONTROL_LISTENER_PORT"
@@ -157,15 +161,18 @@ spec:
             - name: "LOG_LEVEL"
               value: "-l info"
             - name: "DRAIN_TIME"
-              value: '5'
+              value: '30'
+              #may set higher
             - name: "DRAIN_STRATEGY"  
               value: 'gradual'
           ports:
             - containerPort: 1235
               name: admin
         - name: rtpengine
+          #image: rtpengine-master:1
           image: drachtio/rtpengine
-          imagePullPolicy: IfNotPresent
+          #image: l7mp/rtpengine-max-resiliency:0.1
+          #imagePullPolicy: IfNotPresent
           command: [ "/usr/local/bin/rtpengine" ]
           args: [ "--config-file=/etc/rtpengine/rtpengine.conf", "-f", "-E", "--endpoint-learning", "immediate"]
           volumeMounts:
@@ -184,13 +191,13 @@ data:
     # listen-ng=MY_IP:22222
     # interface=MY_IP
     listen-tcp-ng=127.0.0.1:22222
-    interface=127.0.0.1
+    interface=lo/127.0.0.1
 
     foreground=true
     log-stderr=true
 
     port-min=10000
-    port-max=20000
+    port-max=30000
 
     # recording-dir=/tmp
     # recording-method=pcap
@@ -199,7 +206,7 @@ data:
     log-level=7
     delete-delay=0
 
-    timeout=600
+    timeout=6000
 
     redis = redis:6379/1
     subscribe-keyspace=1
