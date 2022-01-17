@@ -117,6 +117,8 @@ class NormalCall(CallBase):
                 ])
             )
         if self.sender_method == 'rtpsend':
+            logging.info(f'{rtpe_address}/{a_rtp}')
+            logging.info(f'{rtpe_address}/{o_rtp}')
             ret.append(subprocess.Popen(["rtpsend", "-s", str(self.start), "-f", self.file, f'{rtpe_address}/{a_rtp}']))
             ret.append(subprocess.Popen(["rtpsend", "-s", str(self.end), "-f", self.file, f'{rtpe_address}/{o_rtp}']))        
         if self.sender_method == 'wait':

@@ -105,27 +105,40 @@ if __name__ == '__main__':
             # ssh into clients username == password
             client1_config = config.get('ssh_linphone1').split('@')
             client2_config = config.get('ssh_linphone2').split('@')
-        
+
             client1 = ShellHandler(client1_config[1], client1_config[0], client1_config[0])
             client2 = ShellHandler(client2_config[1], client2_config[0], client2_config[0])
         
             cmd1 = f'python app.py -p /home/user/shanty.wav -r /home/user/{config.get("record_filename")} -c "call 456" -pr 10.0.1.6:8000'
             cmd2 = f'python app.py -p /home/user/shanty.wav -r /home/user/{config.get("record_filename")} -c "answer 1" -pr 10.0.1.7:8000'
-        
-            logging.info(cmd1)
-            logging.info(cmd2)
+
+            #logging.info(cmd1)
+            #logging.info(cmd2)
 
             # Execute commands on clients
-            client1.execute(cmd1)
+            #client1.execute(cmd1)
             time.sleep(0.5)
-            client2.execute(cmd2)
+            #client2.execute(cmd2)
 
-            time.sleep(20)
+            #time.sleep(20)
 
             if len(calls) > 0: # If your don't specify calls 
                 threaded_calls(calls)
-                threading.Thread(target=linphone_sleep, args=(client1, client2, config.getint('linphone_time'), ), daemon=True).start()
+
+                time.sleep(10)
+                logging.info(cmd1)
+                logging.info(cmd2)
+                #client1.execute(cmd1)
+                time.sleep(0.5)
+                #client2.execute(cmd2)
+
+                #threading.Thread(target=linphone_sleep, args=(client1, client2, config.getint('linphone_time'), ), daemon=True).start()
             else:
+                logging.info(cmd1)
+                logging.info(cmd2)
+                client1.execute(cmd1)
+                time.sleep(0.5)
+                client2.execute(cmd2)
                 linphone_sleep(client1, client2, config.getint('linphone_time'))
         else:
             threaded_calls(calls)
