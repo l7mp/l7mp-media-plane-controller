@@ -36,7 +36,8 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         client_ip, client_rtp_port = None, None
         if 'sdp' in data:
             sdp = sdp_transform.parse(data['sdp'])
-            client_ip, client_rtp_port = sdp['origin']['address'], sdp['media'][0]['port']
+            # client_ip, client_rtp_port = sdp['origin']['address'], sdp['media'][0]['port']
+            client_ip, client_rtp_port = self.client_address[0], sdp['media'][0]['port']
         if "call-id" in data:
             call_id = ''.join(e for e in data['call-id'] if e.isalnum()).lower()
         logging.debug(f'Received message: {raw_data}')
