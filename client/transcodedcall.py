@@ -99,8 +99,16 @@ class TranscodedCall(CallBase):
             self.generate_sdp('127.0.0.1', self.start, "0 101"),
             self.call_id, self.from_tag, **options
         )
-        data = super().ws_send(command) if super().__getattribute__('protocol') == 'ws' else super().send(command, self.start)
-        if not data: return Exception("No data come back from rtpengine (answer)")
+        data = None
+        cnt = 0
+        event = threading.Event()
+        while cnt < 5:
+            data = super().ws_send(command) if super().__getattribute__('protocol') == 'ws' else super().send(command, self.start) 
+            if data:
+                break 
+            logging.warning("No data come back from rtpengine (answer)")
+            cnt=cnt+1
+            event.wait(2)
         if 'sdp' not in data: return Exception(f'There is no sdp part in response: {data}')
         sdp_data = sdp_transform.parse(data["sdp"])
         return sdp_data['media'][0]['port']
@@ -120,8 +128,16 @@ class TranscodedCall(CallBase):
             self.generate_sdp('127.0.0.1', self.end, "96"),
             self.call_id, self.from_tag, self.to_tag, **options
         )
-        data = super().ws_send(command) if super().__getattribute__('protocol') == 'ws' else super().send(command, self.end)
-        if not data: return Exception("No data come back from rtpengine (answer)")
+        data = None
+        cnt = 0
+        event = threading.Event()
+        while cnt < 5:
+            data = super().ws_send(command) if super().__getattribute__('protocol') == 'ws' else super().send(command, self.start) 
+            if data:
+                break 
+            logging.warning("No data come back from rtpengine (answer)")
+            cnt=cnt+1
+            event.wait(2)
         if 'sdp' not in data: return Exception(f'There is no sdp part in response: {data}')
         sdp_data = sdp_transform.parse(data["sdp"])
         return sdp_data['media'][0]['port']
