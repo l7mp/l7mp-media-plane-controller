@@ -43,8 +43,23 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
         logging.debug(f'Received message: {raw_data}')
 
         if config['sidecar_type'] == 'l7mp':
+            '''
+                    Add media handover flag
+            '''
+            extended_raw_data = raw_data
+            if 'flags' in data:
+                data['flags'].append('media-handover')
+                logging.debug(f'data: {data}')
+                if 'cookie' in data:
+                    cookie = data['cookie']
+                    extended_raw_data = cookie + " " + bc.encode(without_keys(data, 'cookie')).decode()
+                    '''
+                    bytes(cookie + " " + bc.encode(data_without_cookie).decode(), 'utf-8')
+                    '''
+                    parsed_data = parse_data(extended_raw_data)
+                    logging.debug(f'extended_raw_data {parsed_data}')
             # Send data to rtpengine
-            raw_response = rtpe_socket.send(raw_data)
+            raw_response = rtpe_socket.send(extended_raw_data)
             if raw_response:
                 response = parse_bc(raw_response)
                 # Replace connectivity ip address to node ip
@@ -84,7 +99,23 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                 self.request.sendall(bytes(data['cookie'] + " " + bc.encode(response).decode(), 'utf-8'))
                 logging.debug("Response from rtpengine sent back to client")
         if config['sidecar_type'] == 'envoy':
-            raw_response = rtpe_socket.send(raw_data)
+            '''
+                    Add media handover flag
+            '''
+            extended_raw_data = raw_data
+            if 'flags' in data:
+                data['flags'].append('media-handover')
+                logging.debug(f'data: {data}')
+                if 'cookie' in data:
+                    cookie = data['cookie']
+                    extended_raw_data = cookie + " " + bc.encode(without_keys(data, 'cookie')).decode()
+                    '''
+                    bytes(cookie + " " + bc.encode(data_without_cookie).decode(), 'utf-8')
+                    '''
+                    parsed_data = parse_data(extended_raw_data)
+                    logging.debug(f'extended_raw_data {parsed_data}')
+            # Send data to rtpengine
+            raw_response = rtpe_socket.send(extended_raw_data)
             if raw_response:
                 response = parse_bc(raw_response)
                 if 'sdp' in response:

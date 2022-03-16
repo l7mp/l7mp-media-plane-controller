@@ -21,6 +21,8 @@ bc = bencodepy.Bencode(
     encoding='utf-8'
 )
 
+def without_keys(d, key):
+    return {x: d[x] for x in d if x != key}
 
 # Parse bencoded data and return with cookie too
 def parse_data(data):
