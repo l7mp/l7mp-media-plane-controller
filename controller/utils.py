@@ -72,73 +72,34 @@ def create_resource(call_id, from_tag, to_tag, config, query, client_ip):
     ws = True if config['protocol'] == 'ws' else False
 
     to_port = query['tags'][to_tag]['medias'][0]['streams'][0]['local port']
-    to_c_address = query['tags'][to_tag]['medias'][0]['streams'][0]['endpoint']['address']
     to_c_port = query['tags'][to_tag]['medias'][0]['streams'][0]['endpoint']['port']
     
     from_port = query['tags'][from_tag]['medias'][0]['streams'][0]['local port']
-    from_c_address = query['tags'][from_tag]['medias'][0]['streams'][0]['endpoint']['address']
     from_c_port = query['tags'][from_tag]['medias'][0]['streams'][0]['endpoint']['port']
+    
     logging.debug('Every port and address is mapped.')
 
-    if from_c_address == '127.0.0.1':
-        from_data = {
-            'tag': from_tag,
-            'local_ip': client_ip,
-            'local_rtp_port': from_c_port,
-            'local_rtcp_port': from_c_port + 1,
-            'remote_rtp_port': from_port,
-            'remote_rtcp_port': from_port + 1,
-        }
-    else:
-        from_data = {
-            'tag': from_tag,
-            'local_ip': from_c_address,
-            'local_rtp_port': from_c_port,
-            'local_rtcp_port': from_c_port + 1,
-            'remote_rtp_port': from_port,
-            'remote_rtcp_port': from_port + 1,
-        } 
-    if to_c_address == '127.0.0.1':
-        to_data = {
-            'tag': to_tag,
-            'local_ip': client_ip,
-            'local_rtp_port': to_c_port,
-            'local_rtcp_port': to_c_port + 1,
-            'remote_rtp_port': to_port,
-            'remote_rtcp_port': to_port + 1,
-        }
-    else:
-        to_data = {
-            'tag': to_tag,
-            'local_ip': to_c_address,
-            'local_rtp_port': to_c_port,
-            'local_rtcp_port': to_c_port + 1,
-            'remote_rtp_port': to_port,
-            'remote_rtcp_port': to_port + 1,
-        }
-    if config.get('udp_mode') == 'singleton':
-        # rtp = from_data['remote_rtp_port']
-        # rtcp = from_data['remote_rtcp_port']
-        # from_data['remote_rtp_port'] = to_data['remote_rtp_port']
-        # from_data['remote_rtcp_port'] = to_data['remote_rtcp_port']
-        # to_data['remote_rtp_port'] = rtp
-        # to_data['remote_rtcp_port'] = rtcp
-        kubernetes_apis.append(
-            L7mpAPI(
-                call_id=call_id,
-                from_data=from_data,
-                udp_mode=config.get('udp_mode')
-            )
-        )
-        kubernetes_apis.append(
-            L7mpAPI(
-                call_id=call_id,
-                to_data=to_data,
-                udp_mode=config.get('udp_mode')
-            )
-        )
-        
-    else:
+    from_data = {
+        'callid': call_id,
+        'tag': from_tag,
+        'local_ip': client_ip,
+        'local_rtp_port': from_c_port,
+        'local_rtcp_port': from_c_port + 1,
+        'remote_rtp_port': from_port,
+        'remote_rtcp_port': from_port + 1,
+    }
+
+    to_data = {
+        'callid': call_id,
+        'tag': to_tag,
+        'local_ip': client_ip,
+        'local_rtp_port': to_c_port,
+        'local_rtcp_port': to_c_port + 1,
+        'remote_rtp_port': to_port,
+        'remote_rtcp_port': to_port + 1,
+    }
+
+    if config['without_operator'] == 'no':
         kubernetes_apis.append(
             KubeAPI(
                 call_id=call_id,
@@ -150,7 +111,16 @@ def create_resource(call_id, from_tag, to_tag, config, query, client_ip):
                 udp_mode=config['udp_mode']
             )
         )
-    
+    else:
+        kubernetes_apis.append(
+            L7mpAPI(
+                call_id=call_id,
+                from_data=from_data,
+                to_data=to_data,
+                udp_mode=config.get('udp_mode')
+            )
+        )
+
 
 # Same as create_resources just async
 async def async_create_resource(call_id, from_tag, to_tag, config, query):

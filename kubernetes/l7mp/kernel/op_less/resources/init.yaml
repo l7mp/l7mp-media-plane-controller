@@ -43,7 +43,7 @@ spec:
             - name: controller-volume
               mountPath: /app/config
           command: ["python"]
-          args: ["new_controller.py", "-c", "config/config.conf", "-l", "info"]
+          args: ["new_controller.py", "-c", "config/config.conf", "-l", "debug"]
           env:
             - name: NODE_IP
               valueFrom:
@@ -84,7 +84,7 @@ spec:
           imagePullPolicy: IfNotPresent
           command: ["node"]
           args:
-            [ "l7mp-proxy.js", "-c", "config/l7mp-worker.yaml", "-s", "-l", "silly", "-o", "init", "-i", "all"]
+            [ "l7mp-proxy.js", "-c", "config/l7mp-worker.yaml", "-s", "-l", "silly"]
           securityContext:
             capabilities:
               add: ["NET_ADMIN", "SYS_ADMIN"]

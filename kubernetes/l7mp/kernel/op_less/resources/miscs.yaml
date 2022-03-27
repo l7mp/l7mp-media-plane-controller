@@ -126,5 +126,5 @@ data:
     sidecar_type=l7mp
     envoy_operator=no
     update_owners=no
-    udp_mode=server
+    udp_mode=singleton
     without_operator=yes
