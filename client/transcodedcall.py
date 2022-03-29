@@ -92,11 +92,11 @@ class TranscodedCall(CallBase):
             "supports": ["load limit"],
             "flags": ["SIP-source-address"],
             "replace": ["origin", "session-connection"],
-            "received-from": ["IP4", "127.0.0.1"],
+            "received-from": ["IP4", self.local_address],
             "codec": { "mask": ["all"], "transcode": ["PCMU", "speex"]}
         }
         command = Commands.offer(
-            self.generate_sdp('127.0.0.1', self.start, "0 101"),
+            self.generate_sdp(self.local_address, self.start, "0 101"),
             self.call_id, self.from_tag, **options
         )
         data = super().ws_send(command) if super().__getattribute__('protocol') == 'ws' else super().send(command, self.start)
@@ -113,11 +113,11 @@ class TranscodedCall(CallBase):
             "supports": ["load limit"],
             "flags": ["SIP-source-address"],
             "replace": ["origin", "session-connection"],
-            "received-from": ["IP4", "127.0.0.1"],
+            "received-from": ["IP4", self.local_address],
             "codec": { "mask": ["all"], "transcode": ["PCMU", "speex"]}
         }
         command = Commands.answer(
-            self.generate_sdp('127.0.0.1', self.end, "96"),
+            self.generate_sdp(self.local_address, self.end, "96"),
             self.call_id, self.from_tag, self.to_tag, **options
         )
         data = super().ws_send(command) if super().__getattribute__('protocol') == 'ws' else super().send(command, self.end)
