@@ -87,6 +87,7 @@ class CallBase:
         
         try:
             response = sock.recv(10240)
+            sock.close()
             logging.debug(f'Received from rtpengine: {str(response)}')
         except Exception as e:
             logging.error(f'After 10 seconds not received any response. Error: {e}')
@@ -95,7 +96,6 @@ class CallBase:
         try:
             data = response.decode()
             data = data.split(" ", 1)
-            sock.close()
             return self._bc.decode(data[1])
         except Exception as e:
             logging.error(f'Received response is not a string. {str(response)}. Error: {e}')

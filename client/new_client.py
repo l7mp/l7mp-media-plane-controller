@@ -9,6 +9,7 @@ from transcodedcall import TranscodedCall
 from ssh_handler import ShellHandler
 from collections import deque
 import threading
+from commands import Commands
 
 # Required params for the linphone handling
 LINPHONE_ARGS = ['ssh_linphone1', 'ssh_linphone2', 'linphone_time', 'record_filename']
@@ -123,6 +124,7 @@ if __name__ == '__main__':
             time.sleep(20)
 
             if len(calls) > 0: # If your don't specify calls 
+                command = Commands.statistics
                 threaded_calls(calls)
                 threading.Thread(target=linphone_sleep, args=(client1, client2, config.getint('linphone_time'), ), daemon=True).start()
             else:
