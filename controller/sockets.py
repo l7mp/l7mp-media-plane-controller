@@ -19,6 +19,7 @@ class TCPSocket():
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 1)
         self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 3)
+        self.sock.settimeout(5)
 
     # Send data 
     def send(self, message, no_wait_response=False):
@@ -46,6 +47,13 @@ class TCPSocket():
                     logging.info("Trying to reconnect")
                     self.connect(0)
                     counter += 1
+                except Exception as e:
+                    self.sock.close()
+                    self.create_socket()
+                    logging.warning(f'Timed out from remote host')
+                    logging.info("Trying to reconnect")
+                    self.connect(0)
+                    counter += 1
             return
 
     # Connect to the defined address
@@ -53,7 +61,7 @@ class TCPSocket():
         counter = 0
         time.sleep(delay)
         logging.info(f"Delay connection by {delay} seconds")
-        while True:
+        while counter < 3:
             try:
                 self.sock.connect((self.address, self.port))
                 logging.info("Successful connection")
