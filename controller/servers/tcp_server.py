@@ -48,7 +48,6 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             extended_raw_data = raw_data
             if 'flags' in data:
                 data['flags'].append('media-handover')
-                logging.debug(f'data: {data}')
                 if 'cookie' in data:
                     cookie = data['cookie']
                     extended_raw_data = cookie + " " + bc.encode(without_keys(data, 'cookie')).decode()
@@ -56,7 +55,6 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     bytes(cookie + " " + bc.encode(data_without_cookie).decode(), 'utf-8')
                     '''
                     parsed_data = parse_data(extended_raw_data)
-                    logging.debug(f'extended_raw_data {parsed_data}')
             # Send data to rtpengine
             raw_response = rtpe_socket.send(extended_raw_data)
             if raw_response:
@@ -104,7 +102,6 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
             extended_raw_data = raw_data
             if 'flags' in data:
                 data['flags'].append('media-handover')
-                logging.debug(f'data: {data}')
                 if 'cookie' in data:
                     cookie = data['cookie']
                     extended_raw_data = cookie + " " + bc.encode(without_keys(data, 'cookie')).decode()
@@ -112,7 +109,6 @@ class ThreadedTCPRequestHandler(socketserver.BaseRequestHandler):
                     bytes(cookie + " " + bc.encode(data_without_cookie).decode(), 'utf-8')
                     '''
                     parsed_data = parse_data(extended_raw_data)
-                    logging.debug(f'extended_raw_data {parsed_data}')
             # Send data to rtpengine
             raw_response = rtpe_socket.send(extended_raw_data)
             if raw_response:
