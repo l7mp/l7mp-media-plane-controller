@@ -26,14 +26,20 @@ class Operations():
         while True:
             try:
                 response = requests.post(f"http://{pod_ip}:1234/api/v1/{path}", json=data)
-                break
+                if response.status_code == 200:
+                    logging.info(f'response 200')
+                    break
+                elif response.status_code != 200 and 'already defined' in str(response.content):
+                    logging.info(f'{response.status_code}:{response.text}')
+                    break
+                else:
+                    logging.info(f'response {response.status_code}:{response.text}')
+                    continue
             except requests.exceptions.ConnectionError as e :
                 logging.error(e)
                 time.sleep(1)
                 continue
 
-        if response.status_code != 200 and 'already defined' not in str(response.content):
-            logging.info(f'{response.status_code}:{response.text}')
         return response
 
     # HTTP DELETE
@@ -160,11 +166,12 @@ class Statuses():
     # Add status or just a resource
     def add_status(self, pod, label, resource):
         s = self._find_obj_by_key_value('pod_name', pod['pod_name'])
-        if not s: 
-            s = Status(pod['pod_name'], pod['pod_ip'], label)        
-            s.add_resource(resource)
-            s.present = True
-            self.statuses.append(s)
+        if not s:
+            if pod['pod_ip']: 
+                s = Status(pod['pod_name'], pod['pod_ip'], label)        
+                s.add_resource(resource)
+                s.present = True
+                self.statuses.append(s)
         else:
             s.add_resource(resource)
             s.present = True
@@ -179,10 +186,10 @@ class Statuses():
                 s.add_endpoint(pod['object'].metadata.name, pod['object'].status.pod_ip, labels)
 
     # Delete a resource from a status
-    def delete_res_from_statuses(self, res_name, label):
+    def delete_res_from_statuses(self, res_name, label, recursive=False):
         for s in self.statuses:
             if s.label == label:
-                s.delete_resource(res_name)
+                s.delete_resource(res_name, recursive)
 
     # Delete a complet status object. Triggered on endpoint delete
     def delete_status(self, pod_name, pod_ip):
@@ -208,8 +215,8 @@ class Statuses():
         }
 
         names = [s.pod_name for s in self.statuses]
-        if pod_dict['pod_name'] in names:
-            return
+        # if pod_dict['pod_name'] in names:
+        #     return
 
         for s in self.statuses:
             if s.label in labels:

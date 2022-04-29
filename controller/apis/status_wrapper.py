@@ -16,8 +16,8 @@ class StatusWrapper():
         for p in pods:
             self.statuses.add_status(p, config['label'], config['resource'])
 
-    def delete(self, res_name, label):
-        self.statuses.delete_res_from_statuses(res_name, label)
+    def delete(self, res_name, label, recursive=False):
+        self.statuses.delete_res_from_statuses(res_name, label, recursive)
 
     def get_statuses(self):
         return self.statuses

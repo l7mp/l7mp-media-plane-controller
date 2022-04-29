@@ -26,6 +26,7 @@ def update():
     deleted_pod = None
     for event in w.stream(api.list_namespaced_pod, namespace='default', label_selector='app=l7mp-worker'):
         if event['type'] == 'MODIFIED' and event['object'].metadata.deletion_timestamp != None:
+            deleted_pod = {event["object"].metadata.name}
             logging.info(f'pod name: {event["object"].metadata.name}, deleted pod name: {deleted_pod}')
             if event['object'].metadata.name != deleted_pod:
                 deleted_pod = event['object'].metadata.name
@@ -172,7 +173,7 @@ class L7mpAPI():
     def delete_resources(self):
         global statuses
         for r in self.resource_names:
-            statuses.statuses.delete(r[1], r[0])
+            statuses.statuses.delete(r[1], r[0], recursive=True)
             logging.info(f'{r[1]} deleted.')
     
     def _create_listener(self):
