@@ -51,7 +51,7 @@ class CallBase:
             logging.error('Cannot make a new connection with this address: '
             f'{self.rtpe_address}:{self.rtpe_port} Error: {e}')
             return None
-        # sock.settimeout(10)
+        sock.settimeout(10)
         logging.debug(f'Socket created on tcp:{self.local_address}:{port}')
         return sock
 
