@@ -77,12 +77,15 @@ def create_resource(call_id, from_tag, to_tag, config, query, client_ip):
     from_port = query['tags'][from_tag]['medias'][0]['streams'][0]['local port']
     from_c_port = query['tags'][from_tag]['medias'][0]['streams'][0]['endpoint']['port']
     
+    to_c_address = query['tags'][to_tag]['medias'][0]['streams'][0]['endpoint']['address']
+    from_c_address = query['tags'][from_tag]['medias'][0]['streams'][0]['endpoint']['address']
+
     logging.debug('Every port and address is mapped.')
 
     from_data = {
         'callid': call_id,
         'tag': from_tag,
-        'local_ip': client_ip,
+        'local_ip': from_c_address,
         'local_rtp_port': from_c_port,
         'local_rtcp_port': from_c_port + 1,
         'remote_rtp_port': from_port,
@@ -92,7 +95,7 @@ def create_resource(call_id, from_tag, to_tag, config, query, client_ip):
     to_data = {
         'callid': call_id,
         'tag': to_tag,
-        'local_ip': client_ip,
+        'local_ip': to_c_address,
         'local_rtp_port': to_c_port,
         'local_rtcp_port': to_c_port + 1,
         'remote_rtp_port': to_port,
